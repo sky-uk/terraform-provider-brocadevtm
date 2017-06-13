@@ -56,7 +56,7 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	clientDebug := d.Get("client_debug").(bool)
-	allow_unverified_ssl := d.Get("allow_unverified_ssl").(bool)
+	allowUnverifiedSSL := d.Get("allow_unverified_ssl").(bool)
 
 	vtmUser := d.Get("vtm_user").(string)
 	if vtmUser == "" {
@@ -77,7 +77,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	config := Config{
 		Debug:       clientDebug,
-		Insecure:    allow_unverified_ssl,
+		Insecure:    allowUnverifiedSSL,
 		VTMUser:     vtmUser,
 		VTMPassword: vtmPassword,
 		VTMServer:   vtmServer,

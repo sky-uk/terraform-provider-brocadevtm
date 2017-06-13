@@ -83,7 +83,7 @@ func testAccBrocadeVTMMonitorCheckDestroy(state *terraform.State) error {
 			return nil
 		}
 		if api.GetResponse().FilterByName(name).Name == "acctest_brocade_monitor" {
-			return fmt.Errorf("Brocade vTM monitor %s still exists.", name)
+			return fmt.Errorf("Brocade vTM monitor %s still exists", name)
 		}
 	}
 	return nil
@@ -94,10 +94,10 @@ func testAccBrocadeVTMMonitorExists(monitorName, monitorResourceName string) res
 
 		rs, ok := state.RootModule().Resources[monitorResourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM Monitor resource %s not found in resources\n", monitorResourceName)
+			return fmt.Errorf("\nBrocade vTM Monitor resource %s not found in resources", monitorResourceName)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM Monitor ID not set in resources\n")
+			return fmt.Errorf("\nBrocade vTM Monitor ID not set in resources")
 		}
 
 		vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)

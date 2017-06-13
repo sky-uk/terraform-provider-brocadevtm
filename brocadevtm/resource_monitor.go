@@ -260,7 +260,7 @@ func resourceMonitorDelete(d *schema.ResourceData, m interface{}) error {
 	getAllAPI := monitor.NewGetSingleMonitor(readName)
 	err := vtmClient.Do(getAllAPI)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Delete: Error fetching monitor %s.", readName)
+		return fmt.Errorf("BrocadeVTM Delete: Error fetching monitor %s", readName)
 	}
 	if getAllAPI.StatusCode() == 404 {
 		d.SetId("")
