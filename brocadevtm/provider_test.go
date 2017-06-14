@@ -29,8 +29,8 @@ func TestProvider_impl(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
-	if v := os.Getenv("BROCADEVTM_USER"); v == "" {
-		t.Fatal("BROCADEVTM_USER must be set for acceptance tests")
+	if v := os.Getenv("BROCADEVTM_USERNAME"); v == "" {
+		t.Fatal("BROCADEVTM_USERNAME must be set for acceptance tests")
 	}
 
 	if v := os.Getenv("BROCADEVTM_PASSWORD"); v == "" {
