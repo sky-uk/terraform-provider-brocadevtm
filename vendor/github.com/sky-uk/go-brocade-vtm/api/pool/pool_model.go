@@ -3,6 +3,7 @@ package pool
 // Pool - main pool struct
 type Pool struct {
 	Properties Properties `json:"properties"`
+	Name       string     `json:"name,omitempty"`
 }
 
 // Properties - General Properties for the pool
