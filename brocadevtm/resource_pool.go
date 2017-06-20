@@ -294,6 +294,66 @@ func resourcePoolDelete(d *schema.ResourceData, m interface{}) error {
 
 // resourcePoolUpdate - Updates an existing pool resource
 func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
-	return nil
+	vtmClient := m.(*brocadevtm.VTMClient)
+	var poolName string
+	var updatePool pool.Pool
+	if v, ok := d.GetOk("name"); ok {
+		poolName = v.(string)
+
+	} else {
+		return fmt.Errorf("Pool name argument required")
+	}
+
+	if d.HasChange("node") {
+		if v, ok := d.GetOk("node"); ok {
+			if nodes, ok := v.(*schema.Set); ok {
+				nodeList := []pool.MemberNode{}
+				for _, value := range nodes.List() {
+					nodeObject := value.(map[string]interface{})
+					newNode := pool.MemberNode{}
+					if nodeValue, ok := nodeObject["node"].(string); ok {
+						newNode.Node = nodeValue
+					}
+					if priorityValue, ok := nodeObject["priority"].(int); ok {
+						newNode.Priority = priorityValue
+					}
+					if stateValue, ok := nodeObject["state"].(string); ok {
+						newNode.State = stateValue
+					}
+					if weightValue, ok := nodeObject["weight"].(int); ok {
+						newNode.Weight = weightValue
+					}
+					nodeList = append(nodeList, newNode)
+
+				}
+				updatePool.Properties.Basic.NodesTable = nodeList
+			}
+		}
+	}
+
+	if d.HasChange("monitorlist") {
+		if v, ok := d.GetOk("monitorlist"); ok {
+			originalMonitors := v.([]interface{})
+			monitors := make([]string, len(originalMonitors))
+			for i, monitor := range originalMonitors {
+				monitors[i] = monitor.(string)
+			}
+			updatePool.Properties.Basic.Monitors = monitors
+		}
+	}
+
+	if d.HasChange("max_connection_attempts") {
+		if v, ok := d.GetOk("max_connection_attempts"); ok {
+			updatePool.Properties.Basic.MaxTimeoutConnectionAttempts = v.(int)
+		}
+	}
+
+	updatePoolAPI := pool.NewUpdate(poolName, updatePool)
+	updatePoolErr := vtmClient.Do(updatePoolAPI)
+	if updatePoolErr != nil {
+		return fmt.Errorf("Error updating pool %s", updatePoolErr)
+	}
+
+	return resourcePoolRead(d, m)
 
 }
