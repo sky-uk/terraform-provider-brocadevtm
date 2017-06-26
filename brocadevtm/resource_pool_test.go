@@ -16,7 +16,7 @@ func TestAccPool_Basic(t *testing.T) {
 		CheckDestroy: testAccCheckBrocadeVTMPoolDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccCheckNSXServiceConfig,
+				Config: testAccCheckVTMServiceConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testCheckBrocadeVTMPoolExists("brocadevtm_pool.foo"),
 					resource.TestCheckResourceAttr(
@@ -24,7 +24,7 @@ func TestAccPool_Basic(t *testing.T) {
 				),
 			},
 			resource.TestStep{
-				Config: testAccCheckNSXServiceConfigUpdated,
+				Config: testAccCheckVTMServiceConfigUpdated,
 				Check: resource.ComposeTestCheckFunc(
 					testCheckBrocadeVTMPoolExists("brocadevtm_pool.foo"),
 					resource.TestCheckResourceAttr(
@@ -85,7 +85,7 @@ func testCheckBrocadeVTMPoolExists(name string) resource.TestCheckFunc {
 	}
 }
 
-const testAccCheckNSXServiceConfig = `
+const testAccCheckVTMServiceConfig = `
 resource "brocadevtm_pool" "foo" {
   name = "pool_foo"
   monitorlist = ["ping"]
@@ -98,7 +98,7 @@ resource "brocadevtm_pool" "foo" {
   max_connection_attempts = 5
 }`
 
-const testAccCheckNSXServiceConfigUpdated = `
+const testAccCheckVTMServiceConfigUpdated = `
 resource "brocadevtm_pool" "foo" {
   name = "pool_bar"
   monitorlist = ["ping"]
