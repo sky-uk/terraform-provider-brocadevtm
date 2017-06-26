@@ -49,6 +49,7 @@ func Provider() terraform.ResourceProvider {
 			"brocadevtm_monitor":        resourceMonitor(),
 			"brocadevtm_pool":           resourcePool(),
 			"brocadevtm_ssl_server_key": resourceSSLServerKey(),
+			"brocadevtm_traffic_ip_group": resourceTrafficIPGroup(),
 		},
 
 		ConfigureFunc: providerConfigure,
