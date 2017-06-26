@@ -71,9 +71,9 @@ func resourceSSLServerKeyCreate(d *schema.ResourceData, meta interface{}) error 
 		payloadObject.Properties.Basic.Request = v.(string)
 	}
 
-	createSSLServerKey := sslServerKey.NewCreate(name, payloadObject)
+	createSSLServerKey := sslServerKey.NewCreate(name, &payloadObject)
 	err := vtmClient.Do(createSSLServerKey)
-	if err != nil {
+	if err != nil && createSSLServerKey.StatusCode() != 201 {
 		d.SetId("")
 		return fmt.Errorf("BrocadeVTM Create Error: %+v", err)
 	}
@@ -93,14 +93,16 @@ func resourceSSLServerKeyRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	getSSLServerKey := sslServerKey.NewGet(name)
 	err := vtmClient.Do(getSSLServerKey)
-	if err != nil {
+	if err != nil && getSSLServerKey.StatusCode() != 200 {
 		d.SetId("")
 		return fmt.Errorf("BrocadeVTM Read Error: %+v", err)
 	}
 
 	sslServerKey := getSSLServerKey.GetResponse()
 	d.Set("note", sslServerKey.Properties.Basic.Note)
-	d.Set("private", sslServerKey.Properties.Basic.Private)
+	// TODO: API doesn't return the private key back, so we ignore it,
+	// otherwise plan is always changing it.
+	// d.Set("private", sslServerKey.Properties.Basic.Private)
 	d.Set("public", sslServerKey.Properties.Basic.Public)
 	d.Set("request", sslServerKey.Properties.Basic.Request)
 
