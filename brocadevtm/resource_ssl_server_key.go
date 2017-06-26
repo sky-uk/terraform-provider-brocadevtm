@@ -56,7 +56,7 @@ func resourceSSLServerKeyCreate(d *schema.ResourceData, meta interface{}) error 
 	if v, ok := d.GetOk("name"); ok {
 		name = v.(string)
 	} else {
-		return fmt.Errorf("BrocadeVTM Read Error: name argument required")
+		return fmt.Errorf("BrocadeVTM Create Error: name argument required")
 	}
 	if v, ok := d.GetOk("note"); ok {
 		payloadObject.Properties.Basic.Note = v.(string)
@@ -118,7 +118,7 @@ func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error 
 	if v, ok := d.GetOk("name"); ok {
 		name = v.(string)
 	} else {
-		return fmt.Errorf("BrocadeVTM Read Error: name argument required")
+		return fmt.Errorf("BrocadeVTM Update Error: name argument required")
 	}
 	if d.HasChange("note") {
 		if v, ok := d.GetOk("note"); ok {
@@ -150,7 +150,7 @@ func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error 
 		err := vtmClient.Do(updateSSLServerKey)
 		if err != nil {
 			d.SetId("")
-			return fmt.Errorf("BrocadeVTM Create Error: %+v", err)
+			return fmt.Errorf("BrocadeVTM Update Error: %+v", err)
 		}
 	}
 	return resourceSSLServerKeyRead(d, meta)
