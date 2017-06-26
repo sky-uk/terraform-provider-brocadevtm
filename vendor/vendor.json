@@ -339,6 +339,12 @@
 			"revisionTime": "2017-06-13T13:28:42Z"
 		},
 		{
+			"checksumSHA1": "KPNvqyfFKVrMILCEc4ZIexWJ+Ys=",
+			"path": "github.com/hashicorp/terraform/helper/acctest",
+			"revision": "de2927d0b4ecc04747538b525ba06a75f56d09a5",
+			"revisionTime": "2017-06-22T14:09:07Z"
+		},
+		{
 			"checksumSHA1": "uT6Q9RdSRAkDjyUgQlJ2XKJRab4=",
 			"path": "github.com/hashicorp/terraform/helper/config",
 			"revision": "87be64b1ac9ee24977af80239ab7d6c0706cf75a",
@@ -479,8 +485,8 @@
 		{
 			"checksumSHA1": "X6qFg4o+aNcKGnh4kpfnnm+MJBQ=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api",
-			"revision": "1ee87d8429e22a5425e0fd0cc00fa85b9b78b7aa",
-			"revisionTime": "2017-06-19T13:11:06Z"
+			"revision": "9f346a98250f0c93b02386433c208c80ddeb6731",
+			"revisionTime": "2017-06-22T10:35:54Z"
 		},
 		{
 			"checksumSHA1": "hHzx/w6QDtM6wEWWLGErSed6vc4=",
@@ -495,6 +501,12 @@
 			"revisionTime": "2017-06-19T13:11:06Z"
 		},
 		{
+			"checksumSHA1": "X0m8x8Jkg0nvlwECdVKYOX5JVsU=",
+			"path": "github.com/sky-uk/go-brocade-vtm/api/ssl_server_key",
+			"revision": "9f346a98250f0c93b02386433c208c80ddeb6731",
+			"revisionTime": "2017-06-22T10:35:54Z"
+		},
+		{
 			"checksumSHA1": "UWjVYmoHlIfHzVIskELHiJQtMOI=",
 			"path": "golang.org/x/crypto/bcrypt",
 			"revision": "e7ba82683099cae71475961448ab8f903ea77c26",
@@ -505,6 +517,30 @@
 			"path": "golang.org/x/crypto/blowfish",
 			"revision": "e7ba82683099cae71475961448ab8f903ea77c26",
 			"revisionTime": "2017-06-03T05:13:44Z"
+		},
+		{
+			"checksumSHA1": "nAu0XmCeC6WnUySyI8R7w4cxAqU=",
+			"path": "golang.org/x/crypto/curve25519",
+			"revision": "adbae1b6b6fb4b02448a0fc0dbbc9ba2b95b294d",
+			"revisionTime": "2017-06-19T06:03:41Z"
+		},
+		{
+			"checksumSHA1": "wGb//LjBPNxYHqk+dcLo7BjPXK8=",
+			"path": "golang.org/x/crypto/ed25519",
+			"revision": "adbae1b6b6fb4b02448a0fc0dbbc9ba2b95b294d",
+			"revisionTime": "2017-06-19T06:03:41Z"
+		},
+		{
+			"checksumSHA1": "LXFcVx8I587SnWmKycSDEq9yvK8=",
+			"path": "golang.org/x/crypto/ed25519/internal/edwards25519",
+			"revision": "adbae1b6b6fb4b02448a0fc0dbbc9ba2b95b294d",
+			"revisionTime": "2017-06-19T06:03:41Z"
+		},
+		{
+			"checksumSHA1": "LpHGP7rxcf7TirWY41DDpUPfhS4=",
+			"path": "golang.org/x/crypto/ssh",
+			"revision": "adbae1b6b6fb4b02448a0fc0dbbc9ba2b95b294d",
+			"revisionTime": "2017-06-19T06:03:41Z"
 		},
 		{
 			"checksumSHA1": "vqc3a+oTUGX8PmD0TS+qQ7gmN8I=",
