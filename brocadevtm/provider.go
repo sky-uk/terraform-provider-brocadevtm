@@ -46,8 +46,9 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"brocadevtm_monitor": resourceMonitor(),
-			"brocadevtm_pool":    resourcePool(),
+			"brocadevtm_monitor":          resourceMonitor(),
+			"brocadevtm_pool":             resourcePool(),
+			"brocadevtm_traffic_ip_group": resourceTrafficIPGroup(),
 		},
 
 		ConfigureFunc: providerConfigure,
