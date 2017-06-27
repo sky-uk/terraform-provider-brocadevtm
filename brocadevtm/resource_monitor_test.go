@@ -20,9 +20,11 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 	fmt.Printf("\n\nMonitor Name is %s.\n\n", monitorName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccBrocadeVTMMonitorCheckDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(state *terraform.State) error {
+			return testAccBrocadeVTMMonitorCheckDestroy(state, monitorName)
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccBrocadeVTMMonitorCreateTemplate(monitorName),
@@ -64,10 +66,9 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 	})
 }
 
-func testAccBrocadeVTMMonitorCheckDestroy(state *terraform.State) error {
+func testAccBrocadeVTMMonitorCheckDestroy(state *terraform.State, name string) error {
 
 	vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
-	var name string
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "brocadevtm_monitor" {
@@ -82,7 +83,7 @@ func testAccBrocadeVTMMonitorCheckDestroy(state *terraform.State) error {
 		if err != nil {
 			return nil
 		}
-		if api.GetResponse().FilterByName(name).Name == "acctest_brocade_monitor" {
+		if api.GetResponse().FilterByName(name).Name == name {
 			return fmt.Errorf("Brocade vTM monitor %s still exists", name)
 		}
 	}
