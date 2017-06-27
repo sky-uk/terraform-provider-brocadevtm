@@ -60,11 +60,9 @@ func resourceTrafficIPGroup() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "Multicast IP address",
 				Required:    true,
-				ForceNew:    true,
 			},
 		},
 	}
-	return nil
 }
 
 func getTrafficManagers(m interface{}) ([]string, error) {
@@ -92,14 +90,14 @@ func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
 	// Retrieve the list of Brocade vTM traffic managers and assign it to Machines
 	trafficManagers, err := getTrafficManagers(m)
 	if err != nil {
-		fmt.Errorf("%v", err)
+		return fmt.Errorf("%v", err)
 	}
 	createTrafficIPGroup.Properties.Basic.Machines = trafficManagers
 
 	if v, ok := d.GetOk("name"); ok && v != "" {
 		tipgName = v.(string)
 	}
-	if v, ok := d.GetOk("enabled"); ok {
+	if v, _ := d.GetOk("enabled"); v != nil {
 		enableTrafficIPGroup := v.(bool)
 		createTrafficIPGroup.Properties.Basic.Enabled = &enableTrafficIPGroup
 	}
@@ -133,14 +131,8 @@ func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
 	if createAPI.StatusCode() != http.StatusCreated && createAPI.StatusCode() != http.StatusOK {
 		return fmt.Errorf("Invalid HTTP response code %d returned. Response object was %+v", createAPI.StatusCode(), createAPI.ResponseObject())
 	}
-	d.SetId(tipgName)
-	d.Set("enabled", createTrafficIPGroup.Properties.Basic.Enabled)
-	d.Set("hashsourceport", createTrafficIPGroup.Properties.Basic.HashSourcePort)
-	d.Set("ipaddresses", createTrafficIPGroup.Properties.Basic.IPAddresses)
-	d.Set("trafficmanagers", createTrafficIPGroup.Properties.Basic.Machines)
-	d.Set("mode", createTrafficIPGroup.Properties.Basic.Mode)
-	d.Set("multicastip", createTrafficIPGroup.Properties.Basic.Multicast)
 
+	d.SetId(tipgName)
 	return resourceTrafficIPGroupRead(d, m)
 }
 
@@ -158,7 +150,7 @@ func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 	getSingleAPI := trafficIpGroups.NewGetSingle(tipgName)
 	err := vtmClient.Do(getSingleAPI)
 	if err != nil {
-		return fmt.Errorf("Error reading Traffic IP Group:", err)
+		return fmt.Errorf("Error reading Traffic IP Group: %+v", err)
 	}
 	if getSingleAPI.StatusCode() == http.StatusNotFound {
 		d.SetId("")
@@ -167,8 +159,8 @@ func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 
 	readTrafficIPGroup = *getSingleAPI.GetResponse()
 	d.Set("name", tipgName)
-	d.Set("enabled", readTrafficIPGroup.Properties.Basic.Enabled)
-	d.Set("hashsourceport", readTrafficIPGroup.Properties.Basic.HashSourcePort)
+	d.Set("enabled", *readTrafficIPGroup.Properties.Basic.Enabled)
+	d.Set("hashsourceport", *readTrafficIPGroup.Properties.Basic.HashSourcePort)
 	d.Set("ipaddresses", readTrafficIPGroup.Properties.Basic.IPAddresses)
 	d.Set("trafficmanagers", readTrafficIPGroup.Properties.Basic.Machines)
 	d.Set("mode", readTrafficIPGroup.Properties.Basic.Mode)
@@ -178,7 +170,53 @@ func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
-	return nil
+
+	vtmClient := m.(*brocadevtm.VTMClient)
+	var trafficIPGroupName string
+	var updateTrafficIPGroup trafficIpGroups.TrafficIPGroup
+	hasChanges := false
+
+	//TODO ipaddresses, trafficmanagers, mode
+
+	if v, ok := d.GetOk("name"); ok && v != "" {
+		trafficIPGroupName = v.(string)
+	} else {
+		return fmt.Errorf("Error Traffic IP Group Update requires name attribute")
+	}
+	if d.HasChange("enabled") {
+		enableTrafficIPGroup := d.Get("enabled").(bool)
+		updateTrafficIPGroup.Properties.Basic.Enabled = &enableTrafficIPGroup
+		hasChanges = true
+	}
+	if d.HasChange("hashsourceport") {
+		hashSourcePort := d.Get("hashsourceport").(bool)
+		updateTrafficIPGroup.Properties.Basic.HashSourcePort = &hashSourcePort
+		hasChanges = true
+	}
+	if d.HasChange("multicastip") {
+		if v, ok := d.GetOk("multicastip"); ok {
+			updateTrafficIPGroup.Properties.Basic.Multicast = v.(string)
+		}
+		hasChanges = true
+	}
+
+	if hasChanges {
+		updateAPI := trafficIpGroups.NewUpdate(trafficIPGroupName, updateTrafficIPGroup)
+		err := vtmClient.Do(updateAPI)
+		if err != nil {
+			return fmt.Errorf("Error Updating Traffic IP Group %s", trafficIPGroupName)
+		}
+		if updateAPI.StatusCode() != http.StatusOK {
+			return fmt.Errorf("Error updating Traffic IP Group %s invalid http return code", trafficIPGroupName)
+		}
+
+		updateResponse := updateAPI.GetResponse()
+		d.SetId(trafficIPGroupName)
+		d.Set("enabled", *updateResponse.Properties.Basic.Enabled)
+		d.Set("hashsourceport", *updateResponse.Properties.Basic.HashSourcePort)
+		d.Set("multicastip", updateResponse.Properties.Basic.Multicast)
+	}
+	return resourceTrafficIPGroupRead(d, m)
 }
 
 func resourceTrafficIPGroupDelete(d *schema.ResourceData, m interface{}) error {

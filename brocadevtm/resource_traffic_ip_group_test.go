@@ -34,11 +34,25 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMTrafficIPGroupExists(trafficIPGroupName, trafficIPGroupResourceName),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "name", trafficIPGroupName),
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "enabled", "false"),
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "hashsourceport", "false"),
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ipaddresses.0", "192.168.100.10"),
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "mode", "multihosted"),
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "multicastip", "192.168.100.11"),
+					// TODO: can we get the name of the test traffic manager rather than hard coding?
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "trafficmanagers.0", "h1ist01-v00.paas.d50.ovp.bskyb.com"),
+				),
+			},
+			{
+				Config: testAccBrocadeVTMTrafficIPGroupUpdateTemplate(trafficIPGroupName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccBrocadeVTMTrafficIPGroupExists(trafficIPGroupName, trafficIPGroupResourceName),
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "name", trafficIPGroupName),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "enabled", "true"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "hashsourceport", "true"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ipaddresses.0", "192.168.100.10"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "mode", "multihosted"),
-					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "multicastip", "192.168.100.11"),
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "multicastip", "192.168.100.12"),
 					// TODO: can we get the name of the test traffic manager rather than hard coding?
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "trafficmanagers.0", "h1ist01-v00.paas.d50.ovp.bskyb.com"),
 				),
@@ -101,11 +115,24 @@ func testAccBrocadeVTMTrafficIPGroupCreateTemplate(trafficIPGroupName string) st
 	return fmt.Sprintf(`
 resource "brocadevtm_traffic_ip_group" "acctest" {
 name = "%s"
+enabled = false
+hashsourceport = false
+ipaddresses = ["192.168.100.10"]
+mode = "multihosted"
+multicastip = "192.168.100.11"
+}
+`, trafficIPGroupName)
+}
+
+func testAccBrocadeVTMTrafficIPGroupUpdateTemplate(trafficIPGroupName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_traffic_ip_group" "acctest" {
+name = "%s"
 enabled = true
 hashsourceport = true
 ipaddresses = ["192.168.100.10"]
 mode = "multihosted"
-multicastip = "192.168.100.11"
+multicastip = "192.168.100.12"
 }
 `, trafficIPGroupName)
 }
