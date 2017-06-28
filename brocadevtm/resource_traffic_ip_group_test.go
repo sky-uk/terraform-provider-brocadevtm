@@ -7,8 +7,8 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/traffic_ip_group"
-	"testing"
 	"regexp"
+	"testing"
 )
 
 func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
@@ -29,15 +29,15 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: testAccBrocadeVTMTrafficIPGroupNoName(),
+				Config:      testAccBrocadeVTMTrafficIPGroupNoName(),
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
-				Config: testAccBrocadeVTMTrafficIPGroupInvalidMode(trafficIPGroupName),
+				Config:      testAccBrocadeVTMTrafficIPGroupInvalidMode(trafficIPGroupName),
 				ExpectError: regexp.MustCompile(`must be one of singlehosted, ec2elastic, ec2vpcelastic, ec2vpcprivate, multihosted or rhi`),
 			},
 			{
-				Config: testAccBrocadeVTMTrafficIPGroupInvalidIPAddress(trafficIPGroupName),
+				Config:      testAccBrocadeVTMTrafficIPGroupInvalidIPAddress(trafficIPGroupName),
 				ExpectError: regexp.MustCompile(`ipaddresses: should be a list`),
 			},
 			{
