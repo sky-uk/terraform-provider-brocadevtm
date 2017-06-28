@@ -57,9 +57,10 @@ func resourceTrafficIPGroup() *schema.Resource {
 				ValidateFunc: validateTrafficIPGroupMode,
 			},
 			"multicastip": {
-				Type:        schema.TypeString,
-				Description: "Multicast IP address",
-				Required:    true,
+				Type:         schema.TypeString,
+				Description:  "Multicast IP address",
+				Required:     true,
+				ValidateFunc: validateTrafficIPGroupMulticastIP,
 			},
 		},
 	}
@@ -70,6 +71,15 @@ func validateTrafficIPGroupMode(v interface{}, k string) (ws []string, errors []
 	modeOptions := regexp.MustCompile(`^(singlehosted|ec2elastic|ec2vpcelastic|ec2vpcprivate|multihosted|rhi)$`)
 	if !modeOptions.MatchString(mode) {
 		errors = append(errors, fmt.Errorf("%q must be one of singlehosted, ec2elastic, ec2vpcelastic, ec2vpcprivate, multihosted or rhi", k))
+	}
+	return
+}
+
+func validateTrafficIPGroupMulticastIP(v interface{}, k string) (ws []string, errors []error) {
+	multicastIP := v.(string)
+	validMulticastIPs := regexp.MustCompile(`^2[2-3][0-9]\.[0-9]+\.[0-9]+\.[0-9]+$`)
+	if !validMulticastIPs.MatchString(multicastIP) {
+		errors = append(errors, fmt.Errorf("%q must be a valid multicast IP (224.0.0.0 - 239.255.255.255)", k))
 	}
 	return
 }
@@ -91,12 +101,12 @@ func getTrafficManagers(m interface{}) ([]string, error) {
 	return trafficManagers, nil
 }
 
-func buildIPAddresses(m interface{}) []string {
-	ipAddresses := make([]string, len(m.([]interface{})))
-	for idx, ipAddress := range m.([]interface{}) {
-		ipAddresses[idx] = ipAddress.(string)
+func buildIPAddresses(ipAddresses interface{}) []string {
+	ipAddressList := make([]string, len(ipAddresses.([]interface{})))
+	for idx, ipAddress := range ipAddresses.([]interface{}) {
+		ipAddressList[idx] = ipAddress.(string)
 	}
-	return ipAddresses
+	return ipAddressList
 }
 
 func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
@@ -107,7 +117,7 @@ func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
 	// Retrieve the list of Brocade vTM traffic managers and assign it to Machines
 	trafficManagers, err := getTrafficManagers(m)
 	if err != nil {
-		return fmt.Errorf("%v", err)
+		return fmt.Errorf("Create error %v", err)
 	}
 	createTrafficIPGroup.Properties.Basic.Machines = trafficManagers
 
@@ -163,7 +173,7 @@ func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 	getSingleAPI := trafficIpGroups.NewGetSingle(tipgName)
 	err := vtmClient.Do(getSingleAPI)
 	if err != nil {
-		return fmt.Errorf("Error reading Traffic IP Group: %+v", err)
+		return fmt.Errorf("Error reading Traffic IP Group %s: %+v", tipgName, err)
 	}
 	if getSingleAPI.StatusCode() == http.StatusNotFound {
 		d.SetId("")
@@ -217,7 +227,7 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 		hasChanges = true
 	}
 	if d.HasChange("multicastip") {
-		if v, ok := d.GetOk("multicastip"); ok {
+		if v, ok := d.GetOk("multicastip"); ok && v != "" {
 			updateTrafficIPGroup.Properties.Basic.Multicast = v.(string)
 		}
 		hasChanges = true
@@ -227,7 +237,7 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 		// On all updates refresh the list of traffic managers
 		trafficManagers, err := getTrafficManagers(m)
 		if err != nil {
-			return fmt.Errorf("%v", err)
+			return fmt.Errorf("update error %v", err)
 		}
 		updateTrafficIPGroup.Properties.Basic.Machines = trafficManagers
 
@@ -244,7 +254,9 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 		d.SetId(trafficIPGroupName)
 		d.Set("enabled", *updateResponse.Properties.Basic.Enabled)
 		d.Set("hashsourceport", *updateResponse.Properties.Basic.HashSourcePort)
+		d.Set("ipaddresses", updateResponse.Properties.Basic.IPAddresses)
 		d.Set("trafficmanagers", updateResponse.Properties.Basic.Machines)
+		d.Set("mode", updateResponse.Properties.Basic.Mode)
 		d.Set("multicastip", updateResponse.Properties.Basic.Multicast)
 	}
 	return resourceTrafficIPGroupRead(d, m)
@@ -258,7 +270,7 @@ func resourceTrafficIPGroupDelete(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("name"); ok {
 		name = v.(string)
 	} else {
-		return fmt.Errorf("Name argument required")
+		return fmt.Errorf("Name argument required when deleting traffic ip group")
 	}
 
 	getTrafficIPGroup := trafficIpGroups.NewGetSingle(name)
