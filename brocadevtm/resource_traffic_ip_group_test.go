@@ -8,6 +8,7 @@ import (
 	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/traffic_ip_group"
 	"testing"
+	"regexp"
 )
 
 func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
@@ -17,8 +18,6 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 	trafficIPGroupResourceName := "brocadevtm_traffic_ip_group.acctest"
 
 	fmt.Printf("\n\nTraffic IP Group is %s.\n\n", trafficIPGroupName)
-
-	//fmt.Printf("\n\nblah %+v", *testAccProvider.Schema["vtm_server"])
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -30,6 +29,18 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
+				Config: testAccBrocadeVTMTrafficIPGroupNoName(),
+				ExpectError: regexp.MustCompile(`required field is not set`),
+			},
+			{
+				Config: testAccBrocadeVTMTrafficIPGroupInvalidMode(trafficIPGroupName),
+				ExpectError: regexp.MustCompile(`must be one of singlehosted, ec2elastic, ec2vpcelastic, ec2vpcprivate, multihosted or rhi`),
+			},
+			{
+				Config: testAccBrocadeVTMTrafficIPGroupInvalidIPAddress(trafficIPGroupName),
+				ExpectError: regexp.MustCompile(`ipaddresses: should be a list`),
+			},
+			{
 				Config: testAccBrocadeVTMTrafficIPGroupCreateTemplate(trafficIPGroupName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMTrafficIPGroupExists(trafficIPGroupName, trafficIPGroupResourceName),
@@ -37,7 +48,7 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "hashsourceport", "false"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ipaddresses.0", "192.168.100.10"),
-					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "mode", "multihosted"),
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "mode", "singlehosted"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "multicastip", "192.168.100.11"),
 					// TODO: can we get the name of the test traffic manager rather than hard coding?
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "trafficmanagers.0", "h1ist01-v00.paas.d50.ovp.bskyb.com"),
@@ -50,7 +61,7 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "name", trafficIPGroupName),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "enabled", "true"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "hashsourceport", "true"),
-					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ipaddresses.0", "192.168.100.10"),
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ipaddresses.0", "192.168.100.11"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "mode", "multihosted"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "multicastip", "192.168.100.12"),
 					// TODO: can we get the name of the test traffic manager rather than hard coding?
@@ -111,6 +122,44 @@ func testAccBrocadeVTMTrafficIPGroupExists(trafficIPGroupName, trafficIPGroupRes
 	}
 }
 
+func testAccBrocadeVTMTrafficIPGroupNoName() string {
+	return fmt.Sprintf(`
+resource "brocadevtm_traffic_ip_group" "acctest" {
+enabled = true
+hashsourceport = false
+ipaddresses = ["192.168.100.10"]
+mode = "singlehosted"
+multicastip = "192.168.100.11"
+}
+`)
+}
+
+func testAccBrocadeVTMTrafficIPGroupInvalidMode(trafficIPGroupName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_traffic_ip_group" "acctest" {
+name = "%s"
+enabled = false
+hashsourceport = false
+ipaddresses = ["192.168.100.10"]
+mode = "SOME_INVALID_MODE"
+multicastip = "192.168.100.11"
+}
+`, trafficIPGroupName)
+}
+
+func testAccBrocadeVTMTrafficIPGroupInvalidIPAddress(trafficIPGroupName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_traffic_ip_group" "acctest" {
+name = "%s"
+enabled = false
+hashsourceport = false
+ipaddresses = "192.168.100.10"
+mode = "multihosted"
+multicastip = "192.168.100.11"
+}
+`, trafficIPGroupName)
+}
+
 func testAccBrocadeVTMTrafficIPGroupCreateTemplate(trafficIPGroupName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_traffic_ip_group" "acctest" {
@@ -118,7 +167,7 @@ name = "%s"
 enabled = false
 hashsourceport = false
 ipaddresses = ["192.168.100.10"]
-mode = "multihosted"
+mode = "singlehosted"
 multicastip = "192.168.100.11"
 }
 `, trafficIPGroupName)
@@ -130,7 +179,7 @@ resource "brocadevtm_traffic_ip_group" "acctest" {
 name = "%s"
 enabled = true
 hashsourceport = true
-ipaddresses = ["192.168.100.10"]
+ipaddresses = ["192.168.100.11"]
 mode = "multihosted"
 multicastip = "192.168.100.12"
 }

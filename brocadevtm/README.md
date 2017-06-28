@@ -21,8 +21,26 @@ please feel free to send the pull requests.
 |-------------------------|--------|-------|---------|--------|
 | Monitor                 |   Y    |   Y   |    N    |   Y    |
 | Pools                   |   N    |   N   |    N    |   N    |
-| Traffic IP              |   N    |   N   |    N    |   N    |
+| Traffic IP              |   Y    |   Y   |    Y    |   Y    |
 | Virtual Server          |   N    |   N   |    N    |   N    |
+
+
+### Traffic IP Group
+
+Implemented Traffic IP Group Attributes  
+  
+| Attribute       | Create | Read | Update | Delete*** |  
+|-----------------|--------|------|--------|-----------|  
+| name            |    Y   |   Y  |   N*   |   Y       |  
+| enabled         |    Y   |   Y  |   Y    |   Y       |  
+| hashsourceport  |    Y   |   Y  |   Y    |   Y       |  
+| ipaddresses     |    Y   |   Y  |   Y    |   Y       |  
+| trafficmanagers |    Y** |   Y  |   Y**  |   Y       |  
+| mode            |    Y   |   Y  |   Y    |   Y       |  
+| multicastip     |    Y   |   Y  |   Y    |   Y       |  
+*Changing the name attribute will force (delete/create) the creation of a new resource.  
+**trafficmanagers is dynamically generated on create and update. Its run each time an update is applied.  
+***Attributes are deleted when the resource is removed.  
 
 
 ### Limitations
