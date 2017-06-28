@@ -41,6 +41,10 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 				ExpectError: regexp.MustCompile(`ipaddresses: should be a list`),
 			},
 			{
+				Config:      testAccBrocadeVTMTrafficIPGroupInvalidMulticastIP(trafficIPGroupName),
+				ExpectError: regexp.MustCompile(`must be a valid multicast IP \(224.0.0.0 - 239.255.255.255\)`),
+			},
+			{
 				Config: testAccBrocadeVTMTrafficIPGroupCreateTemplate(trafficIPGroupName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMTrafficIPGroupExists(trafficIPGroupName, trafficIPGroupResourceName),
@@ -49,9 +53,7 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "hashsourceport", "false"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ipaddresses.0", "192.168.100.10"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "mode", "singlehosted"),
-					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "multicastip", "192.168.100.11"),
-					// TODO: can we get the name of the test traffic manager rather than hard coding?
-					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "trafficmanagers.0", "h1ist01-v00.paas.d50.ovp.bskyb.com"),
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "multicastip", "232.123.23.45"),
 				),
 			},
 			{
@@ -63,9 +65,7 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "hashsourceport", "true"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ipaddresses.0", "192.168.100.11"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "mode", "multihosted"),
-					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "multicastip", "192.168.100.12"),
-					// TODO: can we get the name of the test traffic manager rather than hard coding?
-					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "trafficmanagers.0", "h1ist01-v00.paas.d50.ovp.bskyb.com"),
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "multicastip", "232.123.23.43"),
 				),
 			},
 		},
@@ -129,7 +129,7 @@ enabled = true
 hashsourceport = false
 ipaddresses = ["192.168.100.10"]
 mode = "singlehosted"
-multicastip = "192.168.100.11"
+multicastip = "232.123.23.45"
 }
 `)
 }
@@ -142,7 +142,7 @@ enabled = false
 hashsourceport = false
 ipaddresses = ["192.168.100.10"]
 mode = "SOME_INVALID_MODE"
-multicastip = "192.168.100.11"
+multicastip = "232.123.23.45"
 }
 `, trafficIPGroupName)
 }
@@ -155,12 +155,12 @@ enabled = false
 hashsourceport = false
 ipaddresses = "192.168.100.10"
 mode = "multihosted"
-multicastip = "192.168.100.11"
+multicastip = "232.123.23.45"
 }
 `, trafficIPGroupName)
 }
 
-func testAccBrocadeVTMTrafficIPGroupCreateTemplate(trafficIPGroupName string) string {
+func testAccBrocadeVTMTrafficIPGroupInvalidMulticastIP(trafficIPGroupName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_traffic_ip_group" "acctest" {
 name = "%s"
@@ -169,6 +169,18 @@ hashsourceport = false
 ipaddresses = ["192.168.100.10"]
 mode = "singlehosted"
 multicastip = "192.168.100.11"
+}
+`, trafficIPGroupName)
+}
+func testAccBrocadeVTMTrafficIPGroupCreateTemplate(trafficIPGroupName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_traffic_ip_group" "acctest" {
+name = "%s"
+enabled = false
+hashsourceport = false
+ipaddresses = ["192.168.100.10"]
+mode = "singlehosted"
+multicastip = "232.123.23.45"
 }
 `, trafficIPGroupName)
 }
@@ -181,7 +193,7 @@ enabled = true
 hashsourceport = true
 ipaddresses = ["192.168.100.11"]
 mode = "multihosted"
-multicastip = "192.168.100.12"
+multicastip = "232.123.23.43"
 }
 `, trafficIPGroupName)
 }
