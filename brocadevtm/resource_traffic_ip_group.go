@@ -6,6 +6,7 @@ import (
 	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/traffic_ip_group"
 	"net/http"
+	"regexp"
 )
 
 func resourceTrafficIPGroup() *schema.Resource {
@@ -36,7 +37,6 @@ func resourceTrafficIPGroup() *schema.Resource {
 			},
 
 			"ipaddresses": {
-				// Check API doco re updates.
 				Type:        schema.TypeList,
 				Description: "List of IP addresses to raise on the traffic managers - typically this is one IP address",
 				Required:    true,
@@ -50,19 +50,28 @@ func resourceTrafficIPGroup() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"mode": {
-				Type:        schema.TypeString,
-				Description: "The method used to distribute traffic IPs across machines in the cluster - multihosted when using multicast",
-				Optional:    true,
-				Computed:    true,
+				Type:         schema.TypeString,
+				Description:  "The method used to distribute traffic IPs across machines in the cluster - multihosted when using multicast",
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validateTrafficIPGroupMode,
 			},
 			"multicastip": {
-				// Check API doco re updates.
 				Type:        schema.TypeString,
 				Description: "Multicast IP address",
 				Required:    true,
 			},
 		},
 	}
+}
+
+func validateTrafficIPGroupMode(v interface{}, k string) (ws []string, errors []error) {
+	mode := v.(string)
+	modeOptions := regexp.MustCompile(`^(singlehosted|ec2elastic|ec2vpcelastic|ec2vpcprivate|multihosted|rhi)$`)
+	if !modeOptions.MatchString(mode) {
+		errors = append(errors, fmt.Errorf("%q must be one of singlehosted, ec2elastic, ec2vpcelastic, ec2vpcprivate, multihosted or rhi", k))
+	}
+	return
 }
 
 func getTrafficManagers(m interface{}) ([]string, error) {
@@ -80,6 +89,14 @@ func getTrafficManagers(m interface{}) ([]string, error) {
 		trafficManagers = append(trafficManagers, trafficManager.Name)
 	}
 	return trafficManagers, nil
+}
+
+func buildIPAddresses(m interface{}) []string {
+	ipAddresses := make([]string, len(m.([]interface{})))
+	for idx, ipAddress := range m.([]interface{}) {
+		ipAddresses[idx] = ipAddress.(string)
+	}
+	return ipAddresses
 }
 
 func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
@@ -106,11 +123,7 @@ func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
 		createTrafficIPGroup.Properties.Basic.HashSourcePort = &hashSourcePort
 	}
 	if v, ok := d.GetOk("ipaddresses"); ok && v != "" {
-		ipAddresses := make([]string, len(v.([]interface{})))
-		for idx, ipAddress := range v.([]interface{}) {
-			ipAddresses[idx] = ipAddress.(string)
-		}
-		createTrafficIPGroup.Properties.Basic.IPAddresses = ipAddresses
+		createTrafficIPGroup.Properties.Basic.IPAddresses = buildIPAddresses(v)
 	} else {
 		return fmt.Errorf("ipaddresses argument required")
 	}
@@ -176,8 +189,6 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 	var updateTrafficIPGroup trafficIpGroups.TrafficIPGroup
 	hasChanges := false
 
-	//TODO ipaddresses, trafficmanagers, mode
-
 	if v, ok := d.GetOk("name"); ok && v != "" {
 		trafficIPGroupName = v.(string)
 	} else {
@@ -193,6 +204,18 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 		updateTrafficIPGroup.Properties.Basic.HashSourcePort = &hashSourcePort
 		hasChanges = true
 	}
+	if d.HasChange("ipaddresses") {
+		if v, ok := d.GetOk("ipaddresses"); ok && v != "" {
+			updateTrafficIPGroup.Properties.Basic.IPAddresses = buildIPAddresses(v)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("mode") {
+		if v, ok := d.GetOk("mode"); ok && v != "" {
+			updateTrafficIPGroup.Properties.Basic.Mode = v.(string)
+		}
+		hasChanges = true
+	}
 	if d.HasChange("multicastip") {
 		if v, ok := d.GetOk("multicastip"); ok {
 			updateTrafficIPGroup.Properties.Basic.Multicast = v.(string)
@@ -201,8 +224,15 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if hasChanges {
+		// On all updates refresh the list of traffic managers
+		trafficManagers, err := getTrafficManagers(m)
+		if err != nil {
+			return fmt.Errorf("%v", err)
+		}
+		updateTrafficIPGroup.Properties.Basic.Machines = trafficManagers
+
 		updateAPI := trafficIpGroups.NewUpdate(trafficIPGroupName, updateTrafficIPGroup)
-		err := vtmClient.Do(updateAPI)
+		err = vtmClient.Do(updateAPI)
 		if err != nil {
 			return fmt.Errorf("Error Updating Traffic IP Group %s", trafficIPGroupName)
 		}
@@ -214,6 +244,7 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 		d.SetId(trafficIPGroupName)
 		d.Set("enabled", *updateResponse.Properties.Basic.Enabled)
 		d.Set("hashsourceport", *updateResponse.Properties.Basic.HashSourcePort)
+		d.Set("trafficmanagers", updateResponse.Properties.Basic.Machines)
 		d.Set("multicastip", updateResponse.Properties.Basic.Multicast)
 	}
 	return resourceTrafficIPGroupRead(d, m)
