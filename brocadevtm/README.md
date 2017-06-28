@@ -47,7 +47,7 @@ Implemented Traffic IP Group Attributes
 ### Sample Traffic IP Group template
 
 ```   
-resource "brocadevtm_traffic_ip_group" "paas" {
+resource "brocadevtm_traffic_ip_group" "my_app" {
   name = "sample-traffic-ip-group"
   enabled = true
   hashsourceport = true
