@@ -5,10 +5,10 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"testing"
 	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/virtualserver"
 	"regexp"
+	"testing"
 )
 
 func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
@@ -30,18 +30,65 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: testAccBrocadeVTMVirtualServerInvalidInt(virtualServerName),
+				Config:      testAccBrocadeVTMVirtualServerNegativeInt(virtualServerName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
 			{
-				Config: testAccBrocadeVTMVirtualServerInvalidProtocol(virtualServerName),
-				ExpectError: regexp.MustCompile(`fsdfdsfsdfsafasdf`),
+				Config:      testAccBrocadeVTMVirtualServerInvalidProtocol(virtualServerName),
+				ExpectError: regexp.MustCompile(`must be one of client_first, dns, dns_tcp, ftp, http, https, imaps, imapv2, imapv3, imapv4, ldap, ldaps, pop3, pop3s, rtsp, server_first, siptcp, sipudp, smtp, ssl, stream, telnet, udp or udpstreaming`),
+			},
+			{
+				Config:      testAccBrocadeVTMVirtualServerInvalidSSLSupportOption(virtualServerName),
+				ExpectError: regexp.MustCompile(`must be one of use_default, disabled or enabled`),
 			},
 			{
 				Config: testAccBrocadeVTMVirtualServerCreate(virtualServerName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMVirtualServerExists(virtualServerName, virtualServerResourceName),
 					resource.TestCheckResourceAttr(virtualServerResourceName, "name", virtualServerName),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "pool", "test-pool"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "port", "80"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "enabled", "false"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "listen_on_any", "false"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "listen_traffic_ips.0", "test-traffic-ip-group"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "protocol", "http"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "request_rules.0", "ruleOne"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_decrypt", "false"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_keepalive", "false"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_keepalive_timeout", "60"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_max_client_buffer", "1024"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_max_server_buffer", "8192"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_max_transaction_duration", "300"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_server_first_banner", "ACCESS DENIED"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_timeout", "30"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_default", "testsslkey2"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_ssl2", "disabled"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_ssl3", "disabled"),
+				),
+			},
+			{
+				Config: testAccBrocadeVTMVirtualServerUpdate(virtualServerName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccBrocadeVTMVirtualServerExists(virtualServerName, virtualServerResourceName),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "name", virtualServerName),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "pool", "test-pool2"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "port", "443"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "enabled", "true"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "listen_on_any", "true"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "listen_traffic_ips.0", "another-test-traffic-ip-group"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "protocol", "https"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "request_rules.0", "ruleTwo"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_decrypt", "true"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_keepalive", "true"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_keepalive_timeout", "120"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_max_client_buffer", "2048"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_max_server_buffer", "4096"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_max_transaction_duration", "600"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_server_first_banner", "ACCESS ALLOWED"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_timeout", "45"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_default", "testsslkey1"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_ssl2", "enabled"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_ssl3", "enabled"),
 				),
 			},
 		},
@@ -99,7 +146,7 @@ func testAccBrocadeVTMVirtualServerExists(virtualServerName, virtualServerResour
 	}
 }
 
-func testAccBrocadeVTMVirtualServerInvalidInt(virtualServerName string) string {
+func testAccBrocadeVTMVirtualServerNegativeInt(virtualServerName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
@@ -139,7 +186,7 @@ enabled = true
 listen_on_any = false
 listen_traffic_ips = ["test-traffic-ip-group"]
 pool = "test-pool"
-port = -80
+port = 80
 protocol = "SOME_INVALID_PROTOCOL"
 request_rules = []
 ssl_decrypt = false
@@ -163,7 +210,7 @@ ssl_support_tls1_2 = "use_default"
 `, virtualServerName)
 }
 
-func testAccBrocadeVTMVirtualServerCreate(virtualServerName string) string {
+func testAccBrocadeVTMVirtualServerInvalidSSLSupportOption(virtualServerName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
@@ -186,11 +233,65 @@ ssl_server_cert_default = "abcdefg"
 ssl_server_cert_host_mapping_host = "test-host.example.com"
 ssl_server_cert_host_mapping_alt_certificates = ["cert1","cert2"]
 ssl_server_cert_host_mapping_certificate = "test-host.example.com"
-ssl_support_ssl2 = "use_default"
-ssl_support_ssl3 = "use_default"
-ssl_support_tls1 = "use_default"
-ssl_support_tls1_1 = "use_default"
-ssl_support_tls1_2 = "use_default"
+ssl_support_ssl2 = "SOME_INVALID_SSL_OPTION"
+ssl_support_ssl3 = "SOME_INVALID_SSL_OPTION"
+ssl_support_tls1 = "SOME_INVALID_SSL_OPTION"
+ssl_support_tls1_1 = "SOME_INVALID_SSL_OPTION"
+ssl_support_tls1_2 = "SOME_INVALID_SSL_OPTION"
+}
+`, virtualServerName)
+}
+
+// connection_max_client_buffer connection_max_server_buffer connection_max_transaction_duration connection_server_first_banner connection_timeout ssl_server_cert_default ssl_server_cert_host_mapping_host ssl_server_cert_host_mapping_alt_certificates ssl_server_cert_host_mapping_certificate ssl_support_ssl2 ssl_support_ssl3 ssl_support_tls1 ssl_support_tls1_1 ssl_support_tls1_2
+
+func testAccBrocadeVTMVirtualServerCreate(virtualServerName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_virtual_server" "acctest" {
+name = "%s"
+pool = "test-pool"
+port = 80
+enabled = false
+listen_on_any = false
+listen_traffic_ips = ["test-traffic-ip-group"]
+protocol = "http"
+request_rules = ["ruleOne"]
+ssl_decrypt = false
+connection_keepalive = false
+connection_keepalive_timeout = 60
+connection_max_client_buffer = 1024
+connection_max_server_buffer = 8192
+connection_max_transaction_duration = 300
+connection_server_first_banner = "ACCESS DENIED"
+connection_timeout = 30
+ssl_server_cert_default = "testsslkey2"
+ssl_support_ssl2 = "disabled"
+ssl_support_ssl3 = "disabled"
+}
+`, virtualServerName)
+}
+
+func testAccBrocadeVTMVirtualServerUpdate(virtualServerName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_virtual_server" "acctest" {
+name = "%s"
+pool = "test-pool2"
+port = 443
+enabled = true
+listen_on_any = true
+listen_traffic_ips = ["another-test-traffic-ip-group"]
+protocol = "https"
+request_rules = ["ruleTwo"]
+ssl_decrypt = true
+connection_keepalive = true
+connection_keepalive_timeout = 120
+connection_max_client_buffer = 2048
+connection_max_server_buffer = 4096
+connection_max_transaction_duration = 600
+connection_server_first_banner = "ACCESS ALLOWED"
+connection_timeout = 45
+ssl_server_cert_default = "testsslkey1"
+ssl_support_ssl2 = "enabled"
+ssl_support_ssl3 = "enabled"
 }
 `, virtualServerName)
 }
