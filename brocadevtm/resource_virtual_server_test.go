@@ -64,6 +64,18 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_default", "testsslkey2"),
 					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_ssl2", "disabled"),
 					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_ssl3", "disabled"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_tls1", "use_default"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_tls1_1", "enabled"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_tls1_2", "disabled"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.#", "2"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.0.ssl_server_alt_certs.#", "0"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.0.ssl_server_cert_host", "s1sta07-v00.devops.prd.ovp.bskyb.com"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.0.ssl_server_cert", "testsslkey1"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_alt_certs.#", "2"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_cert_host", "h1pipeline.devops.int.ovp.bskyb.com"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_cert", "testssl001"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_alt_certs.0", "testssl002"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_alt_certs.1", "testssl003"),
 				),
 			},
 			{
@@ -89,6 +101,17 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_default", "testsslkey1"),
 					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_ssl2", "enabled"),
 					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_ssl3", "enabled"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_tls1", "enabled"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_tls1_1", "use_default"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_tls1_2", "enabled"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.#", "2"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.0.ssl_server_alt_certs.#", "1"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.0.ssl_server_cert_host", "h1pipeline.devops.int.ovp.bskyb.com"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.0.ssl_server_cert", "testssl002"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.0.ssl_server_alt_certs.0", "testssl001"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_alt_certs.#", "0"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_cert_host", "s1sta07-v00.devops.prd.ovp.bskyb.com"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_cert", "testsslkey1"),
 				),
 			},
 		},
@@ -266,6 +289,20 @@ connection_timeout = 30
 ssl_server_cert_default = "testsslkey2"
 ssl_support_ssl2 = "disabled"
 ssl_support_ssl3 = "disabled"
+ssl_support_tls1 = "use_default"
+ssl_support_tls1_1 = "enabled"
+ssl_support_tls1_2 = "disabled"
+ssl_server_cert_host_mapping = [
+ {
+  ssl_server_cert_host = "s1sta07-v00.devops.prd.ovp.bskyb.com"
+  ssl_server_cert = "testsslkey1"
+},
+{
+  ssl_server_cert_host = "h1pipeline.devops.int.ovp.bskyb.com"
+  ssl_server_alt_certs = ["testssl002","testssl003"]
+  ssl_server_cert = "testssl001"
+}
+]
 }
 `, virtualServerName)
 }
@@ -292,6 +329,20 @@ connection_timeout = 45
 ssl_server_cert_default = "testsslkey1"
 ssl_support_ssl2 = "enabled"
 ssl_support_ssl3 = "enabled"
+ssl_support_tls1 = "enabled"
+ssl_support_tls1_1 = "use_default"
+ssl_support_tls1_2 = "enabled"
+ssl_server_cert_host_mapping = [
+{
+  ssl_server_cert_host = "h1pipeline.devops.int.ovp.bskyb.com"
+  ssl_server_alt_certs = ["testssl001"]
+  ssl_server_cert = "testssl002"
+},
+{
+  ssl_server_cert_host = "s1sta07-v00.devops.prd.ovp.bskyb.com"
+  ssl_server_cert = "testsslkey1"
+},
+]
 }
 `, virtualServerName)
 }

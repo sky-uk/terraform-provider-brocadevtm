@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/virtualserver"
+	"log"
 	"net/http"
 	"regexp"
 )
@@ -156,22 +157,30 @@ func resourceVirtualServer() *schema.Resource {
 				Computed:     true,
 				ValidateFunc: validateVirtualServerUseSSLSupport,
 			},
-			// Need to refactor this to a list
-			"ssl_server_cert_host_mapping_host": {
-				Type:        schema.TypeString,
-				Description: "Which host the SSL certificate refers to",
-				Optional:    true,
-			},
-			"ssl_server_cert_host_mapping_alt_certificates": {
+			"ssl_server_cert_host_mapping": {
 				Type:        schema.TypeList,
-				Description: "SSL server certificates for a particular destination IP",
+				Description: "Host specific SSL server certificate mappings",
 				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-			"ssl_server_cert_host_mapping_certificate": {
-				Type:        schema.TypeString,
-				Description: "The SSL server certificate for a particular destination",
-				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"ssl_server_cert_host": {
+							Type:        schema.TypeString,
+							Description: "Which host the SSL certificate refers to",
+							Optional:    true,
+						},
+						"ssl_server_alt_certs": {
+							Type:        schema.TypeList,
+							Description: "SSL server certificates for a particular destination IP",
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"ssl_server_cert": {
+							Type:        schema.TypeString,
+							Description: "The SSL server certificate for a particular destination",
+							Optional:    true,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -203,20 +212,26 @@ func validateVirtualServerUseSSLSupport(v interface{}, k string) (ws []string, e
 	return
 }
 
-func buildListenTrafficIPS(trafficIPS interface{}) []string {
-	trafficIPList := make([]string, len(trafficIPS.([]interface{})))
-	for idx, trafficIP := range trafficIPS.([]interface{}) {
-		trafficIPList[idx] = trafficIP.(string)
+func buildStringList(strings interface{}) []string {
+	stringList := make([]string, len(strings.([]interface{})))
+	for idx, stringValue := range strings.([]interface{}) {
+		stringList[idx] = stringValue.(string)
 	}
-	return trafficIPList
+	return stringList
 }
 
-func buildRequestRules(requestRules interface{}) []string {
-	requestRuleList := make([]string, len(requestRules.([]interface{})))
-	for idx, requestRule := range requestRules.([]interface{}) {
-		requestRuleList[idx] = requestRule.(string)
+func buildSSLCertMapping(sslCertMapping []interface{}) []virtualserver.CertItem {
+	certItemList := make([]virtualserver.CertItem, len(sslCertMapping))
+	var certItem virtualserver.CertItem
+
+	for idx, value := range sslCertMapping {
+		mappingItem := value.(map[string]interface{})
+		certItem.Host = mappingItem["ssl_server_cert_host"].(string)
+		certItem.Certificate = mappingItem["ssl_server_cert"].(string)
+		certItem.AltCertificates = buildStringList(mappingItem["ssl_server_alt_certs"])
+		certItemList[idx] = certItem
 	}
-	return requestRuleList
+	return certItemList
 }
 
 func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
@@ -237,7 +252,7 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 		virtualServer.Properties.Basic.ListenOnAny = &virtualServerListenAny
 	}
 	if v, ok := d.GetOk("listen_traffic_ips"); v != "" && ok {
-		virtualServer.Properties.Basic.ListenOnTrafficIps = buildListenTrafficIPS(v)
+		virtualServer.Properties.Basic.ListenOnTrafficIps = buildStringList(v)
 	}
 	if v, ok := d.GetOk("pool"); ok && v != "" {
 		virtualServer.Properties.Basic.Pool = v.(string)
@@ -250,7 +265,7 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 		virtualServer.Properties.Basic.Protocol = v.(string)
 	}
 	if v, ok := d.GetOk("request_rules"); ok && v != "" {
-		virtualServer.Properties.Basic.RequestRules = buildRequestRules(v)
+		virtualServer.Properties.Basic.RequestRules = buildStringList(v)
 	}
 	if v, ok := d.GetOk("ssl_decrypt"); ok {
 		virtualServerSSLDeCrypt := v.(bool)
@@ -292,6 +307,19 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("ssl_support_ssl3"); ok && v != "" {
 		virtualServer.Properties.Ssl.SslSupportSsl3 = v.(string)
 	}
+	if v, ok := d.GetOk("ssl_support_tls1"); ok && v != "" {
+		virtualServer.Properties.Ssl.SslSupportTLS1 = v.(string)
+	}
+	if v, ok := d.GetOk("ssl_support_tls1_1"); ok && v != "" {
+		virtualServer.Properties.Ssl.SslSupportTLS1_1 = v.(string)
+	}
+	if v, ok := d.GetOk("ssl_support_tls1_2"); ok && v != "" {
+		virtualServer.Properties.Ssl.SslSupportTLS1_2 = v.(string)
+	}
+	if v, ok := d.GetOk("ssl_server_cert_host_mapping"); ok && v != "" {
+		virtualServer.Properties.Ssl.ServerCertHostMap = buildSSLCertMapping(v.([]interface{}))
+		log.Printf(fmt.Sprintf("[DEBUG] CREATE: The SSL Server Cert Host Mapping is: %+v", virtualServer.Properties.Ssl.ServerCertHostMap))
+	}
 
 	createAPI := virtualserver.NewCreate(virtualServerName, virtualServer)
 	err := vtmClient.Do(createAPI)
@@ -303,7 +331,6 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 	}
 	d.SetId(virtualServerName)
 	return resourceVirtualServerRead(d, m)
-
 }
 
 func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
@@ -346,6 +373,10 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("ssl_server_cert_default", virtualServer.Properties.Ssl.ServerCertDefault)
 	d.Set("ssl_support_ssl2", virtualServer.Properties.Ssl.SslSupportSsl2)
 	d.Set("ssl_support_ssl3", virtualServer.Properties.Ssl.SslSupportSsl3)
+	d.Set("ssl_support_tls1", virtualServer.Properties.Ssl.SslSupportTLS1)
+	d.Set("ssl_support_tls1_1", virtualServer.Properties.Ssl.SslSupportTLS1_1)
+	d.Set("ssl_support_tls1_2", virtualServer.Properties.Ssl.SslSupportTLS1_2)
+	d.Set("ssl_server_cert_host_mapping", virtualServer.Properties.Ssl.ServerCertHostMap)
 
 	return nil
 }
@@ -387,7 +418,7 @@ func resourceVirtualServerUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 	if d.HasChange("listen_traffic_ips") {
 		if v, ok := d.GetOk("listen_traffic_ips"); ok && v != "" {
-			virtualServer.Properties.Basic.ListenOnTrafficIps = buildListenTrafficIPS(v)
+			virtualServer.Properties.Basic.ListenOnTrafficIps = buildStringList(v)
 		}
 		hasChanges = true
 	}
@@ -399,7 +430,7 @@ func resourceVirtualServerUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 	if d.HasChange("request_rules") {
 		if v, ok := d.GetOk("request_rules"); ok && v != "" {
-			virtualServer.Properties.Basic.RequestRules = buildRequestRules(v)
+			virtualServer.Properties.Basic.RequestRules = buildStringList(v)
 		}
 		hasChanges = true
 	}
@@ -469,6 +500,31 @@ func resourceVirtualServerUpdate(d *schema.ResourceData, m interface{}) error {
 	if d.HasChange("ssl_support_ssl3") {
 		if v, ok := d.GetOk("ssl_support_ssl3"); ok && v != "" {
 			virtualServer.Properties.Ssl.SslSupportSsl3 = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("ssl_support_tls1") {
+		if v, ok := d.GetOk("ssl_support_tls1"); ok && v != "" {
+			virtualServer.Properties.Ssl.SslSupportTLS1 = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("ssl_support_tls1_1") {
+		if v, ok := d.GetOk("ssl_support_tls1_1"); ok && v != "" {
+			virtualServer.Properties.Ssl.SslSupportTLS1_1 = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("ssl_support_tls1_2") {
+		if v, ok := d.GetOk("ssl_support_tls1_2"); ok && v != "" {
+			virtualServer.Properties.Ssl.SslSupportTLS1_2 = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("ssl_server_cert_host_mapping") {
+		if v, ok := d.GetOk("ssl_server_cert_host_mapping"); ok && v != "" {
+			virtualServer.Properties.Ssl.ServerCertHostMap = buildSSLCertMapping(v.([]interface{}))
+			log.Printf(fmt.Sprintf("[DEBUG] UPDATE: The SSL Server Cert Host Mapping is: %+v", virtualServer.Properties.Ssl.ServerCertHostMap))
 		}
 		hasChanges = true
 	}
