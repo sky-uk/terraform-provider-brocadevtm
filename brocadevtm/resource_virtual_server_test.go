@@ -134,8 +134,8 @@ func testAccBrocadeVTMVirtualServerCheckDestroy(state *terraform.State, name str
 		if err != nil {
 			return nil
 		}
-		for _, virtual_server := range api.GetResponse().Children {
-			if virtual_server.Name == name {
+		for _, virtualServer := range api.GetResponse().Children {
+			if virtualServer.Name == name {
 				return fmt.Errorf("Brocade vTM Virtual Server %s still exists", name)
 			}
 		}
