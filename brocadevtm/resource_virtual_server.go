@@ -634,6 +634,7 @@ func resourceVirtualServerUpdate(d *schema.ResourceData, m interface{}) error {
 		if v, ok := d.GetOk("ocsp_issuers"); ok {
 			virtualServer.Properties.Ssl.OCSPIssuers = buildSSLOCSPIssuers(v.([]interface{}))
 		}
+		hasChanges = true
 	}
 
 	if hasChanges {
