@@ -361,6 +361,7 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 		virtualServerSSLDeCrypt := v.(bool)
 		virtualServer.Properties.Basic.SslDecrypt = &virtualServerSSLDeCrypt
 	}
+	// GetOK was returning false for ok when returned value was good.
 	if v, _ := d.GetOk("connection_keepalive"); v != "" {
 		virtalServerConnectionKeepalive := v.(bool)
 		virtualServer.Properties.Connection.Keepalive = &virtalServerConnectionKeepalive
