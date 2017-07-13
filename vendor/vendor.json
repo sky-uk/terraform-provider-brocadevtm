@@ -523,12 +523,12 @@
 			"versionExact": "0.0.10"
 		},
 		{
-			"checksumSHA1": "JoCisAoq3pnGSlulel/kVFat5D0=",
+			"checksumSHA1": "/rsqutEC7KMbyIJTYQTwyRp2gTI=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api/virtualserver",
-			"revision": "4ebe9c12043acd8ac17563912e1187c98029f1b5",
-			"revisionTime": "2017-07-13T13:46:13Z",
-			"version": "0.0.11",
-			"versionExact": "0.0.11"
+			"revision": "fdc78943a2566d5bb5a7ff966ac6b1e59b111338",
+			"revisionTime": "2017-07-13T15:12:19Z",
+			"version": "0.0.12",
+			"versionExact": "0.0.12"
 		},
 		{
 			"checksumSHA1": "UWjVYmoHlIfHzVIskELHiJQtMOI=",

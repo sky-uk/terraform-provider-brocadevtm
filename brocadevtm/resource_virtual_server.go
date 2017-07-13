@@ -5,7 +5,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/virtualserver"
-	"log"
 	"net/http"
 	"regexp"
 )
@@ -182,8 +181,80 @@ func resourceVirtualServer() *schema.Resource {
 					},
 				},
 			},
+			"ocsp_enable": {
+				Type:        schema.TypeBool,
+				Description: "Whether or not the traffic manager should use OCSP to check the revocation status of client certificates",
+				Optional:    true,
+				Computed:    true,
+			},
+			"ocsp_issuers": {
+				Type:        schema.TypeList,
+				Description: "A table of certificate issuer specific OCSP settings",
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"issuer": {
+							Type:        schema.TypeString,
+							Description: "The name of an issuer",
+							Optional:    true,
+							Computed:    true,
+						},
+						"aia": {
+							Type:        schema.TypeBool,
+							Description: "Whether the traffic manager should use AIA information",
+							Optional:    true,
+							Computed:    true,
+						},
+						"nonce": {
+							Type:         schema.TypeString,
+							Description:  "How to use the OCSP nonce extension, which protects against OCSP replay attacks",
+							Optional:     true,
+							ValidateFunc: validateVirtualServerOCSPNonce,
+						},
+						"required": {
+							Type:         schema.TypeString,
+							Description:  "Whether we should do an OCSP check for this issuer",
+							Optional:     true,
+							ValidateFunc: validateVirtualServerOCSPRequired,
+						},
+						"responder_cert": {
+							Type:        schema.TypeString,
+							Description: "The expected responder certificate",
+							Optional:    true,
+						},
+						"signer": {
+							Type:        schema.TypeString,
+							Description: "The certificate with which to sign the request",
+							Optional:    true,
+						},
+						"url": {
+							Type:        schema.TypeString,
+							Description: "Which OCSP responders this virtual server should use to verify client certificates",
+							Optional:    true,
+						},
+					},
+				},
+			},
 		},
 	}
+}
+
+func validateVirtualServerOCSPRequired(v interface{}, k string) (ws []string, errors []error) {
+	ocspRequired := v.(string)
+	ocspRequiredOptions := regexp.MustCompile(`^(none|optional|strict)$`)
+	if !ocspRequiredOptions.MatchString(ocspRequired) {
+		errors = append(errors, fmt.Errorf("%q must be one of none, optional, strict", k))
+	}
+	return
+}
+
+func validateVirtualServerOCSPNonce(v interface{}, k string) (ws []string, errors []error) {
+	nonce := v.(string)
+	nonceOptions := regexp.MustCompile(`^(off|on|strict)$`)
+	if !nonceOptions.MatchString(nonce) {
+		errors = append(errors, fmt.Errorf("%q must be one of off, on or strict", k))
+	}
+	return
 }
 
 func validateVirtualServerUnsignedInteger(v interface{}, k string) (ws []string, errors []error) {
@@ -232,6 +303,25 @@ func buildSSLCertMapping(sslCertMapping []interface{}) []virtualserver.CertItem 
 		certItemList[idx] = certItem
 	}
 	return certItemList
+}
+
+func buildSSLOCSPIssuers(ocspIssuers []interface{}) []virtualserver.OCSPIssuer {
+	ocspIssuerList := make([]virtualserver.OCSPIssuer, len(ocspIssuers))
+	var ocspIssuer virtualserver.OCSPIssuer
+
+	for idx, value := range ocspIssuers {
+		issuerItem := value.(map[string]interface{})
+		ocspIssuer.Issuer = issuerItem["issuer"].(string)
+		ocspIssuerAIA := issuerItem["aia"].(bool)
+		ocspIssuer.AIA = &ocspIssuerAIA
+		ocspIssuer.Nonce = issuerItem["nonce"].(string)
+		ocspIssuer.Required = issuerItem["required"].(string)
+		ocspIssuer.ResponderCert = issuerItem["responder_cert"].(string)
+		ocspIssuer.Signer = issuerItem["signer"].(string)
+		ocspIssuer.URL = issuerItem["url"].(string)
+		ocspIssuerList[idx] = ocspIssuer
+	}
+	return ocspIssuerList
 }
 
 func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
@@ -318,7 +408,13 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 	}
 	if v, ok := d.GetOk("ssl_server_cert_host_mapping"); ok && v != "" {
 		virtualServer.Properties.Ssl.ServerCertHostMap = buildSSLCertMapping(v.([]interface{}))
-		log.Printf(fmt.Sprintf("[DEBUG] CREATE: The SSL Server Cert Host Mapping is: %+v", virtualServer.Properties.Ssl.ServerCertHostMap))
+	}
+	if v, ok := d.GetOk("ocsp_enable"); ok {
+		virtualServerOCSPEnable := v.(bool)
+		virtualServer.Properties.Ssl.OCSPEnable = &virtualServerOCSPEnable
+	}
+	if v, ok := d.GetOk("ocsp_issuers"); ok {
+		virtualServer.Properties.Ssl.OCSPIssuers = buildSSLOCSPIssuers(v.([]interface{}))
 	}
 
 	createAPI := virtualserver.NewCreate(virtualServerName, virtualServer)
@@ -377,6 +473,8 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("ssl_support_tls1_1", virtualServer.Properties.Ssl.SslSupportTLS1_1)
 	d.Set("ssl_support_tls1_2", virtualServer.Properties.Ssl.SslSupportTLS1_2)
 	d.Set("ssl_server_cert_host_mapping", virtualServer.Properties.Ssl.ServerCertHostMap)
+	d.Set("ocsp_enable", virtualServer.Properties.Ssl.OCSPEnable)
+	d.Set("ocsp_issuers", virtualServer.Properties.Ssl.OCSPIssuers)
 
 	return nil
 }
@@ -524,9 +622,18 @@ func resourceVirtualServerUpdate(d *schema.ResourceData, m interface{}) error {
 	if d.HasChange("ssl_server_cert_host_mapping") {
 		if v, ok := d.GetOk("ssl_server_cert_host_mapping"); ok && v != "" {
 			virtualServer.Properties.Ssl.ServerCertHostMap = buildSSLCertMapping(v.([]interface{}))
-			log.Printf(fmt.Sprintf("[DEBUG] UPDATE: The SSL Server Cert Host Mapping is: %+v", virtualServer.Properties.Ssl.ServerCertHostMap))
 		}
 		hasChanges = true
+	}
+	if d.HasChange("ocsp_enable") {
+		virtualServerOCSPEnable := d.Get("ocsp_enable").(bool)
+		virtualServer.Properties.Ssl.OCSPEnable = &virtualServerOCSPEnable
+		hasChanges = true
+	}
+	if d.HasChange("ocsp_issuers") {
+		if v, ok := d.GetOk("ocsp_issuers"); ok {
+			virtualServer.Properties.Ssl.OCSPIssuers = buildSSLOCSPIssuers(v.([]interface{}))
+		}
 	}
 
 	if hasChanges {

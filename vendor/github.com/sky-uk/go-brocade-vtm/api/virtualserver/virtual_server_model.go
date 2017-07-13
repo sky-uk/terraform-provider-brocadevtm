@@ -115,13 +115,26 @@ type Gzip struct {
 
 // Ssl configuration section
 type Ssl struct {
-	ServerCertDefault string     `json:"server_cert_default,omitempty"` // ""
-	ServerCertHostMap []CertItem `json:"server_cert_host_mapping,omitempty"`
-	SslSupportSsl2    string     `json:"ssl_support_ssl2,omitempty"`
-	SslSupportSsl3    string     `json:"ssl_support_ssl3,omitempty"`
-	SslSupportTLS1    string     `json:"ssl_support_tls1,omitempty"`
-	SslSupportTLS1_1  string     `json:"ssl_support_tls1_1,omitempty"`
-	SslSupportTLS1_2  string     `json:"ssl_support_tls1_2,omitempty"`
+	ServerCertDefault string       `json:"server_cert_default,omitempty"` // ""
+	ServerCertHostMap []CertItem   `json:"server_cert_host_mapping,omitempty"`
+	SslSupportSsl2    string       `json:"ssl_support_ssl2,omitempty"`
+	SslSupportSsl3    string       `json:"ssl_support_ssl3,omitempty"`
+	SslSupportTLS1    string       `json:"ssl_support_tls1,omitempty"`
+	SslSupportTLS1_1  string       `json:"ssl_support_tls1_1,omitempty"`
+	SslSupportTLS1_2  string       `json:"ssl_support_tls1_2,omitempty"`
+	OCSPEnable        *bool        `json:"ocsp_enable,omitempty"`
+	OCSPIssuers       []OCSPIssuer `json:"ocsp_issuers,omitempty"`
+}
+
+// OCSPIssuer configuration serction
+type OCSPIssuer struct {
+	Issuer        string `json:"issuer,omitempty"`
+	AIA           *bool  `json:"aia,omitempty"`
+	Nonce         string `json:"nonce,omitempty"`
+	Required      string `json:"required,omitempty"`
+	ResponderCert string `json:"responder_cert,omitempty"`
+	Signer        string `json:"signer,omitempty"`
+	URL           string `json:"url,omitempty"`
 }
 
 // CertItem : a single certificate item in the cert map

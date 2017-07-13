@@ -30,6 +30,10 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
+				Config:      testAccBrocadeVTMVirtualServerNoName(),
+				ExpectError: regexp.MustCompile(`required field is not set`),
+			},
+			{
 				Config:      testAccBrocadeVTMVirtualServerNegativeInt(virtualServerName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
@@ -40,6 +44,14 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 			{
 				Config:      testAccBrocadeVTMVirtualServerInvalidSSLSupportOption(virtualServerName),
 				ExpectError: regexp.MustCompile(`must be one of use_default, disabled or enabled`),
+			},
+			{
+				Config:      testAccBrocadeVTMVirtualServerInvalidNonce(virtualServerName),
+				ExpectError: regexp.MustCompile(`must be one of off, on or strict`),
+			},
+			{
+				Config:      testAccBrocadeVTMVirtualServerInvalidOCSPRequired(virtualServerName),
+				ExpectError: regexp.MustCompile(`must be one of none, optional, strict`),
 			},
 			{
 				Config: testAccBrocadeVTMVirtualServerCreate(virtualServerName),
@@ -76,6 +88,15 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_cert", "testssl001"),
 					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_alt_certs.0", "testssl002"),
 					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_alt_certs.1", "testssl003"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_enable", "true"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.#", "1"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.issuer", "_DEFAULT_"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.aia", "true"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.nonce", "off"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.required", "optional"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.responder_cert", "SOME_RESPONDER_CERT"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.signer", "ANOTHER_SIGNER"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.url", "http://www.sky.uk/"),
 				),
 			},
 			{
@@ -112,6 +133,15 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_alt_certs.#", "0"),
 					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_cert_host", "s1sta07-v00.devops.prd.ovp.bskyb.com"),
 					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_cert", "testsslkey1"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_enable", "false"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.#", "1"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.issuer", "_DEFAULT_"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.aia", "false"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.nonce", "on"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.required", "none"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.responder_cert", "ANOTHER_RESPONDER_CERT"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.signer", "SOME_SIGNER"),
+					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.url", "http://www.sky.com/"),
 				),
 			},
 		},
@@ -169,34 +199,21 @@ func testAccBrocadeVTMVirtualServerExists(virtualServerName, virtualServerResour
 	}
 }
 
+func testAccBrocadeVTMVirtualServerNoName() string {
+	return fmt.Sprintf(`
+resource "brocadevtm_virtual_server" "acctest" {
+pool = "test-pool"
+port = 80
+}
+`)
+}
+
 func testAccBrocadeVTMVirtualServerNegativeInt(virtualServerName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
-enabled = true
-listen_on_any = false
-listen_traffic_ips = ["test-traffic-ip-group"]
 pool = "test-pool"
 port = -80
-protocol = "http"
-request_rules = []
-ssl_decrypt = false
-connection_keepalive = false
-connection_keepalive_timeout = 60
-connection_max_client_buffer = 256
-connection_max_server_buffer = 256
-connection_max_transaction_duration = 100
-connection_server_first_banner = "Banner"
-connection_timeout = 60
-ssl_server_cert_default = "abcdefg"
-ssl_server_cert_host_mapping_host = "test-host.example.com"
-ssl_server_cert_host_mapping_alt_certificates = ["cert1","cert2"]
-ssl_server_cert_host_mapping_certificate = "test-host.example.com"
-ssl_support_ssl2 = "use_default"
-ssl_support_ssl3 = "use_default"
-ssl_support_tls1 = "use_default"
-ssl_support_tls1_1 = "use_default"
-ssl_support_tls1_2 = "use_default"
 }
 `, virtualServerName)
 }
@@ -205,30 +222,9 @@ func testAccBrocadeVTMVirtualServerInvalidProtocol(virtualServerName string) str
 	return fmt.Sprintf(`
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
-enabled = true
-listen_on_any = false
-listen_traffic_ips = ["test-traffic-ip-group"]
 pool = "test-pool"
 port = 80
 protocol = "SOME_INVALID_PROTOCOL"
-request_rules = []
-ssl_decrypt = false
-connection_keepalive = false
-connection_keepalive_timeout = 60
-connection_max_client_buffer = 256
-connection_max_server_buffer = 256
-connection_max_transaction_duration = 100
-connection_server_first_banner = "Banner"
-connection_timeout = 60
-ssl_server_cert_default = "abcdefg"
-ssl_server_cert_host_mapping_host = "test-host.example.com"
-ssl_server_cert_host_mapping_alt_certificates = ["cert1","cert2"]
-ssl_server_cert_host_mapping_certificate = "test-host.example.com"
-ssl_support_ssl2 = "use_default"
-ssl_support_ssl3 = "use_default"
-ssl_support_tls1 = "use_default"
-ssl_support_tls1_1 = "use_default"
-ssl_support_tls1_2 = "use_default"
 }
 `, virtualServerName)
 }
@@ -237,25 +233,8 @@ func testAccBrocadeVTMVirtualServerInvalidSSLSupportOption(virtualServerName str
 	return fmt.Sprintf(`
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
-enabled = true
-listen_on_any = false
-listen_traffic_ips = ["test-traffic-ip-group"]
 pool = "test-pool"
 port = 80
-protocol = "http"
-request_rules = []
-ssl_decrypt = false
-connection_keepalive = false
-connection_keepalive_timeout = 60
-connection_max_client_buffer = 256
-connection_max_server_buffer = 256
-connection_max_transaction_duration = 100
-connection_server_first_banner = "Banner"
-connection_timeout = 60
-ssl_server_cert_default = "abcdefg"
-ssl_server_cert_host_mapping_host = "test-host.example.com"
-ssl_server_cert_host_mapping_alt_certificates = ["cert1","cert2"]
-ssl_server_cert_host_mapping_certificate = "test-host.example.com"
 ssl_support_ssl2 = "SOME_INVALID_SSL_OPTION"
 ssl_support_ssl3 = "SOME_INVALID_SSL_OPTION"
 ssl_support_tls1 = "SOME_INVALID_SSL_OPTION"
@@ -265,7 +244,50 @@ ssl_support_tls1_2 = "SOME_INVALID_SSL_OPTION"
 `, virtualServerName)
 }
 
-// connection_max_client_buffer connection_max_server_buffer connection_max_transaction_duration connection_server_first_banner connection_timeout ssl_server_cert_default ssl_server_cert_host_mapping_host ssl_server_cert_host_mapping_alt_certificates ssl_server_cert_host_mapping_certificate ssl_support_ssl2 ssl_support_ssl3 ssl_support_tls1 ssl_support_tls1_1 ssl_support_tls1_2
+func testAccBrocadeVTMVirtualServerInvalidNonce(virtualServerName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_virtual_server" "acctest" {
+name = "%s"
+pool = "test-pool"
+port = 80
+ocsp_enable = true
+ocsp_enable = true
+ocsp_issuers = [
+  {
+     issuer = "_DEFAULT_"
+     aia = true
+     nonce = "SOME_INVALID_OPTION"
+     required = "optional"
+     responder_cert = ""
+     signer = ""
+     url = ""
+  },
+]
+}
+`, virtualServerName)
+}
+
+func testAccBrocadeVTMVirtualServerInvalidOCSPRequired(virtualServerName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_virtual_server" "acctest" {
+name = "%s"
+pool = "test-pool"
+port = 80
+ocsp_enable = true
+ocsp_issuers = [
+  {
+     issuer = "_DEFAULT_"
+     aia = true
+     nonce = "off"
+     required = "SOME_INVALID_OPTION"
+     responder_cert = ""
+     signer = ""
+     url = ""
+  },
+]
+}
+`, virtualServerName)
+}
 
 func testAccBrocadeVTMVirtualServerCreate(virtualServerName string) string {
 	return fmt.Sprintf(`
@@ -303,6 +325,18 @@ ssl_server_cert_host_mapping = [
   ssl_server_cert = "testssl001"
 }
 ]
+ocsp_enable = true
+ocsp_issuers = [
+  {
+     issuer = "_DEFAULT_"
+     aia = true
+     nonce = "off"
+     required = "optional"
+     responder_cert = "SOME_RESPONDER_CERT"
+     signer = "ANOTHER_SIGNER"
+     url = "http://www.sky.uk/"
+  },
+]
 }
 `, virtualServerName)
 }
@@ -333,15 +367,27 @@ ssl_support_tls1 = "enabled"
 ssl_support_tls1_1 = "use_default"
 ssl_support_tls1_2 = "enabled"
 ssl_server_cert_host_mapping = [
-{
-  ssl_server_cert_host = "h1pipeline.devops.int.ovp.bskyb.com"
-  ssl_server_alt_certs = ["testssl001"]
-  ssl_server_cert = "testssl002"
-},
-{
-  ssl_server_cert_host = "s1sta07-v00.devops.prd.ovp.bskyb.com"
-  ssl_server_cert = "testsslkey1"
-},
+  {
+    ssl_server_cert_host = "h1pipeline.devops.int.ovp.bskyb.com"
+    ssl_server_alt_certs = ["testssl001"]
+    ssl_server_cert = "testssl002"
+  },
+  {
+    ssl_server_cert_host = "s1sta07-v00.devops.prd.ovp.bskyb.com"
+    ssl_server_cert = "testsslkey1"
+  },
+]
+ocsp_enable = false
+ocsp_issuers = [
+  {
+     issuer = "_DEFAULT_"
+     aia = false
+     nonce = "on"
+     required = "none"
+     responder_cert = "ANOTHER_RESPONDER_CERT"
+     signer = "SOME_SIGNER"
+     url = "http://www.sky.com/"
+  },
 ]
 }
 `, virtualServerName)
