@@ -25,7 +25,7 @@ func TestAccPool_Basic(t *testing.T) {
 		CheckDestroy: testAccCheckBrocadeVTMPoolDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccCheckVTMServiceConfig,
+				Config: testAccCheckVTMServiceConfig(poolName),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckBrocadeVTMPoolExists(poolResourceName),
 					resource.TestCheckResourceAttr(poolResourceName, "name", poolName),
@@ -49,9 +49,23 @@ func TestAccPool_Basic(t *testing.T) {
 			resource.TestStep{
 				Config: testAccCheckVTMServiceConfigUpdated,
 				Check: resource.ComposeTestCheckFunc(
-					testCheckBrocadeVTMPoolExists("brocadevtm_pool.foo"),
-					resource.TestCheckResourceAttr(
-						"brocadevtm_pool.foo", "name", "pool_bar"),
+					testCheckBrocadeVTMPoolExists(poolResourceName),
+					resource.TestCheckResourceAttr(poolResourceName, "name", poolName),
+					resource.TestCheckResourceAttr(poolResourceName, "monitorlist", "[\"ping\"]"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "20"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_idle_connections_pernode", "40"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_timed_out_connection_attempts", "40"),
+					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_connection_timeout", "120"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_connections_per_node", "20"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_queue_size", "40"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_reply_time", "120"),
+					resource.TestCheckResourceAttr(poolResourceName, "queue_timeout", "120"),
+					resource.TestCheckResourceAttr(poolResourceName, "http_keepalive", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "http_keepalive_non_idempotent", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "load_balancing_priority_enabled", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "load_balancing_priority_nodes", "16"),
+					resource.TestCheckResourceAttr(poolResourceName, "tcp_nagle", "true"),
 				),
 			},
 		},
@@ -108,9 +122,10 @@ func testCheckBrocadeVTMPoolExists(name string) resource.TestCheckFunc {
 	}
 }
 
-const testAccCheckVTMServiceConfig = `
+func testAccCheckVTMServiceConfig(poolName string) string {
+	return fmt.Sprintf(`
 resource "brocadevtm_pool" "foo" {
-  name = "pool_foo"
+  name = "%s"
   monitorlist = ["ping"]
   node {
     node="127.0.0.1:80"
@@ -132,11 +147,13 @@ resource "brocadevtm_pool" "foo" {
   load_balancing_priority_enabled = false
   load_balancing_priority_nodes = 8
   tcp_nagle = false
-}`
+}`, poolName)
+}
 
-const testAccCheckVTMServiceConfigUpdated = `
+func testAccCheckVTMServiceConfigUpdated(poolName string) string {
+	return fmt.Sprintf(`
 resource "brocadevtm_pool" "foo" {
-  name = "pool_bar"
+  name = "%s"
   monitorlist = ["ping"]
   node {
     node="127.0.0.1:80"
@@ -150,5 +167,19 @@ resource "brocadevtm_pool" "foo" {
     state="active"
     weight=1
   }
-  max_connection_attempts = 5
-}`
+  max_connection_attempts = 20
+  max_idle_connections_pernode = 40
+  max_timed_out_connection_attempts = 40
+  node_close_with_rst = true
+  max_connection_timeout = 120
+  max_connections_per_node = 20
+  max_queue_size = 40
+  max_reply_time = 120
+  queue_timeout = 120
+  http_keepalive = true
+  http_keepalive_non_idempotent = true
+  load_balancing_priority_enabled = true
+  load_balancing_priority_nodes = 16
+  tcp_nagle = true
+}`, poolName)
+}
