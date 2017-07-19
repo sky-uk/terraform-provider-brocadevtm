@@ -47,7 +47,7 @@ func TestAccPool_Basic(t *testing.T) {
 				),
 			},
 			resource.TestStep{
-				Config: testAccCheckVTMServiceConfigUpdated,
+				Config: testAccCheckVTMServiceConfigUpdated(poolName),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckBrocadeVTMPoolExists(poolResourceName),
 					resource.TestCheckResourceAttr(poolResourceName, "name", poolName),
