@@ -18,8 +18,8 @@ func NewGetAll() *GetAllTrafficIPGroupsAPI {
 }
 
 // GetResponse returns ResponseObject of GetAllTrafficIPGroupsAPI.
-func (ga GetAllTrafficIPGroupsAPI) GetResponse() *TrafficIPGroupList {
-	return ga.ResponseObject().(*TrafficIPGroupList)
+func (ga GetAllTrafficIPGroupsAPI) GetResponse() TrafficIPGroupList {
+	return *ga.ResponseObject().(*TrafficIPGroupList)
 }
 
 // FilterByName : returns a monitor object if the monitor name matches.

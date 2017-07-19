@@ -18,6 +18,6 @@ func NewGetAll() *GetAllSSLServerKeys {
 }
 
 // GetResponse returns ResponseObject of SSLServerKeysList.
-func (gam GetAllSSLServerKeys) GetResponse() *SSLServerKeysList {
-	return gam.ResponseObject().(*SSLServerKeysList)
+func (gam GetAllSSLServerKeys) GetResponse() SSLServerKeysList {
+	return *gam.ResponseObject().(*SSLServerKeysList)
 }

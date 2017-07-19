@@ -162,7 +162,7 @@ func testAccBrocadeVTMVirtualServerCheckDestroy(state *terraform.State, name str
 		api := virtualserver.NewGetAll()
 		err := vtmClient.Do(api)
 		if err != nil {
-			return nil
+			return fmt.Errorf("Brocade vTM Virtual Server - error occurred while retrieving a list of all virtual servers")
 		}
 		for _, virtualServer := range api.GetResponse().Children {
 			if virtualServer.Name == name {

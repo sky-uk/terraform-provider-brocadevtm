@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"encoding/xml"
+	"errors"
 	"fmt"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"io"
@@ -14,13 +16,23 @@ import (
 )
 
 // NewVTMClient  Creates a new vtmClient object.
-func NewVTMClient(url string, user string, password string, ignoreSSL bool, debug bool) *VTMClient {
+func NewVTMClient(
+	url string,
+	user string,
+	password string,
+	ignoreSSL bool,
+	debug bool,
+	headers map[string]string,
+) *VTMClient {
+
 	vtmClient := new(VTMClient)
 	vtmClient.URL = url
 	vtmClient.User = user
 	vtmClient.Password = password
 	vtmClient.IgnoreSSL = ignoreSSL
-	vtmClient.debug = debug
+	vtmClient.Debug = debug
+	vtmClient.Headers = headers
+
 	return vtmClient
 }
 
@@ -30,29 +42,69 @@ type VTMClient struct {
 	User      string
 	Password  string
 	IgnoreSSL bool
-	debug     bool
+	Debug     bool
+	Headers   map[string]string
+}
+
+func (vtmClient *VTMClient) formatRequestPayload(api api.VTMApi) (io.Reader, error) {
+
+	var requestPayload io.Reader
+
+	var reqBytes []byte
+	if api.RequestObject() != nil {
+		var err error
+		contentType := vtmClient.Headers["Content-Type"]
+		if contentType == "application/json" {
+			reqBytes, err = json.Marshal(api.RequestObject())
+			if err != nil {
+				log.Fatal(err)
+				return nil, err
+			}
+		}
+		if contentType == "application/xml" {
+			reqBytes, err = xml.Marshal(api.RequestObject())
+			if err != nil {
+				log.Fatal(err)
+				return nil, err
+			}
+		}
+		if contentType == "application/octet-stream" {
+			reqBytes = api.RequestObject().([]byte)
+		}
+
+		requestPayload = bytes.NewReader(reqBytes)
+	}
+
+	if vtmClient.Debug {
+		log.Println("--------------------------------------------------------------")
+		log.Println("Request payload:")
+		log.Println(string(reqBytes))
+		log.Println("--------------------------------------------------------------")
+	}
+
+	return requestPayload, nil
 }
 
 // Do - makes the API call.
 func (vtmClient *VTMClient) Do(api api.VTMApi) error {
-	requestURL := fmt.Sprintf("%s%s", vtmClient.URL, api.Endpoint())
-	var requestPayload io.Reader
 
-	// TODO: change this to JSON
-	if api.RequestObject() != nil {
-		requestJSONBytes, marshallingErr := json.Marshal(api.RequestObject())
-		if marshallingErr != nil {
-			log.Fatal(marshallingErr)
-			return (marshallingErr)
-		}
-		if vtmClient.debug {
-			log.Println("Request payload as JSON:")
-			log.Println(string(requestJSONBytes))
-			log.Println("--------------------------------------------------------------")
-		}
-		requestPayload = bytes.NewReader(requestJSONBytes)
+	requestURL := fmt.Sprintf("%s%s", vtmClient.URL, api.Endpoint())
+
+	if vtmClient.Headers == nil {
+		vtmClient.Headers = make(map[string]string)
 	}
-	if vtmClient.debug {
+
+	_, ok := vtmClient.Headers["Content-Type"]
+	if !ok {
+		vtmClient.Headers["Content-Type"] = "application/json"
+	}
+
+	requestPayload, err := vtmClient.formatRequestPayload(api)
+	if err != nil {
+		return err
+	}
+
+	if vtmClient.Debug {
 		log.Println("requestURL:", requestURL)
 	}
 	req, err := http.NewRequest(api.Method(), requestURL, requestPayload)
@@ -62,8 +114,10 @@ func (vtmClient *VTMClient) Do(api api.VTMApi) error {
 	}
 
 	req.SetBasicAuth(vtmClient.User, vtmClient.Password)
-	// TODO: remove this hardcoded value!
-	req.Header.Set("Content-Type", "application/json")
+
+	for headerKey, headerValue := range vtmClient.Headers {
+		req.Header.Set(headerKey, headerValue)
+	}
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: vtmClient.IgnoreSSL},
@@ -78,30 +132,71 @@ func (vtmClient *VTMClient) Do(api api.VTMApi) error {
 	return vtmClient.handleResponse(api, res)
 }
 
-func (vtmClient *VTMClient) handleResponse(api api.VTMApi, res *http.Response) error {
-	api.SetStatusCode(res.StatusCode)
+func (vtmClient *VTMClient) handleResponse(apiObj api.VTMApi, res *http.Response) error {
+	apiObj.SetStatusCode(res.StatusCode)
 	bodyText, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		log.Println("ERROR reading response: ", err)
 		return err
 	}
 
-	api.SetRawResponse(bodyText)
+	apiObj.SetRawResponse(bodyText)
 
-	if vtmClient.debug {
+	if vtmClient.Debug {
 		log.Println(string(bodyText))
 	}
 
-	if isJSON(res.Header.Get("Content-Type")) && api.StatusCode() == 200 {
-		JSONerr := json.Unmarshal(bodyText, api.ResponseObject())
-		if JSONerr != nil {
-			log.Println("ERROR unmarshalling response: ", JSONerr)
+	if isJSON(res.Header.Get("Content-Type")) {
+		if apiObj.StatusCode() >= http.StatusOK && apiObj.StatusCode() < http.StatusBadRequest {
+			if len(bodyText) > 0 {
+				JSONerr := json.Unmarshal(bodyText, apiObj.ResponseObject())
+				if JSONerr != nil {
+					log.Println("ERROR unmarshalling response: ", JSONerr)
+					return JSONerr
+				}
+			}
 			return nil
 		}
+
+		if len(bodyText) > 0 {
+			var errObj api.ReqError
+			err := json.Unmarshal(bodyText, &errObj)
+			if err != nil {
+				log.Printf("Error unmarshalling error response:\n%v", err)
+			}
+			return errors.New(errObj.Error.ErrorText)
+		}
+	}
+	if isXML(res.Header.Get("Content-Type")) {
+		if apiObj.StatusCode() >= http.StatusOK && apiObj.StatusCode() < http.StatusBadRequest {
+			if len(bodyText) > 0 {
+				xmlErr := xml.Unmarshal(bodyText, apiObj.ResponseObject())
+				if xmlErr != nil {
+					log.Println("ERROR unmarshalling response: ", xmlErr)
+					return xmlErr
+				}
+			}
+			return nil
+		}
+
+		if len(bodyText) > 0 {
+			var errObj api.ReqError
+			err := xml.Unmarshal(bodyText, &errObj)
+			if err != nil {
+				log.Printf("Error unmarshalling error response:\n%v", err)
+			}
+			return errors.New(errObj.Error.ErrorText)
+		}
+
 	} else {
-		api.SetResponseObject(string(bodyText))
+		data := []byte(bodyText)
+		apiObj.SetRawResponse(data)
 	}
 	return nil
+}
+
+func isXML(contentType string) bool {
+	return strings.Contains(strings.ToLower(contentType), "/xml")
 }
 
 func isJSON(contentType string) bool {

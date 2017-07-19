@@ -12,6 +12,18 @@ type BaseAPI struct {
 	err         error
 }
 
+// ReqError - Base Error structure
+type ReqError struct {
+	Error ReqErrorItem `json:"error"`
+}
+
+// ReqErrorItem - Error item
+type ReqErrorItem struct {
+	ErrorID   string                 `json:"error_id"`
+	ErrorText string                 `json:"error_text"`
+	ErrorInfo map[string]interface{} `json:"error_info"`
+}
+
 // NewBaseAPI - Returns a new object of the BaseAPI.
 func NewBaseAPI(method string, endpoint string, requestObject interface{}, responseObject interface{}) *BaseAPI {
 	return &BaseAPI{method, endpoint, requestObject, responseObject, 0, nil, nil}

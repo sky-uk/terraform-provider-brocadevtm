@@ -71,7 +71,7 @@ func resourceSSLServerKeyCreate(d *schema.ResourceData, meta interface{}) error 
 		payloadObject.Properties.Basic.Request = v.(string)
 	}
 
-	createSSLServerKey := sslServerKey.NewCreate(name, &payloadObject)
+	createSSLServerKey := sslServerKey.NewCreate(name, payloadObject)
 	err := vtmClient.Do(createSSLServerKey)
 	if err != nil && createSSLServerKey.StatusCode() != 201 {
 		d.SetId("")

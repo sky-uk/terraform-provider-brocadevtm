@@ -11,9 +11,9 @@ type CreateUpdateTrafficIPGroupAPI struct {
 }
 
 // execCreateUpdate returns a new object of CreateTrafficIPGroupA.
-func execCreateUpdate(name string, requestPayload TrafficIPGroup) *CreateUpdateTrafficIPGroupAPI {
+func execCreateUpdate(name string, tipg TrafficIPGroup) *CreateUpdateTrafficIPGroupAPI {
 	this := new(CreateUpdateTrafficIPGroupAPI)
-	this.BaseAPI = api.NewBaseAPI(http.MethodPut, "/api/tm/3.8/config/active/traffic_ip_groups/"+name, requestPayload, new(TrafficIPGroup))
+	this.BaseAPI = api.NewBaseAPI(http.MethodPut, "/api/tm/3.8/config/active/traffic_ip_groups/"+name, tipg, new(TrafficIPGroup))
 	return this
 }
 
@@ -28,6 +28,6 @@ func NewUpdate(name string, requestPayload TrafficIPGroup) *CreateUpdateTrafficI
 }
 
 // GetResponse returns ResponseObject of CreateTrafficIPGroupAPI.
-func (ga CreateUpdateTrafficIPGroupAPI) GetResponse() *TrafficIPGroup {
-	return ga.ResponseObject().(*TrafficIPGroup)
+func (ga CreateUpdateTrafficIPGroupAPI) GetResponse() TrafficIPGroup {
+	return *ga.ResponseObject().(*TrafficIPGroup)
 }

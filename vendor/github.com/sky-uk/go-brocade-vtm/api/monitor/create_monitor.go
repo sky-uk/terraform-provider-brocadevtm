@@ -16,11 +16,11 @@ func NewCreate(monitorName string, monitor Monitor) *CreateMonitorAPI {
 	requestPayLoad := new(Monitor)
 	requestPayLoad.Properties.Basic = monitor.Properties.Basic
 	requestPayLoad.Properties.HTTP = monitor.Properties.HTTP
-	this.BaseAPI = api.NewBaseAPI(http.MethodPut, "/api/tm/3.8/config/active/monitors/"+monitorName, requestPayLoad, new(string))
+	this.BaseAPI = api.NewBaseAPI(http.MethodPut, "/api/tm/3.8/config/active/monitors/"+monitorName, requestPayLoad, new(Monitor))
 	return this
 }
 
 // GetResponse : get response object from created monitor
-func (cma CreateMonitorAPI) GetResponse() string {
-	return cma.ResponseObject().(string)
+func (cma CreateMonitorAPI) GetResponse() Monitor {
+	return *cma.ResponseObject().(*Monitor)
 }

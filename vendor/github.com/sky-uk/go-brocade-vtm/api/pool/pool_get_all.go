@@ -19,6 +19,6 @@ func NewGetAll() *GetAllPools {
 }
 
 // GetResponse returns ResponseObject of GetAllPools.
-func (gap GetAllPools) GetResponse() *LBPoolList {
-	return gap.ResponseObject().(*LBPoolList)
+func (gap GetAllPools) GetResponse() LBPoolList {
+	return *gap.ResponseObject().(*LBPoolList)
 }

@@ -19,6 +19,6 @@ func NewGetSingle(poolName string) *GetSinglePool {
 }
 
 // GetResponse returns ResponseObject of GetSinglePool
-func (gsp GetSinglePool) GetResponse() *Pool {
-	return gsp.ResponseObject().(*Pool)
+func (gsp GetSinglePool) GetResponse() Pool {
+	return *gsp.ResponseObject().(*Pool)
 }
