@@ -2,6 +2,7 @@ package brocadevtm
 
 import (
 	"fmt"
+	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm"
@@ -10,6 +11,14 @@ import (
 )
 
 func TestAccPool_Basic(t *testing.T) {
+
+	randomInt := acctest.RandInt()
+
+	poolName := fmt.Sprintf("acctest_brocadevtm_pool-%d", randomInt)
+	poolResourceName := "brocadevtm_pool.acctest"
+
+	fmt.Printf("\n\nPool is %s.\n\n", poolName)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -18,9 +27,23 @@ func TestAccPool_Basic(t *testing.T) {
 			resource.TestStep{
 				Config: testAccCheckVTMServiceConfig,
 				Check: resource.ComposeTestCheckFunc(
-					testCheckBrocadeVTMPoolExists("brocadevtm_pool.foo"),
-					resource.TestCheckResourceAttr(
-						"brocadevtm_pool.foo", "name", "pool_foo"),
+					testCheckBrocadeVTMPoolExists(poolResourceName),
+					resource.TestCheckResourceAttr(poolResourceName, "name", poolName),
+					resource.TestCheckResourceAttr(poolResourceName, "monitorlist", "[\"ping\"]"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "100"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_idle_connections_pernode", "20"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_timed_out_connection_attempts", "20"),
+					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_connection_timeout", "60"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_connections_per_node", "10"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_queue_size", "20"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_reply_time", "60"),
+					resource.TestCheckResourceAttr(poolResourceName, "queue_timeout", "60"),
+					resource.TestCheckResourceAttr(poolResourceName, "http_keepalive", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "http_keepalive_non_idempotent", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "load_balancing_priority_enabled", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "load_balancing_priority_nodes", "8"),
+					resource.TestCheckResourceAttr(poolResourceName, "tcp_nagle", "false"),
 				),
 			},
 			resource.TestStep{
@@ -95,7 +118,20 @@ resource "brocadevtm_pool" "foo" {
     state="active"
     weight=1
   }
-  max_connection_attempts = 5
+  max_connection_attempts = 10
+  max_idle_connections_pernode = 20
+  max_timed_out_connection_attempts = 20
+  node_close_with_rst = false
+  max_connection_timeout = 60
+  max_connections_per_node = 10
+  max_queue_size = 20
+  max_reply_time = 60
+  queue_timeout = 60
+  http_keepalive = false
+  http_keepalive_non_idempotent = false
+  load_balancing_priority_enabled = false
+  load_balancing_priority_nodes = 8
+  tcp_nagle = false
 }`
 
 const testAccCheckVTMServiceConfigUpdated = `
