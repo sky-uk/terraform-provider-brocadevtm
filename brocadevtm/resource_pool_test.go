@@ -2,12 +2,12 @@ package brocadevtm
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/pool"
 	"testing"
+	"github.com/hashicorp/terraform/helper/acctest"
 )
 
 func TestAccPool_Basic(t *testing.T) {
@@ -29,8 +29,8 @@ func TestAccPool_Basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testCheckBrocadeVTMPoolExists(poolResourceName),
 					resource.TestCheckResourceAttr(poolResourceName, "name", poolName),
-					resource.TestCheckResourceAttr(poolResourceName, "monitorlist", "[\"ping\"]"),
-					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "100"),
+					resource.TestCheckResourceAttr(poolResourceName, "monitorlist","[\"ping\"]"),
+					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "10"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_idle_connections_pernode", "20"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_timed_out_connection_attempts", "20"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "false"),
