@@ -27,6 +27,7 @@ type HTTP struct {
 	BodyRegex      string `json:"body_regex,omitempty"`
 	HostHeader     string `json:"host_header,omitempty"`
 	URIPath        string `json:"path,omitempty"`
+	StatusRegex    string `json:"status_regex,omitempty"`
 }
 
 // MonitorsList : List of nodes monitored

@@ -24,6 +24,6 @@ func NewGet(name string) *GetSSLServerKey {
 }
 
 // GetResponse returns ResponseObject of GetOneSSLServerKey.
-func (reqObj GetSSLServerKey) GetResponse() *SSLServerKey {
-	return reqObj.ResponseObject().(*SSLServerKey)
+func (reqObj GetSSLServerKey) GetResponse() SSLServerKey {
+	return *reqObj.ResponseObject().(*SSLServerKey)
 }

@@ -23,6 +23,6 @@ func NewGetAll() *GetAllVirtualServers {
 }
 
 // GetResponse returns ResponseObject of GetAllVirtualServers.
-func (gav GetAllVirtualServers) GetResponse() *VirtualServersList {
-	return gav.ResponseObject().(*VirtualServersList)
+func (gav GetAllVirtualServers) GetResponse() VirtualServersList {
+	return *gav.ResponseObject().(*VirtualServersList)
 }

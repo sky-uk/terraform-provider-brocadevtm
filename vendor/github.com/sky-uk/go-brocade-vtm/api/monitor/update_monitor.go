@@ -1,7 +1,6 @@
 package monitor
 
 import (
-	"encoding/json"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"net/http"
 )
@@ -17,11 +16,11 @@ func NewUpdate(name string, monitor Monitor) *UpdateMonitorAPI {
 	requestPayLoad := new(Monitor)
 	requestPayLoad.Properties.Basic = monitor.Properties.Basic
 	requestPayLoad.Properties.HTTP = monitor.Properties.HTTP
-	this.BaseAPI = api.NewBaseAPI(http.MethodPut, "/api/tm/3.8/config/active/monitors/"+name, requestPayLoad, new(json.RawMessage))
+	this.BaseAPI = api.NewBaseAPI(http.MethodPut, "/api/tm/3.8/config/active/monitors/"+name, requestPayLoad, new(Monitor))
 	return this
 }
 
 // GetResponse : returns the response object from UpdateMonitorAPI
-func (updateMonitorAPI UpdateMonitorAPI) GetResponse() string {
-	return updateMonitorAPI.ResponseObject().(string)
+func (updateMonitorAPI UpdateMonitorAPI) GetResponse() Monitor {
+	return *updateMonitorAPI.ResponseObject().(*Monitor)
 }

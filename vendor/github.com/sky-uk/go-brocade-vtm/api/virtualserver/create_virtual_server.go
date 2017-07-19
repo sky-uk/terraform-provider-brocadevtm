@@ -24,12 +24,12 @@ func NewCreate(virtualServerName string,
 		http.MethodPut,
 		"/api/tm/3.8/config/active/virtual_servers/"+virtualServerName,
 		virtualServer,
-		new(interface{}),
+		new(VirtualServer),
 	)
 	return this
 }
 
 // GetResponse : get response object from created virtualServer
-func (cvs CreateVirtualServerAPI) GetResponse() string {
-	return cvs.ResponseObject().(string)
+func (cvs CreateVirtualServerAPI) GetResponse() VirtualServer {
+	return *cvs.ResponseObject().(*VirtualServer)
 }

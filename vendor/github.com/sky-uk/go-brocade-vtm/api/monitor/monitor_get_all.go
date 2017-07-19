@@ -18,6 +18,6 @@ func NewGetAll() *GetAllMonitors {
 }
 
 // GetResponse returns ResponseObject of GetAllMonitors.
-func (gam GetAllMonitors) GetResponse() *MonitorsList {
-	return gam.ResponseObject().(*MonitorsList)
+func (gam GetAllMonitors) GetResponse() MonitorsList {
+	return *gam.ResponseObject().(*MonitorsList)
 }
