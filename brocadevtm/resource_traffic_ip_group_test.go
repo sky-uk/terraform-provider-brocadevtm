@@ -99,7 +99,7 @@ func testAccBrocadeVTMTrafficIPGroupCheckDestroy(state *terraform.State, name st
 		api := trafficIpGroups.NewGetAll()
 		err := vtmClient.Do(api)
 		if err != nil {
-			return nil
+			return fmt.Errorf("Brocade vTM traffic IP group error retrieving the list of traffic IP groups")
 		}
 		if api.GetResponse().FilterByName(name).Name == name {
 			return fmt.Errorf("Brocade vTM traffic IP group %s still exists", name)

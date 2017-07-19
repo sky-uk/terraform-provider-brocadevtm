@@ -27,6 +27,6 @@ func execCreateUpdate(poolName string, pool Pool) *CreatePoolAPI {
 }
 
 // GetResponse - Returns the http call response
-func (cp CreatePoolAPI) GetResponse() *Pool {
-	return cp.ResponseObject().(*Pool)
+func (cp CreatePoolAPI) GetResponse() Pool {
+	return *cp.ResponseObject().(*Pool)
 }

@@ -147,7 +147,7 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 		d.SetId("")
 		return nil
 	}
-	getSingleMonitorAPI := monitor.NewGetSingleMonitor(getChildMonitor.Name)
+	getSingleMonitorAPI := monitor.NewGetSingle(getChildMonitor.Name)
 	getMonitorProperties := getSingleMonitorAPI.GetResponse()
 	err = vtmClient.Do(getSingleMonitorAPI)
 	if err != nil {
@@ -257,7 +257,7 @@ func resourceMonitorDelete(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("BrocadeVTM Delete Error: name argument required")
 	}
 
-	getAllAPI := monitor.NewGetSingleMonitor(readName)
+	getAllAPI := monitor.NewGetSingle(readName)
 	err := vtmClient.Do(getAllAPI)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Delete: Error fetching monitor %s", readName)
