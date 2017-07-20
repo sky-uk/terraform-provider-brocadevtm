@@ -114,7 +114,7 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 
 	err := vtmClient.Do(createAPI)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Create Error: %+v", err)
+		return fmt.Errorf("BrocadeVTM Create Error: %v", err)
 	}
 
 	if createAPI.StatusCode() != 201 && createAPI.StatusCode() != 200 {
@@ -148,11 +148,12 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 	getSingleMonitorAPI := monitor.NewGetSingle(getChildMonitor.Name)
-	getMonitorProperties := getSingleMonitorAPI.GetResponse()
 	err = vtmClient.Do(getSingleMonitorAPI)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Read Error: %+v", err)
 	}
+
+	getMonitorProperties := getSingleMonitorAPI.GetResponse()
 
 	d.Set("name", getChildMonitor.Name)
 	d.Set("delay", getMonitorProperties.Properties.Basic.Delay)
