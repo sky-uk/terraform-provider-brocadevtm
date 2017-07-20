@@ -27,6 +27,10 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
+				Config:      testAccBrocadeVTMMonitorInvalidName(),
+				ExpectError: regexp.MustCompile(`Response object was \{\"error_id\":\"http.invalid_path\",\"error_text\":\"The path \'/api/tm/3.8/config/active/monitors/../virtual_servers/some_random_virtual_server\' is invalid`),
+			},
+			{
 				Config: testAccBrocadeVTMMonitorCreateTemplate(monitorName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMMonitorExists(monitorName, monitorResourceName),
@@ -57,10 +61,6 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(monitorResourceName, "http_body_regex", "^healthy"),
 					resource.TestCheckResourceAttr(monitorResourceName, "http_path", "/some/other/status/page"),
 				),
-			},
-			{
-				Config:      testAccBrocadeVTMMonitorInvalidName(),
-				ExpectError: regexp.MustCompile(`Invalid HTTP response code 400 returned. Response object was \{\"error_id\":\"http.invalid_path\",\"error_text\":\"The path \'/api/tm/3.8/config/active/monitors/../virtual_servers/some_random_virtual_server\' is invalid`),
 			},
 		},
 	})

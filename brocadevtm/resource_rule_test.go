@@ -34,14 +34,15 @@ func TestAccBrocadeVTMRuleBasic(t *testing.T) {
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
+				Config:      testAccBrocadeVTMRuleNoRule(ruleName),
+				ExpectError: regexp.MustCompile(`required field is not set`),
+			},
+			{
 				Config: testAccBrocadeVTMRuleCreate(ruleName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMRuleExists(ruleName, ruleResourceName),
 					resource.TestCheckResourceAttr(ruleResourceName, "name", ruleName),
-					resource.TestCheckResourceAttr(ruleResourceName, "rule.#", "3"),
-					resource.TestCheckResourceAttr(ruleResourceName, "rule.0", "if( string.ipmaskmatch( request.getremoteip(), \"10.1.11.13\" ) ){"),
-					resource.TestCheckResourceAttr(ruleResourceName, "rule.1", "	connection.discard();"),
-					resource.TestCheckResourceAttr(ruleResourceName, "rule.2", "}"),
+					resource.TestCheckResourceAttr(ruleResourceName, "rule", "if( string.ipmaskmatch( request.getremoteip(), \"192.168.11.13\" ) ){\n    connection.discard();\n}\n"),
 				),
 			},
 			{
@@ -49,10 +50,7 @@ func TestAccBrocadeVTMRuleBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMRuleExists(ruleName, ruleResourceName),
 					resource.TestCheckResourceAttr(ruleResourceName, "name", ruleName),
-					resource.TestCheckResourceAttr(ruleResourceName, "rule.#", "3"),
-					resource.TestCheckResourceAttr(ruleResourceName, "rule.0", "if( string.ipmaskmatch( request.getremoteip(), \"192.168.11.13\" ) ){"),
-					resource.TestCheckResourceAttr(ruleResourceName, "rule.1", "	connection.discard();"),
-					resource.TestCheckResourceAttr(ruleResourceName, "rule.2", "}"),
+					resource.TestCheckResourceAttr(ruleResourceName, "rule", "if( string.ipmaskmatch( request.getremoteip(), \"10.78.12.34\" ) ){\n    connection.discard();\n}\n"),
 				),
 			},
 		},
@@ -101,8 +99,8 @@ func testAccBrocadeVTMRuleExists(ruleName, ruleResourceName string) resource.Tes
 		if err != nil {
 			return fmt.Errorf("Brocade vTM Rule - error while retrieving a list of all rules: %v", err)
 		}
-		for _, rule := range api.GetResponse().Children {
-			if rule.Name == ruleName {
+		for _, childRule := range api.GetResponse().Children {
+			if childRule.Name == ruleName {
 				return nil
 			}
 		}
@@ -113,20 +111,32 @@ func testAccBrocadeVTMRuleExists(ruleName, ruleResourceName string) resource.Tes
 func testAccBrocadeVTMRuleNoName() string {
 	return fmt.Sprintf(`
 resource "brocadevtm_rule" "acctest" {
-rule = ["if( string.ipmaskmatch( request.getremoteip(), \"10.1.11.13\" ) ){",
-"	connection.discard();",
-"}"]
+rule = <<RULE
+if( string.ipmaskmatch( request.getremoteip(), "192.168.11.13" ) ){
+    connection.discard();
+}
+RULE
 }
 `)
+}
+
+func testAccBrocadeVTMRuleNoRule(name string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_rule" "acctest" {
+name = "%s"
+}
+`, name)
 }
 
 func testAccBrocadeVTMRuleCreate(name string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_rule" "acctest" {
 name = "%s"
-rule = ["if( string.ipmaskmatch( request.getremoteip(), \"10.1.11.13\" ) ){",
-"	connection.discard();",
-"}"]
+rule = <<RULE
+if( string.ipmaskmatch( request.getremoteip(), "192.168.11.13" ) ){
+    connection.discard();
+}
+RULE
 }
 `, name)
 }
@@ -135,9 +145,11 @@ func testAccBrocadeVTMRuleUpdate(name string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_rule" "acctest" {
 name = "%s"
-rule = ["if( string.ipmaskmatch( request.getremoteip(), \"192.168.11.13\" ) ){",
-"	connection.discard();",
-"}"]
+rule = <<RULE
+if( string.ipmaskmatch( request.getremoteip(), "10.78.12.34" ) ){
+    connection.discard();
+}
+RULE
 }
 `, name)
 }
