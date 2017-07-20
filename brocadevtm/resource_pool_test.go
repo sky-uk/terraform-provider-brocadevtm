@@ -126,7 +126,7 @@ func testCheckBrocadeVTMPoolExists(name string) resource.TestCheckFunc {
 
 func testAccCheckVTMServiceConfig(poolName string) string {
 	fmt.Println("REACHED testAccCheckVTMServiceConfig\n")
-	fmt.Println("Pool Name is: %s",poolName)
+	fmt.Println("Pool Name is: %s", poolName)
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "foo" {
   name = "%s"
@@ -156,7 +156,7 @@ resource "brocadevtm_pool" "foo" {
 
 func testAccCheckVTMServiceConfigUpdated(poolName string) string {
 	fmt.Println("REACHED testAccCheckVTMServiceConfigUpdated\n")
-	fmt.Println("Pool Name is: %s",poolName)
+	fmt.Println("Pool Name is: %s", poolName)
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "foo" {
   name = "%s"
