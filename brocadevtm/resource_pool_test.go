@@ -27,7 +27,7 @@ func TestAccPool_Basic(t *testing.T) {
 			resource.TestStep{
 				Config: testAccCheckVTMServiceConfig(poolName),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckBrocadeVTMPoolExists(poolName),
+					testCheckBrocadeVTMPoolExists(poolResourceName),
 					resource.TestCheckResourceAttr(poolResourceName, "name", poolName),
 					resource.TestCheckResourceAttr(poolResourceName, "monitorlist", "[\"ping\"]"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "10"),
@@ -49,7 +49,7 @@ func TestAccPool_Basic(t *testing.T) {
 			resource.TestStep{
 				Config: testAccCheckVTMServiceConfigUpdated(poolName),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckBrocadeVTMPoolExists(poolName),
+					testCheckBrocadeVTMPoolExists(poolResourceName),
 					resource.TestCheckResourceAttr(poolResourceName, "name", poolName),
 					resource.TestCheckResourceAttr(poolResourceName, "monitorlist", "[\"ping\"]"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "20"),
