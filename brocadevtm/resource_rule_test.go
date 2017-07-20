@@ -111,17 +111,11 @@ func testAccBrocadeVTMRuleExists(ruleName, ruleResourceName string) resource.Tes
 func testAccBrocadeVTMRuleNoName() string {
 	return fmt.Sprintf(`
 resource "brocadevtm_rule" "acctest" {
-<<<<<<< HEAD
 rule = <<RULE
 if( string.ipmaskmatch( request.getremoteip(), "192.168.11.13" ) ){
     connection.discard();
 }
 RULE
-=======
-rule = ["if( string.ipmaskmatch( request.getremoteip(), \"10.1.11.13\" ) ){",
-"	connection.discard();",
-"}"]
->>>>>>> Added CRUD for vTM rules
 }
 `)
 }

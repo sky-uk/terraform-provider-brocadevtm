@@ -48,7 +48,6 @@ func resourceRuleCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	createAPI := rule.NewCreate(vtmRule.Name, []byte(fmt.Sprintf(vtmRule.Script)))
-
 	err := vtmClient.Do(createAPI)
 	if err != nil {
 		return fmt.Errorf("Error while creating rule %s: %+v", vtmRule.Name, err)
@@ -70,7 +69,6 @@ func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 
 	vtmRule.Name = d.Id()
 	readAPI := rule.NewGetRule(vtmRule.Name)
-
 	err := vtmClient.Do(readAPI)
 	if readAPI.StatusCode() == http.StatusNotFound {
 		d.SetId("")
@@ -90,7 +88,6 @@ func resourceRuleUpdate(d *schema.ResourceData, m interface{}) error {
 
 	var vtmRule rule.TrafficScriptRule
 	hasChanges := false
-
 	vtmRule.Name = d.Id()
 
 	if d.HasChange("rule") {
