@@ -26,7 +26,7 @@ func TestAccBrocadeVTMSSLServerKeyBasic(t *testing.T) {
 		},
 		Providers: testAccProviders,
 		CheckDestroy: func(state *terraform.State) error {
-				return testAccBrocadeVTMSSLServerKeyCheckDestroy(state, sslServerKeyName)
+			return testAccBrocadeVTMSSLServerKeyCheckDestroy(state, sslServerKeyName)
 		},
 		Steps: []resource.TestStep{
 			{
@@ -82,8 +82,7 @@ func testAccBrocadeVTMSSLServerKeyCheckDestroy(state *terraform.State, sslServer
 	return nil
 }
 
-
-func testAccBrocadeVTMSSLServerKeyExists(sslServerKeyName, sslServerKeyResourceName string) resource.TestCheckFunc{
+func testAccBrocadeVTMSSLServerKeyExists(sslServerKeyName, sslServerKeyResourceName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
 		rs, ok := state.RootModule().Resources[sslServerKeyResourceName]
