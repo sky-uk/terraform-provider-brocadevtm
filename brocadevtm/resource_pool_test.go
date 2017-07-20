@@ -73,7 +73,7 @@ func TestAccPool_Basic(t *testing.T) {
 }
 
 func testAccCheckBrocadeVTMPoolDestroy(s *terraform.State) error {
-	fmt.Printf("REACHED testAccCheckBrocadeVTMPoolDestroy")
+	fmt.Println("REACHED testAccCheckBrocadeVTMPoolDestroy\n")
 	vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
 	var name string
 	for _, r := range s.RootModule().Resources {
@@ -96,7 +96,7 @@ func testAccCheckBrocadeVTMPoolDestroy(s *terraform.State) error {
 }
 
 func testCheckBrocadeVTMPoolExists(name string) resource.TestCheckFunc {
-	fmt.Printf("REACHED testCheckBrocadeVTMPoolExists")
+	fmt.Println("REACHED testCheckBrocadeVTMPoolExists\n")
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[name]
 		if !ok {
@@ -125,7 +125,8 @@ func testCheckBrocadeVTMPoolExists(name string) resource.TestCheckFunc {
 }
 
 func testAccCheckVTMServiceConfig(poolName string) string {
-	fmt.Printf("REACHED testAccCheckVTMServiceConfig")
+	fmt.Println("REACHED testAccCheckVTMServiceConfig\n")
+	fmt.Println("Pool Name is: %s",poolName)
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "foo" {
   name = "%s"
@@ -154,7 +155,8 @@ resource "brocadevtm_pool" "foo" {
 }
 
 func testAccCheckVTMServiceConfigUpdated(poolName string) string {
-	fmt.Printf("REACHED testAccCheckVTMServiceConfigUpdated")
+	fmt.Println("REACHED testAccCheckVTMServiceConfigUpdated\n")
+	fmt.Println("Pool Name is: %s",poolName)
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "foo" {
   name = "%s"
