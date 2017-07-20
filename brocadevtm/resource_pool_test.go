@@ -98,6 +98,7 @@ func testAccCheckBrocadeVTMPoolDestroy(s *terraform.State) error {
 func testCheckBrocadeVTMPoolExists(name string) resource.TestCheckFunc {
 	fmt.Printf("\n\nREACHED testCheckBrocadeVTMPoolExists\n\n")
 	return func(s *terraform.State) error {
+		fmt.Printf("Pool resource name is: %s",name)
 		rs, ok := s.RootModule().Resources[name]
 		if !ok {
 			return fmt.Errorf("Not found: %s", name)
