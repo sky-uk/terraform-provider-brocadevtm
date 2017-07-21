@@ -20,50 +20,50 @@ func TestAccPool_Basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckDestroy,
+		CheckDestroy: testAccPoolCheckDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccNoName(),
+				Config:      testAccPoolNoName(),
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 
 			{
-				Config:      testAccNoNodes(poolName),
+				Config:      testAccPoolNoNodes(poolName),
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
-				Config:      testAccNodeListHasNoNodeAttribute(poolName),
+				Config:      testAccPoolNodeListHasNoNodeAttribute(poolName),
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
-				Config:      testAccNodeListHasNoPriorityAttribute(poolName),
+				Config:      testAccPoolNodeListHasNoPriorityAttribute(poolName),
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
-				Config:      testAccNodeListHasNoWeightAttribute(poolName),
+				Config:      testAccPoolNodeListHasNoWeightAttribute(poolName),
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
-				Config:      testAccNodeListHasNoStateAttribute(poolName),
+				Config:      testAccPoolNodeListHasNoStateAttribute(poolName),
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
-				Config:      testAccInvalidNode(poolName),
+				Config:      testAccPoolInvalidNode(poolName),
 				ExpectError: regexp.MustCompile(`Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 
 			{
-				Config:      testAccInvalidNodeNoIP(poolName),
+				Config:      testAccPoolInvalidNodeNoIP(poolName),
 				ExpectError: regexp.MustCompile(`Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 			{
-				Config:      testAccInvalidNodeNoPort(poolName),
+				Config:      testAccPoolInvalidNodeNoPort(poolName),
 				ExpectError: regexp.MustCompile(`Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 			{
-				Config: testAccCheckVTMServiceConfig(poolName),
+				Config: testAccPoolCheckVTMServiceConfig(poolName),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckExists(poolResourceName),
+					testCheckPoolExists(poolResourceName),
 					resource.TestCheckResourceAttr(poolResourceName, "name", poolName),
 					resource.TestCheckResourceAttr(poolResourceName, "monitorlist.0", "ping"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "10"),
@@ -83,9 +83,9 @@ func TestAccPool_Basic(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccCheckVTMServiceConfigUpdated(poolName),
+				Config: testAccPoolCheckVTMServiceConfigUpdated(poolName),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckExists(poolResourceName),
+					testCheckPoolExists(poolResourceName),
 					resource.TestCheckResourceAttr(poolResourceName, "name", poolName),
 					resource.TestCheckResourceAttr(poolResourceName, "monitorlist.0", "ping"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "20"),
@@ -108,7 +108,7 @@ func TestAccPool_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckDestroy(s *terraform.State) error {
+func testAccPoolCheckDestroy(s *terraform.State) error {
 	vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
 	var name string
 	for _, r := range s.RootModule().Resources {
@@ -130,7 +130,7 @@ func testAccCheckDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testCheckExists(name string) resource.TestCheckFunc {
+func testCheckPoolExists(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[name]
 		if !ok {
@@ -158,7 +158,7 @@ func testCheckExists(name string) resource.TestCheckFunc {
 	}
 }
 
-func testAccInvalidNodeNoPort(poolName string) string {
+func testAccPoolInvalidNodeNoPort(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
   name = "%s"
@@ -186,7 +186,7 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
-func testAccInvalidNodeNoIP(poolName string) string {
+func testAccPoolInvalidNodeNoIP(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
   name = "%s"
@@ -214,7 +214,7 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
-func testAccInvalidNode(poolName string) string {
+func testAccPoolInvalidNode(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
   name = "%s"
@@ -228,7 +228,7 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
-func testAccNoName() string {
+func testAccPoolNoName() string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
   monitorlist = ["ping"]
@@ -255,7 +255,7 @@ resource "brocadevtm_pool" "acctest" {
 }`)
 }
 
-func testAccNoNodes(poolName string) string {
+func testAccPoolNoNodes(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
   name = "%s"
@@ -277,7 +277,7 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
-func testAccNodeListHasNoNodeAttribute(poolName string) string {
+func testAccPoolNodeListHasNoNodeAttribute(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
   name = "%s"
@@ -290,7 +290,7 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
-func testAccNodeListHasNoPriorityAttribute(poolName string) string {
+func testAccPoolNodeListHasNoPriorityAttribute(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
   name = "%s"
@@ -303,7 +303,7 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
-func testAccNodeListHasNoStateAttribute(poolName string) string {
+func testAccPoolNodeListHasNoStateAttribute(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
   name = "%s"
@@ -316,7 +316,7 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
-func testAccNodeListHasNoWeightAttribute(poolName string) string {
+func testAccPoolNodeListHasNoWeightAttribute(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
   name = "%s"
@@ -329,7 +329,7 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
-func testAccCheckVTMServiceConfig(poolName string) string {
+func testAccPoolCheckVTMServiceConfig(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
   name = "%s"
@@ -357,7 +357,7 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
-func testAccCheckVTMServiceConfigUpdated(poolName string) string {
+func testAccPoolCheckVTMServiceConfigUpdated(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
   name = "%s"
