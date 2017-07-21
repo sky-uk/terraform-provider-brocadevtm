@@ -49,17 +49,16 @@ func TestAccPool_Basic(t *testing.T) {
 			},
 			{
 				Config: testAccInvalidNode(poolName),
-				//ExpectError: regexp.MustCompile(fmt.Sprintf("Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80")),
 				ExpectError: regexp.MustCompile(`Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 
 			{
 				Config:      testAccInvalidNodeNoIP(poolName),
-				ExpectError: regexp.MustCompile(fmt.Sprintf("Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80")),
+				ExpectError: regexp.MustCompile(`Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 			{
 				Config:      testAccInvalidNodeNoPort(poolName),
-				ExpectError: regexp.MustCompile(fmt.Sprintf("Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80")),
+				ExpectError: regexp.MustCompile(`Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 			{
 				Config: testAccCheckVTMServiceConfig(poolName),
