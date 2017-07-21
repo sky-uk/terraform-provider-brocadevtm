@@ -48,7 +48,7 @@ func TestAccPool_Basic(t *testing.T) {
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
-				Config: testAccInvalidNode(poolName),
+				Config:      testAccInvalidNode(poolName),
 				ExpectError: regexp.MustCompile(`Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 
@@ -109,7 +109,6 @@ func TestAccPool_Basic(t *testing.T) {
 }
 
 func testAccCheckDestroy(s *terraform.State) error {
-	//fmt.Printf("\n\nREACHED testAccCheckBrocadeVTMPoolDestroy\n\n")
 	vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
 	var name string
 	for _, r := range s.RootModule().Resources {
@@ -134,7 +133,6 @@ func testAccCheckDestroy(s *terraform.State) error {
 func testCheckExists(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[name]
-		//fmt.Printf("Pool resource name is: %v", s)
 		if !ok {
 			return fmt.Errorf("Not found: %s", name)
 		}
