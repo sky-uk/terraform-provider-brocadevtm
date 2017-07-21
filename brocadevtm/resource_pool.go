@@ -6,6 +6,7 @@ import (
 	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/pool"
 	"log"
+	"regexp"
 )
 
 func resourcePool() *schema.Resource {
@@ -21,27 +22,30 @@ func resourcePool() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"node": &schema.Schema{
+			"node": {
 				Type:     schema.TypeSet,
 				Required: true,
 				ForceNew: false,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"node": &schema.Schema{
-							Type:     schema.TypeString,
-							Required: true,
+						"node": {
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validateNode,
 						},
-						"priority": &schema.Schema{
+						"priority": {
 							Type:     schema.TypeInt,
 							Required: true,
 						},
-						"state": &schema.Schema{
-							Type:     schema.TypeString,
-							Required: true,
+						"state": {
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validateState,
 						},
-						"weight": &schema.Schema{
-							Type:     schema.TypeInt,
-							Required: true,
+						"weight": {
+							Type:         schema.TypeInt,
+							Required:     true,
+							ValidateFunc: validateWeight,
 						},
 					},
 				},
@@ -125,6 +129,33 @@ func resourcePool() *schema.Resource {
 		},
 	}
 
+}
+
+func validateNode(v interface{}, k string) (ws []string, errors []error) {
+	node := v.(string)
+	validateNode := regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$`)
+	if !validateNode.MatchString(node) {
+		errors = append(errors, fmt.Errorf("Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80"))
+	}
+	return
+}
+
+func validateWeight(v interface{}, k string) (ws []string, errors []error) {
+	weight := v.(int)
+
+	if weight < 1 || weight > 100 {
+		errors = append(errors, fmt.Errorf("%q must be between 1-100", k))
+	}
+	return
+}
+
+func validateState(v interface{}, k string) (ws []string, errors []error) {
+	state := v.(string)
+	stateOptions := regexp.MustCompile(`^(active|draining|disabled)$`)
+	if !stateOptions.MatchString(state) {
+		errors = append(errors, fmt.Errorf("%q must be one of active, draining, disabled", k))
+	}
+	return
 }
 
 // resourcePoolCreate - Creates a  pool resource object

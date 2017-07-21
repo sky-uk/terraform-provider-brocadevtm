@@ -7,29 +7,66 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/pool"
+	"regexp"
 	"testing"
 )
 
 func TestAccPool_Basic(t *testing.T) {
 
 	randomInt := acctest.RandInt()
-
 	poolName := fmt.Sprintf("acctest_brocadevtm_pool-%d", randomInt)
 	poolResourceName := "brocadevtm_pool.acctest"
-
-	fmt.Printf("\n\nPool is %s.\n\n", poolName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckBrocadeVTMPoolDestroy,
+		CheckDestroy: testAccCheckDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
+				Config:      testAccNoName(),
+				ExpectError: regexp.MustCompile(`required field is not set`),
+			},
+
+			{
+				Config:      testAccNoNodes(poolName),
+				ExpectError: regexp.MustCompile(`required field is not set`),
+			},
+			{
+				Config:      testAccNodeListHasNoNodeAttribute(poolName),
+				ExpectError: regexp.MustCompile(`required field is not set`),
+			},
+			{
+				Config:      testAccNodeListHasNoPriorityAttribute(poolName),
+				ExpectError: regexp.MustCompile(`required field is not set`),
+			},
+			{
+				Config:      testAccNodeListHasNoWeightAttribute(poolName),
+				ExpectError: regexp.MustCompile(`required field is not set`),
+			},
+			{
+				Config:      testAccNodeListHasNoStateAttribute(poolName),
+				ExpectError: regexp.MustCompile(`required field is not set`),
+			},
+			{
+				Config: testAccInvalidNode(poolName),
+				//ExpectError: regexp.MustCompile(fmt.Sprintf("Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80")),
+				ExpectError: regexp.MustCompile(`Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
+			},
+
+			{
+				Config:      testAccInvalidNodeNoIP(poolName),
+				ExpectError: regexp.MustCompile(fmt.Sprintf("Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80")),
+			},
+			{
+				Config:      testAccInvalidNodeNoPort(poolName),
+				ExpectError: regexp.MustCompile(fmt.Sprintf("Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80")),
+			},
+			{
 				Config: testAccCheckVTMServiceConfig(poolName),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckBrocadeVTMPoolExists(poolResourceName),
+					testCheckExists(poolResourceName),
 					resource.TestCheckResourceAttr(poolResourceName, "name", poolName),
-					resource.TestCheckResourceAttr(poolResourceName, "monitorlist", "[\"ping\"]"),
+					resource.TestCheckResourceAttr(poolResourceName, "monitorlist.0", "ping"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "10"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_idle_connections_pernode", "20"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_timed_out_connection_attempts", "20"),
@@ -46,12 +83,12 @@ func TestAccPool_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResourceName, "tcp_nagle", "false"),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccCheckVTMServiceConfigUpdated(poolName),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckBrocadeVTMPoolExists(poolResourceName),
+					testCheckExists(poolResourceName),
 					resource.TestCheckResourceAttr(poolResourceName, "name", poolName),
-					resource.TestCheckResourceAttr(poolResourceName, "monitorlist", "[\"ping\"]"),
+					resource.TestCheckResourceAttr(poolResourceName, "monitorlist.0", "ping"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "20"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_idle_connections_pernode", "40"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_timed_out_connection_attempts", "40"),
@@ -72,8 +109,8 @@ func TestAccPool_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckBrocadeVTMPoolDestroy(s *terraform.State) error {
-	fmt.Printf("\n\nREACHED testAccCheckBrocadeVTMPoolDestroy\n\n")
+func testAccCheckDestroy(s *terraform.State) error {
+	//fmt.Printf("\n\nREACHED testAccCheckBrocadeVTMPoolDestroy\n\n")
 	vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
 	var name string
 	for _, r := range s.RootModule().Resources {
@@ -95,11 +132,10 @@ func testAccCheckBrocadeVTMPoolDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testCheckBrocadeVTMPoolExists(name string) resource.TestCheckFunc {
-	fmt.Printf("\n\nREACHED testCheckBrocadeVTMPoolExists\n\n")
+func testCheckExists(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		fmt.Printf("Pool resource name is: %s",name)
 		rs, ok := s.RootModule().Resources[name]
+		//fmt.Printf("Pool resource name is: %v", s)
 		if !ok {
 			return fmt.Errorf("Not found: %s", name)
 		}
@@ -125,11 +161,180 @@ func testCheckBrocadeVTMPoolExists(name string) resource.TestCheckFunc {
 	}
 }
 
-func testAccCheckVTMServiceConfig(poolName string) string {
-	fmt.Printf("\n\nREACHED testAccCheckVTMServiceConfig\n\n")
-	fmt.Printf("\n\nPool Name is: %s\n\n", poolName)
+func testAccInvalidNodeNoPort(poolName string) string {
 	return fmt.Sprintf(`
-resource "brocadevtm_pool" "foo" {
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  monitorlist = ["ping"]
+  node {
+    node="127.0.0.1"
+    priority=1
+    state="active"
+    weight=1
+  }
+  max_connection_attempts = 10
+  max_idle_connections_pernode = 20
+  max_timed_out_connection_attempts = 20
+  node_close_with_rst = false
+  max_connection_timeout = 60
+  max_connections_per_node = 10
+  max_queue_size = 20
+  max_reply_time = 60
+  queue_timeout = 60
+  http_keepalive = false
+  http_keepalive_non_idempotent = false
+  load_balancing_priority_enabled = false
+  load_balancing_priority_nodes = 8
+  tcp_nagle = false
+}`, poolName)
+}
+
+func testAccInvalidNodeNoIP(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  monitorlist = ["ping"]
+  node {
+    node="8080"
+    priority=1
+    state="active"
+    weight=1
+  }
+  max_connection_attempts = 10
+  max_idle_connections_pernode = 20
+  max_timed_out_connection_attempts = 20
+  node_close_with_rst = false
+  max_connection_timeout = 60
+  max_connections_per_node = 10
+  max_queue_size = 20
+  max_reply_time = 60
+  queue_timeout = 60
+  http_keepalive = false
+  http_keepalive_non_idempotent = false
+  load_balancing_priority_enabled = false
+  load_balancing_priority_nodes = 8
+  tcp_nagle = false
+}`, poolName)
+}
+
+func testAccInvalidNode(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  monitorlist = ["ping"]
+  node {
+    node="325345234534"
+    priority=1
+    state="active"
+    weight=1
+  }
+}`, poolName)
+}
+
+func testAccNoName() string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  monitorlist = ["ping"]
+  node {
+    node="127.0.0.1:80"
+    priority=1
+    state="active"
+    weight=1
+  }
+  max_connection_attempts = 10
+  max_idle_connections_pernode = 20
+  max_timed_out_connection_attempts = 20
+  node_close_with_rst = false
+  max_connection_timeout = 60
+  max_connections_per_node = 10
+  max_queue_size = 20
+  max_reply_time = 60
+  queue_timeout = 60
+  http_keepalive = false
+  http_keepalive_non_idempotent = false
+  load_balancing_priority_enabled = false
+  load_balancing_priority_nodes = 8
+  tcp_nagle = false
+}`)
+}
+
+func testAccNoNodes(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  monitorlist = ["ping"]
+  max_connection_attempts = 10
+  max_idle_connections_pernode = 20
+  max_timed_out_connection_attempts = 20
+  node_close_with_rst = false
+  max_connection_timeout = 60
+  max_connections_per_node = 10
+  max_queue_size = 20
+  max_reply_time = 60
+  queue_timeout = 60
+  http_keepalive = false
+  http_keepalive_non_idempotent = false
+  load_balancing_priority_enabled = false
+  load_balancing_priority_nodes = 8
+  tcp_nagle = false
+}`, poolName)
+}
+
+func testAccNodeListHasNoNodeAttribute(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  monitorlist = ["ping"]
+  node {
+    priority=1
+    state="active"
+    weight=1
+  }
+}`, poolName)
+}
+
+func testAccNodeListHasNoPriorityAttribute(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  monitorlist = ["ping"]
+  node {
+    node="127.0.0.1:80"
+    state="active"
+    weight=1
+  }
+}`, poolName)
+}
+
+func testAccNodeListHasNoStateAttribute(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  monitorlist = ["ping"]
+  node {
+    node="127.0.0.1:80"
+    priority=1
+    weight=1
+  }
+}`, poolName)
+}
+
+func testAccNodeListHasNoWeightAttribute(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  monitorlist = ["ping"]
+  node {
+    node="127.0.0.1:80"
+    priority=1
+    state="active"
+  }
+}`, poolName)
+}
+
+func testAccCheckVTMServiceConfig(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
   name = "%s"
   monitorlist = ["ping"]
   node {
@@ -156,10 +361,8 @@ resource "brocadevtm_pool" "foo" {
 }
 
 func testAccCheckVTMServiceConfigUpdated(poolName string) string {
-	fmt.Printf("\n\nREACHED testAccCheckVTMServiceConfigUpdated\n\n")
-	fmt.Printf("\n\nPool Name is: %s\n\n", poolName)
 	return fmt.Sprintf(`
-resource "brocadevtm_pool" "foo" {
+resource "brocadevtm_pool" "acctest" {
   name = "%s"
   monitorlist = ["ping"]
   node {
