@@ -6,6 +6,7 @@ import (
 	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/pool"
 	"log"
+	"regexp"
 )
 
 func resourcePool() *schema.Resource {
@@ -21,27 +22,30 @@ func resourcePool() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"node": &schema.Schema{
+			"node": {
 				Type:     schema.TypeSet,
 				Required: true,
 				ForceNew: false,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"node": &schema.Schema{
-							Type:     schema.TypeString,
-							Required: true,
+						"node": {
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validateNode,
 						},
-						"priority": &schema.Schema{
+						"priority": {
 							Type:     schema.TypeInt,
 							Required: true,
 						},
-						"state": &schema.Schema{
-							Type:     schema.TypeString,
-							Required: true,
+						"state": {
+							Type:         schema.TypeString,
+							Required:     true,
+							ValidateFunc: validateState,
 						},
-						"weight": &schema.Schema{
-							Type:     schema.TypeInt,
-							Required: true,
+						"weight": {
+							Type:         schema.TypeInt,
+							Required:     true,
+							ValidateFunc: validateWeight,
 						},
 					},
 				},
@@ -57,9 +61,101 @@ func resourcePool() *schema.Resource {
 				Optional: true,
 				ForceNew: false,
 			},
+			"max_idle_connections_pernode": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				ForceNew: false,
+			},
+			"max_timed_out_connection_attempts": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				ForceNew: false,
+			},
+			"node_close_with_rst": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				ForceNew: false,
+			},
+			"max_connection_timeout": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				ForceNew: false,
+			},
+			"max_connections_per_node": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				ForceNew: false,
+			},
+			"max_queue_size": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				ForceNew: false,
+			},
+			"max_reply_time": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				ForceNew: false,
+			},
+			"queue_timeout": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				ForceNew: false,
+			},
+			"http_keepalive": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				ForceNew: false,
+			},
+			"http_keepalive_non_idempotent": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				ForceNew: false,
+			},
+			"load_balancing_priority_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				ForceNew: false,
+			},
+			"load_balancing_priority_nodes": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				ForceNew: false,
+			},
+			"tcp_nagle": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				ForceNew: false,
+			},
 		},
 	}
 
+}
+
+func validateNode(v interface{}, k string) (ws []string, errors []error) {
+	node := v.(string)
+	validateNode := regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$`)
+	if !validateNode.MatchString(node) {
+		errors = append(errors, fmt.Errorf("Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80"))
+	}
+	return
+}
+
+func validateWeight(v interface{}, k string) (ws []string, errors []error) {
+	weight := v.(int)
+
+	if weight < 1 || weight > 100 {
+		errors = append(errors, fmt.Errorf("%q must be between 1-100", k))
+	}
+	return
+}
+
+func validateState(v interface{}, k string) (ws []string, errors []error) {
+	state := v.(string)
+	stateOptions := regexp.MustCompile(`^(active|draining|disabled)$`)
+	if !stateOptions.MatchString(state) {
+		errors = append(errors, fmt.Errorf("%q must be one of active, draining, disabled", k))
+	}
+	return
 }
 
 // resourcePoolCreate - Creates a  pool resource object
@@ -116,8 +212,10 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 		createPool.Properties.Basic.Monitors = monitors
 	}
 	if v, ok := d.GetOk("node_close_with_rst"); ok {
-		createPool.Properties.Basic.NodeCloseWithReset = v.(*bool)
+		nodeCloseWithReset := v.(bool)
+		createPool.Properties.Basic.NodeCloseWithReset = &nodeCloseWithReset
 	}
+
 	if v, ok := d.GetOk("max_connection_timeout"); ok {
 		createPool.Properties.Connection.MaxConnectTime = v.(int)
 	}
@@ -134,19 +232,23 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 		createPool.Properties.Connection.QueueTimeout = v.(int)
 	}
 	if v, ok := d.GetOk("http_keepalive"); ok {
-		createPool.Properties.HTTP.HTTPKeepAlive = v.(*bool)
+		httpKeepAlive := v.(bool)
+		createPool.Properties.HTTP.HTTPKeepAlive = &httpKeepAlive
 	}
 	if v, ok := d.GetOk("http_keepalive_non_idempotent"); ok {
-		createPool.Properties.HTTP.HTTPKeepAliveNonIdempotent = v.(*bool)
+		httpKeepAliveNonIdempotent := v.(bool)
+		createPool.Properties.HTTP.HTTPKeepAliveNonIdempotent = &httpKeepAliveNonIdempotent
 	}
 	if v, ok := d.GetOk("load_balancing_priority_enabled"); ok {
-		createPool.Properties.LoadBalancing.PriorityEnabled = v.(*bool)
+		loadBalancingPriorityEnabled := v.(bool)
+		createPool.Properties.LoadBalancing.PriorityEnabled = &loadBalancingPriorityEnabled
 	}
 	if v, ok := d.GetOk("load_balancing_priority_nodes"); ok {
 		createPool.Properties.LoadBalancing.PriorityNodes = v.(int)
 	}
 	if v, ok := d.GetOk("tcp_nagle"); ok {
-		createPool.Properties.TCP.Nagle = v.(*bool)
+		tcpNagle := v.(bool)
+		createPool.Properties.TCP.Nagle = &tcpNagle
 	}
 
 	createAPI := pool.NewCreate(poolName, createPool)
@@ -215,7 +317,8 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 		readPool.Properties.Basic.Monitors = monitors
 	}
 	if v, ok := d.GetOk("node_close_with_rst"); ok {
-		readPool.Properties.Basic.NodeCloseWithReset = v.(*bool)
+		nodeCloseWithRst := v.(bool)
+		readPool.Properties.Basic.NodeCloseWithReset = &nodeCloseWithRst
 	}
 	if v, ok := d.GetOk("max_connection_timeout"); ok {
 		readPool.Properties.Connection.MaxConnectTime = v.(int)
@@ -233,19 +336,23 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 		readPool.Properties.Connection.QueueTimeout = v.(int)
 	}
 	if v, ok := d.GetOk("http_keepalive"); ok {
-		readPool.Properties.HTTP.HTTPKeepAlive = v.(*bool)
+		httpKeepAlive := v.(bool)
+		readPool.Properties.HTTP.HTTPKeepAlive = &httpKeepAlive
 	}
 	if v, ok := d.GetOk("http_keepalive_non_idempotent"); ok {
-		readPool.Properties.HTTP.HTTPKeepAliveNonIdempotent = v.(*bool)
+		httpKeepAliveNonIdempotent := v.(bool)
+		readPool.Properties.HTTP.HTTPKeepAliveNonIdempotent = &httpKeepAliveNonIdempotent
 	}
 	if v, ok := d.GetOk("load_balancing_priority_enabled"); ok {
-		readPool.Properties.LoadBalancing.PriorityEnabled = v.(*bool)
+		loadBalancingPriorityEnabled := v.(bool)
+		readPool.Properties.LoadBalancing.PriorityEnabled = &loadBalancingPriorityEnabled
 	}
 	if v, ok := d.GetOk("load_balancing_priority_nodes"); ok {
 		readPool.Properties.LoadBalancing.PriorityNodes = v.(int)
 	}
 	if v, ok := d.GetOk("tcp_nagle"); ok {
-		readPool.Properties.TCP.Nagle = v.(*bool)
+		tcpNagle := v.(bool)
+		readPool.Properties.TCP.Nagle = &tcpNagle
 	}
 	getSingleAPI := pool.NewGetSingle(poolName)
 	readErr := vtmClient.Do(getSingleAPI)
@@ -254,7 +361,7 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	}
 	d.Set("name", poolName)
 	d.Set("node", readPool.Properties.Basic.NodesTable)
-	d.Set("max_connection_attempts", readPool.Properties.Basic.Monitors)
+	d.Set("max_connection_attempts", readPool.Properties.Basic.MaxConnectionAttempts)
 	d.Set("max_idle_connections_pernode", readPool.Properties.Basic.MaxIdleConnectionsPerNode)
 	d.Set("max_timed_out_connection_attempts", readPool.Properties.Basic.MaxTimeoutConnectionAttempts)
 	d.Set("monitorlist", readPool.Properties.Basic.Monitors)
@@ -344,7 +451,90 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 
 	if d.HasChange("max_connection_attempts") {
 		if v, ok := d.GetOk("max_connection_attempts"); ok {
+			updatePool.Properties.Basic.MaxConnectionAttempts = v.(int)
+		}
+	}
+
+	if d.HasChange("max_idle_connections_pernode") {
+		if v, ok := d.GetOk("max_idle_connections_pernode"); ok {
+			updatePool.Properties.Basic.MaxIdleConnectionsPerNode = v.(int)
+		}
+	}
+
+	if d.HasChange("max_timed_out_connection_attempts") {
+		if v, ok := d.GetOk("max_timed_out_connection_attempts"); ok {
 			updatePool.Properties.Basic.MaxTimeoutConnectionAttempts = v.(int)
+		}
+	}
+
+	if d.HasChange("node_close_with_rst") {
+		if v, ok := d.GetOk("node_close_with_rst"); ok {
+			nodeCloseWithRst := v.(bool)
+			updatePool.Properties.Basic.NodeCloseWithReset = &nodeCloseWithRst
+		}
+	}
+
+	if d.HasChange("max_connection_timeout") {
+		if v, ok := d.GetOk("max_connection_timeout"); ok {
+			updatePool.Properties.Connection.MaxConnectTime = v.(int)
+		}
+	}
+
+	if d.HasChange("max_connections_per_node") {
+		if v, ok := d.GetOk("max_connections_per_node"); ok {
+			updatePool.Properties.Connection.MaxConnectionsPerNode = v.(int)
+		}
+	}
+
+	if d.HasChange("max_queue_size") {
+		if v, ok := d.GetOk("max_queue_size"); ok {
+			updatePool.Properties.Connection.MaxQueueSize = v.(int)
+		}
+	}
+
+	if d.HasChange("max_reply_time") {
+		if v, ok := d.GetOk("max_reply_time"); ok {
+			updatePool.Properties.Connection.MaxReplyTime = v.(int)
+		}
+	}
+
+	if d.HasChange("queue_timeout") {
+		if v, ok := d.GetOk("queue_timeout"); ok {
+			updatePool.Properties.Connection.QueueTimeout = v.(int)
+		}
+	}
+
+	if d.HasChange("http_keepalive") {
+		if v, ok := d.GetOk("http_keepalive"); ok {
+			httpKeepAlive := v.(bool)
+			updatePool.Properties.HTTP.HTTPKeepAlive = &httpKeepAlive
+		}
+	}
+
+	if d.HasChange("http_keepalive_non_idempotent") {
+		if v, ok := d.GetOk("http_keepalive_non_idempotent"); ok {
+			httpKeepAliveNonIdempotent := v.(bool)
+			updatePool.Properties.HTTP.HTTPKeepAliveNonIdempotent = &httpKeepAliveNonIdempotent
+		}
+	}
+
+	if d.HasChange("load_balancing_priority_enabled") {
+		if v, ok := d.GetOk("load_balancing_priority_enabled"); ok {
+			loadBalancingPriorityEnabled := v.(bool)
+			updatePool.Properties.LoadBalancing.PriorityEnabled = &loadBalancingPriorityEnabled
+		}
+	}
+
+	if d.HasChange("load_balancing_priority_nodes") {
+		if v, ok := d.GetOk("load_balancing_priority_nodes"); ok {
+			updatePool.Properties.LoadBalancing.PriorityNodes = v.(int)
+		}
+	}
+
+	if d.HasChange("tcp_nagle") {
+		if v, ok := d.GetOk("tcp_nagle"); ok {
+			tcpNagle := v.(bool)
+			updatePool.Properties.TCP.Nagle = &tcpNagle
 		}
 	}
 
