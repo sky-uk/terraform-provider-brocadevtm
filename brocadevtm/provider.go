@@ -78,16 +78,12 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		return nil, fmt.Errorf("vtm_server must be provided")
 	}
 
-	headers := make(map[string]string)
-	headers["Content-Type"] = "application/json"
-
 	config := Config{
 		Debug:       clientDebug,
 		Insecure:    allowUnverifiedSSL,
 		VTMUser:     vtmUser,
 		VTMPassword: vtmPassword,
 		VTMServer:   vtmServer,
-		Headers:     headers,
 	}
 
 	return config.Client()

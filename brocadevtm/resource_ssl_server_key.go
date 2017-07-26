@@ -3,7 +3,7 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm"
+	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/go-brocade-vtm/api/ssl_server_key"
 )
 
@@ -49,7 +49,7 @@ func resourceSSLServerKey() *schema.Resource {
 }
 
 func resourceSSLServerKeyCreate(d *schema.ResourceData, meta interface{}) error {
-	vtmClient := meta.(*brocadevtm.VTMClient)
+	vtmClient := meta.(*rest.Client)
 	var name string
 	var payloadObject sslServerKey.SSLServerKey
 
@@ -83,7 +83,7 @@ func resourceSSLServerKeyCreate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceSSLServerKeyRead(d *schema.ResourceData, meta interface{}) error {
-	vtmClient := meta.(*brocadevtm.VTMClient)
+	vtmClient := meta.(*rest.Client)
 	var name string
 
 	if v, ok := d.GetOk("name"); ok {
@@ -98,7 +98,7 @@ func resourceSSLServerKeyRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("BrocadeVTM Read Error: %+v", err)
 	}
 
-	sslServerKey := getSSLServerKey.GetResponse()
+	sslServerKey := getSSLServerKey.ResponseObject().(sslServerKey.SSLServerKey)
 	d.Set("note", sslServerKey.Properties.Basic.Note)
 	// TODO: API doesn't return the private key back, so we ignore it,
 	// otherwise plan is always changing it.
@@ -110,7 +110,7 @@ func resourceSSLServerKeyRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error {
-	vtmClient := meta.(*brocadevtm.VTMClient)
+	vtmClient := meta.(*rest.Client)
 	var name string
 	var payloadObject sslServerKey.SSLServerKey
 	hasChanges := false
@@ -157,7 +157,7 @@ func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceSSLServerKeyDelete(d *schema.ResourceData, meta interface{}) error {
-	vtmClient := meta.(*brocadevtm.VTMClient)
+	vtmClient := meta.(*rest.Client)
 
 	var name string
 

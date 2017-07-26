@@ -13,10 +13,10 @@ type Properties struct {
 
 // Basic : Basic monitor configration
 type Basic struct {
-	Delay    int    `json:"delay,omitempty"`
-	Failures int    `json:"failures,omitempty"`
+	Delay    uint   `json:"delay,omitempty"`
+	Failures uint   `json:"failures,omitempty"`
 	Type     string `json:"type,omitempty"`
-	Timeout  int    `json:"timeout,omitempty"`
+	Timeout  uint   `json:"timeout,omitempty"`
 	UseSSL   *bool  `json:"use_ssl,omitempty"`
 	Verbose  *bool  `json:"verbose,omitempty"`
 }

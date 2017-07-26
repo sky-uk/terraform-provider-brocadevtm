@@ -47,14 +47,3 @@ type Basic struct {
 	RhiProtocols                 string      `json:"rhi_protocols,omitempty"`
 	Slaves                       []string    `json:"slaves,omitempty"`
 }
-
-// TrafficManagerChildren : A list of traffic manager children
-type TrafficManagerChildren struct {
-	Children []TrafficMangerChild `json:"children"`
-}
-
-// TrafficMangerChild : A traffic manager name and reference
-type TrafficMangerChild struct {
-	Name string `json:"name"`
-	HREF string `json:"href"`
-}

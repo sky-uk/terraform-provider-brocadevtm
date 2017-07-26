@@ -3,8 +3,8 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/monitor"
+	"github.com/sky-uk/go-rest-api"
 )
 
 func resourceMonitor() *schema.Resource {
@@ -24,16 +24,19 @@ func resourceMonitor() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 				Computed: true,
+				ValidateFunc: validateMonitorUnsignedInteger,
 			},
 			"timeout": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				Computed: true,
+				ValidateFunc: validateMonitorUnsignedInteger,
 			},
 			"failures": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				Computed: true,
+				ValidateFunc: validateMonitorUnsignedInteger,
 			},
 			"verbose": {
 				Type:     schema.TypeBool,
@@ -69,25 +72,34 @@ func resourceMonitor() *schema.Resource {
 	}
 }
 
+func validateMonitorUnsignedInteger(v interface{}, k string) (ws []string, errors []error) {
+	ttl := v.(int)
+	if ttl < 0 {
+		errors = append(errors, fmt.Errorf("%q can't be negative", k))
+	}
+	return
+}
+
 func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 	var createMonitor monitor.Monitor
 	var name string
 
 	if v, ok := d.GetOk("name"); ok {
 		name = v.(string)
-	} else {
-		return fmt.Errorf("BrocadeVTM Create Error: name argument required")
 	}
 	if v, ok := d.GetOk("delay"); ok {
-		createMonitor.Properties.Basic.Delay = v.(int)
+		delay := v.(int)
+		createMonitor.Properties.Basic.Delay = uint(delay)
 	}
 	if v, ok := d.GetOk("timeout"); ok {
-		createMonitor.Properties.Basic.Timeout = v.(int)
+		timeout := v.(int)
+		createMonitor.Properties.Basic.Timeout = uint(timeout)
 	}
 	if v, ok := d.GetOk("failures"); ok {
-		createMonitor.Properties.Basic.Failures = v.(int)
+		failures := v.(int)
+		createMonitor.Properties.Basic.Failures = uint(failures)
 	}
 	if v, ok := d.GetOk("verbose"); ok {
 		monitorVerbosity := v.(bool)
@@ -116,11 +128,11 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Create Error: %v", err)
 	}
-
+/*
 	if createAPI.StatusCode() != 201 && createAPI.StatusCode() != 200 {
-		return fmt.Errorf("BrocadeVTM Create Error: Invalid HTTP response code %+v returned. Response object was %+v", createAPI.StatusCode(), createAPI.ResponseObject())
+		return fmt.Errorf("BrocadeVTM Create Error: Invalid HTTP response code %+v returned. Response object was %+v", createAPI.StatusCode(), createAPI.ResponseObject().(*monitor.Monitor))
 	}
-
+*/
 	d.SetId(name)
 	return resourceMonitorRead(d, m)
 
@@ -128,7 +140,7 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 	var readName string
 
 	if v, ok := d.GetOk("name"); ok {
@@ -142,20 +154,16 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Read Error: %+v", err)
 	}
-	getChildMonitor := getAllAPI.GetResponse().FilterByName(readName)
-	if getChildMonitor.Name != readName {
-		d.SetId("")
-		return nil
-	}
-	getSingleMonitorAPI := monitor.NewGetSingle(getChildMonitor.Name)
+
+	getSingleMonitorAPI := monitor.NewGet(readName)
 	err = vtmClient.Do(getSingleMonitorAPI)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Read Error: %+v", err)
 	}
 
-	getMonitorProperties := getSingleMonitorAPI.GetResponse()
+	getMonitorProperties := getSingleMonitorAPI.ResponseObject().(monitor.Monitor)
 
-	d.Set("name", getChildMonitor.Name)
+	d.Set("name", readName)
 	d.Set("delay", getMonitorProperties.Properties.Basic.Delay)
 	d.Set("timeout", getMonitorProperties.Properties.Basic.Timeout)
 	d.Set("failures", getMonitorProperties.Properties.Basic.Failures)
@@ -170,31 +178,32 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 
 func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 	var readName string
 	var updateMonitor monitor.Monitor
 	hasChanges := false
 
 	if v, ok := d.GetOk("name"); ok {
 		readName = v.(string)
-	} else {
-		return fmt.Errorf("BrocadeVTM Update Error: name argument required")
 	}
 	if d.HasChange("delay") {
 		if v, ok := d.GetOk("delay"); ok {
-			updateMonitor.Properties.Basic.Delay = v.(int)
+			delay := v.(int)
+			updateMonitor.Properties.Basic.Delay = uint(delay)
 		}
 		hasChanges = true
 	}
 	if d.HasChange("timeout") {
 		if v, ok := d.GetOk("timeout"); ok {
-			updateMonitor.Properties.Basic.Timeout = v.(int)
+			timeout := v.(int)
+			updateMonitor.Properties.Basic.Timeout = uint(timeout)
 		}
 		hasChanges = true
 	}
 	if d.HasChange("failures") {
 		if v, ok := d.GetOk("failures"); ok {
-			updateMonitor.Properties.Basic.Failures = v.(int)
+			failures := v.(int)
+			updateMonitor.Properties.Basic.Failures = uint(failures)
 		}
 		hasChanges = true
 	}
@@ -249,7 +258,7 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceMonitorDelete(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 	var readName string
 
 	if v, ok := d.GetOk("name"); ok {
@@ -258,7 +267,7 @@ func resourceMonitorDelete(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("BrocadeVTM Delete Error: name argument required")
 	}
 
-	getAllAPI := monitor.NewGetSingle(readName)
+	getAllAPI := monitor.NewGet(readName)
 	err := vtmClient.Do(getAllAPI)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Delete: Error fetching monitor %s", readName)

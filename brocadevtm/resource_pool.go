@@ -3,7 +3,7 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm"
+	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/go-brocade-vtm/api/pool"
 	"log"
 	"regexp"
@@ -161,7 +161,7 @@ func validateState(v interface{}, k string) (ws []string, errors []error) {
 // resourcePoolCreate - Creates a  pool resource object
 func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 	var createPool pool.Pool
 	var poolName string
 	if v, ok := d.GetOk("name"); ok {
@@ -266,14 +266,13 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 
 // resourcePoolRead - Reads a  pool resource
 func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
-	vtmClient := m.(*brocadevtm.VTMClient)
-	var readPool pool.Pool
+	vtmClient := m.(*rest.Client)
+	//var readPool pool.Pool
 	var poolName string
 	if v, ok := d.GetOk("name"); ok {
 		poolName = v.(string)
-	} else {
-		return fmt.Errorf("Pool name argument required")
 	}
+	/*
 	if v, ok := d.GetOk("node"); ok {
 		if nodes, ok := v.(*schema.Set); ok {
 			nodeList := []pool.MemberNode{}
@@ -354,28 +353,32 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 		tcpNagle := v.(bool)
 		readPool.Properties.TCP.Nagle = &tcpNagle
 	}
-	getSingleAPI := pool.NewGetSingle(poolName)
-	readErr := vtmClient.Do(getSingleAPI)
+	*/
+
+	getAPI := pool.NewGet(poolName)
+	readErr := vtmClient.Do(getAPI)
 	if readErr != nil {
-		log.Println("Error reading pool:", readErr)
+		return fmt.Errorf("Error reading pool:", readErr)
 	}
+	response := getAPI.ResponseObject().(*pool.Pool)
+
 	d.Set("name", poolName)
-	d.Set("node", readPool.Properties.Basic.NodesTable)
-	d.Set("max_connection_attempts", readPool.Properties.Basic.MaxConnectionAttempts)
-	d.Set("max_idle_connections_pernode", readPool.Properties.Basic.MaxIdleConnectionsPerNode)
-	d.Set("max_timed_out_connection_attempts", readPool.Properties.Basic.MaxTimeoutConnectionAttempts)
-	d.Set("monitorlist", readPool.Properties.Basic.Monitors)
-	d.Set("node_close_with_rst", readPool.Properties.Basic.NodeCloseWithReset)
-	d.Set("max_connection_timeout", readPool.Properties.Connection.MaxConnectTime)
-	d.Set("max_connections_per_node", readPool.Properties.Connection.MaxConnectionsPerNode)
-	d.Set("max_queue_size", readPool.Properties.Connection.MaxQueueSize)
-	d.Set("max_reply_time", readPool.Properties.Connection.MaxReplyTime)
-	d.Set("queue_timeout", readPool.Properties.Connection.QueueTimeout)
-	d.Set("http_keepalive", readPool.Properties.HTTP.HTTPKeepAlive)
-	d.Set("http_keepalive_non_idempotent", readPool.Properties.HTTP.HTTPKeepAliveNonIdempotent)
-	d.Set("load_balancing_priority_enabled", readPool.Properties.LoadBalancing.PriorityEnabled)
-	d.Set("load_balancing_priority_nodes", readPool.Properties.LoadBalancing.PriorityNodes)
-	d.Set("tcp_nagle", readPool.Properties.TCP.Nagle)
+	d.Set("node", response.Properties.Basic.NodesTable)
+	d.Set("max_connection_attempts", response.Properties.Basic.MaxConnectionAttempts)
+	d.Set("max_idle_connections_pernode", response.Properties.Basic.MaxIdleConnectionsPerNode)
+	d.Set("max_timed_out_connection_attempts", response.Properties.Basic.MaxTimeoutConnectionAttempts)
+	d.Set("monitorlist", response.Properties.Basic.Monitors)
+	d.Set("node_close_with_rst", response.Properties.Basic.NodeCloseWithReset)
+	d.Set("max_connection_timeout", response.Properties.Connection.MaxConnectTime)
+	d.Set("max_connections_per_node", response.Properties.Connection.MaxConnectionsPerNode)
+	d.Set("max_queue_size", response.Properties.Connection.MaxQueueSize)
+	d.Set("max_reply_time", response.Properties.Connection.MaxReplyTime)
+	d.Set("queue_timeout", response.Properties.Connection.QueueTimeout)
+	d.Set("http_keepalive", response.Properties.HTTP.HTTPKeepAlive)
+	d.Set("http_keepalive_non_idempotent", response.Properties.HTTP.HTTPKeepAliveNonIdempotent)
+	d.Set("load_balancing_priority_enabled", response.Properties.LoadBalancing.PriorityEnabled)
+	d.Set("load_balancing_priority_nodes", response.Properties.LoadBalancing.PriorityNodes)
+	d.Set("tcp_nagle", response.Properties.TCP.Nagle)
 
 	return nil
 }
@@ -383,12 +386,10 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 // resourcePoolDelete - Deletes a pool resource
 
 func resourcePoolDelete(d *schema.ResourceData, m interface{}) error {
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 	var poolName string
 	if v, ok := d.GetOk("name"); ok {
 		poolName = v.(string)
-	} else {
-		return fmt.Errorf("Pool name argument required")
 	}
 	deleteAPI := pool.NewDelete(poolName)
 	deleteErr := vtmClient.Do(deleteAPI)
@@ -401,7 +402,7 @@ func resourcePoolDelete(d *schema.ResourceData, m interface{}) error {
 
 // resourcePoolUpdate - Updates an existing pool resource
 func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 	var poolName string
 	var updatePool pool.Pool
 	if v, ok := d.GetOk("name"); ok {

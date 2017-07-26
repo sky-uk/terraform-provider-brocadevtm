@@ -1,5 +1,5 @@
-PACKAGE  = github.com/sky-uk/go-brocade-vtm
-BINARYNAME = go-brocade-vtm-cli
+PACKAGE  = github.com/sky-uk/go-rest-api
+#BINARYNAME = gobrocadevtm-cli
 DATE    ?= $(shell date +%FT%T%z)
 VERSION ?= $(shell git describe --tags --always --dirty --match=v* 2> /dev/null || \
 			cat $(CURDIR)/VERSION 2> /dev/null || echo v0)
@@ -21,15 +21,11 @@ Q = $(if $(filter 1,$V),,@)
 M = $(shell printf "\033[34;1m▶\033[0m")
 
 .PHONY: all
-all: fmt lint test vendor | $(BASE) ; $(info $(M) building executable…) @ ## Build program binary
-	$Q cd $(BASE)/cli && $(GO) build \
-		-tags release \
-		-o ../$(BINARYNAME) ./*.go
+all: fmt lint test vendor | $(BASE) 
 
 $(BASE): ; $(info $(M) setting GOPATH…)
 	@mkdir -p $(dir $@)
 	@ln -sf $(CURDIR) $@
-
 
 # Tools
 
@@ -60,8 +56,8 @@ fmt: ; $(info $(M) running gofmt…) @ ## Run gofmt on all source files
 clean: ; $(info $(M) cleaning…)	@ ## Cleanup everything
 	@rm -rf $(GOPATH)
 	@rm -rf bin
-	@rm -rf go-brocade-vtm-cli
 	@rm -rf test/tests.* test/coverage.*
+	#@rm -rf gobrocadevtm-cli
 
 .PHONY: help
 help:

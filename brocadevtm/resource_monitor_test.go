@@ -5,7 +5,7 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm"
+	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/go-brocade-vtm/api/monitor"
 	"regexp"
 	"testing"
@@ -68,7 +68,7 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 
 func testAccBrocadeVTMMonitorCheckDestroy(state *terraform.State, name string) error {
 
-	vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
+	vtmClient := testAccProvider.Meta().(*rest.Client)
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "brocadevtm_monitor" {
@@ -83,8 +83,10 @@ func testAccBrocadeVTMMonitorCheckDestroy(state *terraform.State, name string) e
 		if err != nil {
 			return nil
 		}
-		if api.GetResponse().FilterByName(name).Name == name {
-			return fmt.Errorf("Brocade vTM monitor %s still exists", name)
+		for _, monitorChild := range api.ResponseObject().(*monitor.MonitorsList).Children {
+			if monitorChild.Name == name {
+				return fmt.Errorf("Brocade vTM monitor %s still exists", name)
+			}
 		}
 	}
 	return nil
@@ -101,16 +103,17 @@ func testAccBrocadeVTMMonitorExists(monitorName, monitorResourceName string) res
 			return fmt.Errorf("\nBrocade vTM Monitor ID not set in resources")
 		}
 
-		vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
+		vtmClient := testAccProvider.Meta().(*rest.Client)
 		getAllAPI := monitor.NewGetAll()
 
 		err := vtmClient.Do(getAllAPI)
 		if err != nil {
 			return fmt.Errorf("Error: %+v", err)
 		}
-		foundMonitor := getAllAPI.GetResponse().FilterByName(monitorName)
-		if foundMonitor.Name != monitorName {
-			return fmt.Errorf("Brocade vTM Monitor %s not found on remote vTM", monitorName)
+		for _, monitorChild := range getAllAPI.ResponseObject().(*monitor.MonitorsList).Children {
+			if monitorChild.Name == monitorName {
+				return fmt.Errorf("Brocade vTM Monitor %s not found on remote vTM", monitorName)
+			}
 		}
 		return nil
 	}

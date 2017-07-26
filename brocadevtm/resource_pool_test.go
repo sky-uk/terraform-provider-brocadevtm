@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/pool"
+	"github.com/sky-uk/go-rest-api"
 	"regexp"
 	"testing"
 )
@@ -109,7 +109,7 @@ func TestAccPool_Basic(t *testing.T) {
 }
 
 func testAccPoolCheckDestroy(s *terraform.State) error {
-	vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
+	vtmClient := testAccProvider.Meta().(*rest.Client)
 	var name string
 	for _, r := range s.RootModule().Resources {
 		if r.Type != "brocadevtm_pool" {
@@ -120,7 +120,7 @@ func testAccPoolCheckDestroy(s *terraform.State) error {
 			return nil
 		}
 
-		api := pool.NewGetSingle(name)
+		api := pool.NewGet(name)
 		err := vtmClient.Do(api)
 
 		if err != nil {
@@ -145,9 +145,9 @@ func testCheckPoolExists(name string) resource.TestCheckFunc {
 			return fmt.Errorf("No pool name is set")
 		}
 
-		vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
+		vtmClient := testAccProvider.Meta().(*rest.Client)
 
-		api := pool.NewGetSingle(rs.Primary.Attributes["name"])
+		api := pool.NewGet(rs.Primary.Attributes["name"])
 		err := vtmClient.Do(api)
 
 		if err != nil {

@@ -3,7 +3,7 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm"
+	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/go-brocade-vtm/api/virtualserver"
 	"net/http"
 	"regexp"
@@ -326,7 +326,7 @@ func buildSSLOCSPIssuers(ocspIssuers []interface{}) []virtualserver.OCSPIssuer {
 
 func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 	var virtualServerName string
 	var virtualServer virtualserver.VirtualServer
 
@@ -424,7 +424,7 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server Create failed for %s with error: %+v", virtualServerName, err))
 	}
 	if createAPI.StatusCode() != http.StatusCreated {
-		return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server Create failed for %s with http status code != 201 - error: %+v", virtualServerName, createAPI.GetResponse()))
+		return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server Create failed for %s with http status code != 201 - error: %+v", virtualServerName, createAPI.ResponseObject().(*virtualserver.VirtualServer)))
 	}
 	d.SetId(virtualServerName)
 	return resourceVirtualServerRead(d, m)
@@ -432,7 +432,7 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 	var virtualServerName string
 	var virtualServer virtualserver.VirtualServer
 
@@ -440,7 +440,7 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 		virtualServerName = v.(string)
 	}
 
-	getSingleAPI := virtualserver.NewGetSingle(virtualServerName)
+	getSingleAPI := virtualserver.NewGet(virtualServerName)
 	err := vtmClient.Do(getSingleAPI)
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server Read failed for %s with error: %+v", virtualServerName, err))
@@ -450,7 +450,7 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
-	virtualServer = *getSingleAPI.GetResponse()
+	virtualServer = *getSingleAPI.ResponseObject().(*virtualserver.VirtualServer)
 	d.SetId(virtualServerName)
 	d.Set("enabled", *virtualServer.Properties.Basic.Enabled)
 	d.Set("listen_on_any", *virtualServer.Properties.Basic.ListenOnAny)
@@ -482,7 +482,7 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 
 func resourceVirtualServerUpdate(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 	var virtualServerName string
 	var virtualServer virtualserver.VirtualServer
 	hasChanges := false
@@ -646,7 +646,7 @@ func resourceVirtualServerUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 		responseCode := updateAPI.StatusCode()
 		if responseCode != http.StatusOK {
-			return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server update failed for %s with invalid response code %d - response: %+v", virtualServerName, responseCode, updateAPI.GetResponse()))
+			return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server update failed for %s with invalid response code %d - response: %+v", virtualServerName, responseCode, updateAPI.ResponseObject().(*virtualserver.VirtualServer)))
 		}
 	}
 	return resourceVirtualServerRead(d, m)
@@ -654,13 +654,13 @@ func resourceVirtualServerUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceVirtualServerDelete(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 	var virtualServerName string
 
 	if v, ok := d.GetOk("name"); ok && v != "" {
 		virtualServerName = v.(string)
 	}
-	getVirtualServer := virtualserver.NewGetSingle(virtualServerName)
+	getVirtualServer := virtualserver.NewGet(virtualServerName)
 	err := vtmClient.Do(getVirtualServer)
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server delete failed for %s - error: %+v", virtualServerName, err))

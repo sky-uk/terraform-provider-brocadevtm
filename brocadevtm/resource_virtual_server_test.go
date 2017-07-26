@@ -5,7 +5,7 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm"
+	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/go-brocade-vtm/api/virtualserver"
 	"regexp"
 	"testing"
@@ -150,7 +150,7 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 
 func testAccBrocadeVTMVirtualServerCheckDestroy(state *terraform.State, name string) error {
 
-	vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
+	vtmClient := testAccProvider.Meta().(*rest.Client)
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "brocadevtm_virtual_server" {
@@ -164,7 +164,7 @@ func testAccBrocadeVTMVirtualServerCheckDestroy(state *terraform.State, name str
 		if err != nil {
 			return fmt.Errorf("Brocade vTM Virtual Server - error occurred while retrieving a list of all virtual servers")
 		}
-		for _, virtualServer := range api.GetResponse().Children {
+		for _, virtualServer := range api.ResponseObject().(*virtualserver.VirtualServersList).Children {
 			if virtualServer.Name == name {
 				return fmt.Errorf("Brocade vTM Virtual Server %s still exists", name)
 			}
@@ -184,13 +184,13 @@ func testAccBrocadeVTMVirtualServerExists(virtualServerName, virtualServerResour
 			return fmt.Errorf("\nBrocade vTM Virtual Server ID not set for %s in resources", virtualServerName)
 		}
 
-		vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
+		vtmClient := testAccProvider.Meta().(*rest.Client)
 		api := virtualserver.NewGetAll()
 		err := vtmClient.Do(api)
 		if err != nil {
 			return fmt.Errorf("Error: %+v", err)
 		}
-		for _, virtualServer := range api.GetResponse().Children {
+		for _, virtualServer := range api.ResponseObject().(*virtualserver.VirtualServersList).Children {
 			if virtualServer.Name == virtualServerName {
 				return nil
 			}

@@ -3,7 +3,7 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm"
+	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/go-brocade-vtm/api/rule"
 	"net/http"
 )
@@ -34,12 +34,13 @@ func resourceRuleCreate(d *schema.ResourceData, m interface{}) error {
 
 	var vtmRule rule.TrafficScriptRule
 
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
+	/*
 	headers := make(map[string]string)
 	headers["Content-Type"] = "application/octet-stream"
 	headers["Content-Transfer-Encoding"] = "text"
 	vtmClient.Headers = headers
-
+	*/
 	if v, ok := d.GetOk("name"); ok && v != "" {
 		vtmRule.Name = v.(string)
 	}
@@ -61,14 +62,16 @@ func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 
 	var vtmRule rule.TrafficScriptRule
 
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
+	/*
 	headers := make(map[string]string)
 	headers["Content-Type"] = "application/octet-stream"
 	headers["Content-Transfer-Encoding"] = "text"
 	vtmClient.Headers = headers
+	*/
 
 	vtmRule.Name = d.Id()
-	readAPI := rule.NewGetRule(vtmRule.Name)
+	readAPI := rule.NewGet(vtmRule.Name)
 	err := vtmClient.Do(readAPI)
 	if readAPI.StatusCode() == http.StatusNotFound {
 		d.SetId("")
@@ -77,7 +80,10 @@ func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("Error while retrieving rule %s: %v", vtmRule.Name, err)
 	}
-	vtmRule.Script = readAPI.GetResponse()
+
+	response := readAPI.ResponseObject().(*rule.TrafficScriptRule)
+	vtmRule.Script = response.Script
+
 	d.SetId(vtmRule.Name)
 	d.Set("rule", vtmRule.Script)
 
@@ -98,11 +104,13 @@ func resourceRuleUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if hasChanges {
-		vtmClient := m.(*brocadevtm.VTMClient)
+		vtmClient := m.(*rest.Client)
+		/*
 		headers := make(map[string]string)
 		headers["Content-Type"] = "application/octet-stream"
 		headers["Content-Transfer-Encoding"] = "text"
 		vtmClient.Headers = headers
+		*/
 
 		updateAPI := rule.NewUpdate(vtmRule.Name, []byte(fmt.Sprintf(vtmRule.Script)))
 		err := vtmClient.Do(updateAPI)
@@ -118,7 +126,7 @@ func resourceRuleUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceRuleDelete(d *schema.ResourceData, m interface{}) error {
 
 	var vtmRule rule.TrafficScriptRule
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 
 	vtmRule.Name = d.Id()
 	deleteAPI := rule.NewDelete(vtmRule.Name)
