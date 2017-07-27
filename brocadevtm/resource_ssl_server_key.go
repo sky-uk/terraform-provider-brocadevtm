@@ -148,10 +148,9 @@ func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error 
 		updateSSLServerKey := sslServerKey.NewUpdate(name, payloadObject)
 		err := vtmClient.Do(updateSSLServerKey)
 		if err != nil {
-			// TODO this is odd? Why?
-			d.SetId("")
 			return fmt.Errorf("BrocadeVTM SSL Server Key error whilst updating %s: %v", name, err)
 		}
+		d.SetId(name)
 	}
 	return resourceSSLServerKeyRead(d, meta)
 }

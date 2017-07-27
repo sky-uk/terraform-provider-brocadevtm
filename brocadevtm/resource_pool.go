@@ -25,7 +25,6 @@ func resourcePool() *schema.Resource {
 			"node": {
 				Type:     schema.TypeSet,
 				Required: true,
-				ForceNew: false,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"node": {
@@ -34,8 +33,9 @@ func resourcePool() *schema.Resource {
 							ValidateFunc: validateNode,
 						},
 						"priority": {
-							Type:     schema.TypeInt,
-							Required: true,
+							Type:         schema.TypeInt,
+							Required:     true,
+							ValidateFunc: validatePoolUnsignedInteger,
 						},
 						"state": {
 							Type:         schema.TypeString,
@@ -53,82 +53,92 @@ func resourcePool() *schema.Resource {
 			"monitorlist": {
 				Type:     schema.TypeList,
 				Required: true,
-				ForceNew: false,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 			"max_connection_attempts": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: false,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validatePoolUnsignedInteger,
+				Default:      0,
 			},
 			"max_idle_connections_pernode": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: false,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validatePoolUnsignedInteger,
+				Default:      50,
 			},
 			"max_timed_out_connection_attempts": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: false,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validatePoolUnsignedInteger,
+				Default:      2,
 			},
 			"node_close_with_rst": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				ForceNew: false,
 			},
 			"max_connection_timeout": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: false,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validatePoolUnsignedInteger,
+				Default:      4,
 			},
 			"max_connections_per_node": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: false,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validatePoolUnsignedInteger,
 			},
 			"max_queue_size": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: false,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validatePoolUnsignedInteger,
+				Default:      0,
 			},
 			"max_reply_time": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: false,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validatePoolUnsignedInteger,
+				Default:      30,
 			},
 			"queue_timeout": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: false,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validatePoolUnsignedInteger,
+				Default:      10,
 			},
 			"http_keepalive": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				ForceNew: false,
 			},
 			"http_keepalive_non_idempotent": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				ForceNew: false,
 			},
 			"load_balancing_priority_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				ForceNew: false,
 			},
 			"load_balancing_priority_nodes": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: false,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validatePoolUnsignedInteger,
+				Default:      1,
 			},
 			"tcp_nagle": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				ForceNew: false,
 			},
 		},
 	}
 
+}
+
+func validatePoolUnsignedInteger(v interface{}, k string) (ws []string, errors []error) {
+	checkNumber := v.(int)
+	if checkNumber < 0 {
+		errors = append(errors, fmt.Errorf("%q can't be negative", k))
+	}
+	return
 }
 
 func validateNode(v interface{}, k string) (ws []string, errors []error) {
@@ -193,6 +203,14 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 			createPool.Properties.Basic.NodesTable = nodeList
 		}
 	}
+	if v, ok := d.GetOk("monitorlist"); ok {
+		originalMonitors := v.([]interface{})
+		monitors := make([]string, len(originalMonitors))
+		for i, monitor := range originalMonitors {
+			monitors[i] = monitor.(string)
+		}
+		createPool.Properties.Basic.Monitors = monitors
+	}
 	if v, ok := d.GetOk("max_connection_attempts"); ok {
 		createPool.Properties.Basic.MaxConnectionAttempts = v.(int)
 	}
@@ -201,14 +219,6 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	}
 	if v, ok := d.GetOk("max_timed_out_connection_attempts"); ok {
 		createPool.Properties.Basic.MaxTimeoutConnectionAttempts = v.(int)
-	}
-	if v, ok := d.GetOk("monitorlist"); ok {
-		originalMonitors := v.([]interface{})
-		monitors := make([]string, len(originalMonitors))
-		for i, monitor := range originalMonitors {
-			monitors[i] = monitor.(string)
-		}
-		createPool.Properties.Basic.Monitors = monitors
 	}
 	if v, ok := d.GetOk("node_close_with_rst"); ok {
 		nodeCloseWithReset := v.(bool)
@@ -230,7 +240,7 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("queue_timeout"); ok {
 		createPool.Properties.Connection.QueueTimeout = v.(int)
 	}
-	if v, ok := d.GetOk("http_keepalive"); ok {
+	if v, _ := d.GetOk("http_keepalive"); v != nil {
 		httpKeepAlive := v.(bool)
 		createPool.Properties.HTTP.HTTPKeepAlive = &httpKeepAlive
 	}
@@ -245,7 +255,7 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("load_balancing_priority_nodes"); ok {
 		createPool.Properties.LoadBalancing.PriorityNodes = v.(int)
 	}
-	if v, ok := d.GetOk("tcp_nagle"); ok {
+	if v, _ := d.GetOk("tcp_nagle"); v != nil {
 		tcpNagle := v.(bool)
 		createPool.Properties.TCP.Nagle = &tcpNagle
 	}
@@ -262,6 +272,7 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 
 // resourcePoolRead - Reads a  pool resource
 func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
+
 	vtmClient := m.(*rest.Client)
 	var poolName string
 
@@ -282,10 +293,10 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 
 	d.Set("name", poolName)
 	d.Set("node", response.Properties.Basic.NodesTable)
+	d.Set("monitorlist", response.Properties.Basic.Monitors)
 	d.Set("max_connection_attempts", response.Properties.Basic.MaxConnectionAttempts)
 	d.Set("max_idle_connections_pernode", response.Properties.Basic.MaxIdleConnectionsPerNode)
 	d.Set("max_timed_out_connection_attempts", response.Properties.Basic.MaxTimeoutConnectionAttempts)
-	d.Set("monitorlist", response.Properties.Basic.Monitors)
 	d.Set("node_close_with_rst", response.Properties.Basic.NodeCloseWithReset)
 	d.Set("max_connection_timeout", response.Properties.Connection.MaxConnectTime)
 	d.Set("max_connections_per_node", response.Properties.Connection.MaxConnectionsPerNode)
@@ -293,8 +304,8 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("max_reply_time", response.Properties.Connection.MaxReplyTime)
 	d.Set("queue_timeout", response.Properties.Connection.QueueTimeout)
 	d.Set("http_keepalive", *response.Properties.HTTP.HTTPKeepAlive)
-	d.Set("http_keepalive_non_idempotent", response.Properties.HTTP.HTTPKeepAliveNonIdempotent)
-	d.Set("load_balancing_priority_enabled", response.Properties.LoadBalancing.PriorityEnabled)
+	d.Set("http_keepalive_non_idempotent", *response.Properties.HTTP.HTTPKeepAliveNonIdempotent)
+	d.Set("load_balancing_priority_enabled", *response.Properties.LoadBalancing.PriorityEnabled)
 	d.Set("load_balancing_priority_nodes", response.Properties.LoadBalancing.PriorityNodes)
 	d.Set("tcp_nagle", *response.Properties.TCP.Nagle)
 
@@ -303,12 +314,14 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 
 // resourcePoolUpdate - Updates an existing pool resource
 func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
+
 	vtmClient := m.(*rest.Client)
 	var poolName string
 	var updatePool pool.Pool
+	hasChanges := false
+
 	if v, ok := d.GetOk("name"); ok {
 		poolName = v.(string)
-
 	}
 
 	if d.HasChange("node") {
@@ -336,6 +349,7 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 				updatePool.Properties.Basic.NodesTable = nodeList
 			}
 		}
+		hasChanges = true
 	}
 
 	if d.HasChange("monitorlist") {
@@ -347,24 +361,28 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 			}
 			updatePool.Properties.Basic.Monitors = monitors
 		}
+		hasChanges = true
 	}
 
 	if d.HasChange("max_connection_attempts") {
 		if v, ok := d.GetOk("max_connection_attempts"); ok {
 			updatePool.Properties.Basic.MaxConnectionAttempts = v.(int)
 		}
+		hasChanges = true
 	}
 
 	if d.HasChange("max_idle_connections_pernode") {
 		if v, ok := d.GetOk("max_idle_connections_pernode"); ok {
 			updatePool.Properties.Basic.MaxIdleConnectionsPerNode = v.(int)
 		}
+		hasChanges = true
 	}
 
 	if d.HasChange("max_timed_out_connection_attempts") {
 		if v, ok := d.GetOk("max_timed_out_connection_attempts"); ok {
 			updatePool.Properties.Basic.MaxTimeoutConnectionAttempts = v.(int)
 		}
+		hasChanges = true
 	}
 
 	if d.HasChange("node_close_with_rst") {
@@ -372,43 +390,48 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 			nodeCloseWithRst := v.(bool)
 			updatePool.Properties.Basic.NodeCloseWithReset = &nodeCloseWithRst
 		}
+		hasChanges = true
 	}
 
 	if d.HasChange("max_connection_timeout") {
 		if v, ok := d.GetOk("max_connection_timeout"); ok {
 			updatePool.Properties.Connection.MaxConnectTime = v.(int)
 		}
+		hasChanges = true
 	}
 
 	if d.HasChange("max_connections_per_node") {
 		if v, ok := d.GetOk("max_connections_per_node"); ok {
 			updatePool.Properties.Connection.MaxConnectionsPerNode = v.(int)
 		}
+		hasChanges = true
 	}
 
 	if d.HasChange("max_queue_size") {
 		if v, ok := d.GetOk("max_queue_size"); ok {
 			updatePool.Properties.Connection.MaxQueueSize = v.(int)
 		}
+		hasChanges = true
 	}
 
 	if d.HasChange("max_reply_time") {
 		if v, ok := d.GetOk("max_reply_time"); ok {
 			updatePool.Properties.Connection.MaxReplyTime = v.(int)
 		}
+		hasChanges = true
 	}
 
 	if d.HasChange("queue_timeout") {
 		if v, ok := d.GetOk("queue_timeout"); ok {
 			updatePool.Properties.Connection.QueueTimeout = v.(int)
 		}
+		hasChanges = true
 	}
 
 	if d.HasChange("http_keepalive") {
-		if v, ok := d.GetOk("http_keepalive"); ok {
-			httpKeepAlive := v.(bool)
-			updatePool.Properties.HTTP.HTTPKeepAlive = &httpKeepAlive
-		}
+		httpKeepAlive := d.Get("http_keepalive").(bool)
+		updatePool.Properties.HTTP.HTTPKeepAlive = &httpKeepAlive
+		hasChanges = true
 	}
 
 	if d.HasChange("http_keepalive_non_idempotent") {
@@ -416,6 +439,7 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 			httpKeepAliveNonIdempotent := v.(bool)
 			updatePool.Properties.HTTP.HTTPKeepAliveNonIdempotent = &httpKeepAliveNonIdempotent
 		}
+		hasChanges = true
 	}
 
 	if d.HasChange("load_balancing_priority_enabled") {
@@ -423,27 +447,30 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 			loadBalancingPriorityEnabled := v.(bool)
 			updatePool.Properties.LoadBalancing.PriorityEnabled = &loadBalancingPriorityEnabled
 		}
+		hasChanges = true
 	}
 
 	if d.HasChange("load_balancing_priority_nodes") {
 		if v, ok := d.GetOk("load_balancing_priority_nodes"); ok {
 			updatePool.Properties.LoadBalancing.PriorityNodes = v.(int)
 		}
+		hasChanges = true
 	}
 
 	if d.HasChange("tcp_nagle") {
-		if v, ok := d.GetOk("tcp_nagle"); ok {
-			tcpNagle := v.(bool)
-			updatePool.Properties.TCP.Nagle = &tcpNagle
+		tcpNagle := d.Get("tcp_nagle").(bool)
+		updatePool.Properties.TCP.Nagle = &tcpNagle
+		hasChanges = true
+	}
+
+	if hasChanges {
+		updatePoolAPI := pool.NewUpdate(poolName, updatePool)
+		updatePoolErr := vtmClient.Do(updatePoolAPI)
+		if updatePoolErr != nil {
+			return fmt.Errorf("BrocadeVTM Pool error whilst updating %s: %v", poolName, updatePoolErr)
 		}
+		d.SetId(poolName)
 	}
-
-	updatePoolAPI := pool.NewUpdate(poolName, updatePool)
-	updatePoolErr := vtmClient.Do(updatePoolAPI)
-	if updatePoolErr != nil {
-		return fmt.Errorf("BrocadeVTM Pool error whilst updating %s: %v", poolName, updatePoolErr)
-	}
-
 	return resourcePoolRead(d, m)
 
 }

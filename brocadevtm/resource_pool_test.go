@@ -23,6 +23,10 @@ func TestAccPool_Basic(t *testing.T) {
 		CheckDestroy: testAccPoolCheckDestroy,
 		Steps: []resource.TestStep{
 			{
+				Config:      testAccPoolNodeUnsignedInt(poolName),
+				ExpectError: regexp.MustCompile(`can't be negative`),
+			},
+			{
 				Config:      testAccPoolNoName(),
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
@@ -155,6 +159,34 @@ func testCheckPoolExists(name string) resource.TestCheckFunc {
 
 		return nil
 	}
+}
+
+func testAccPoolNodeUnsignedInt(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  monitorlist = ["ping"]
+  node {
+    node="127.0.0.1:80"
+    priority=1
+    state="active"
+    weight=1
+  }
+  max_connection_attempts = -10
+  max_idle_connections_pernode = 20
+  max_timed_out_connection_attempts = 20
+  node_close_with_rst = false
+  max_connection_timeout = 60
+  max_connections_per_node = 10
+  max_queue_size = 20
+  max_reply_time = 60
+  queue_timeout = 60
+  http_keepalive = false
+  http_keepalive_non_idempotent = false
+  load_balancing_priority_enabled = false
+  load_balancing_priority_nodes = 8
+  tcp_nagle = false
+}`, poolName)
 }
 
 func testAccPoolInvalidNodeNoPort(poolName string) string {
