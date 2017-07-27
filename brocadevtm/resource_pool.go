@@ -234,7 +234,7 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("max_timed_out_connection_attempts"); ok {
 		createPool.Properties.Basic.MaxTimeoutConnectionAttempts = v.(int)
 	}
-	if v, ok := d.GetOk("node_close_with_rst"); ok {
+	if v, _ := d.GetOk("node_close_with_rst"); v != nil {
 		nodeCloseWithReset := v.(bool)
 		createPool.Properties.Basic.NodeCloseWithReset = &nodeCloseWithReset
 	}
@@ -258,11 +258,11 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 		httpKeepAlive := v.(bool)
 		createPool.Properties.HTTP.HTTPKeepAlive = &httpKeepAlive
 	}
-	if v, ok := d.GetOk("http_keepalive_non_idempotent"); ok {
+	if v, _ := d.GetOk("http_keepalive_non_idempotent"); v != nil {
 		httpKeepAliveNonIdempotent := v.(bool)
 		createPool.Properties.HTTP.HTTPKeepAliveNonIdempotent = &httpKeepAliveNonIdempotent
 	}
-	if v, ok := d.GetOk("load_balancing_priority_enabled"); ok {
+	if v, _ := d.GetOk("load_balancing_priority_enabled"); v != nil {
 		loadBalancingPriorityEnabled := v.(bool)
 		createPool.Properties.LoadBalancing.PriorityEnabled = &loadBalancingPriorityEnabled
 	}
@@ -314,7 +314,7 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("max_connection_attempts", response.Properties.Basic.MaxConnectionAttempts)
 	d.Set("max_idle_connections_pernode", response.Properties.Basic.MaxIdleConnectionsPerNode)
 	d.Set("max_timed_out_connection_attempts", response.Properties.Basic.MaxTimeoutConnectionAttempts)
-	d.Set("node_close_with_rst", response.Properties.Basic.NodeCloseWithReset)
+	d.Set("node_close_with_rst", *response.Properties.Basic.NodeCloseWithReset)
 	d.Set("max_connection_timeout", response.Properties.Connection.MaxConnectTime)
 	d.Set("max_connections_per_node", response.Properties.Connection.MaxConnectionsPerNode)
 	d.Set("max_queue_size", response.Properties.Connection.MaxQueueSize)
@@ -404,10 +404,8 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if d.HasChange("node_close_with_rst") {
-		if v, ok := d.GetOk("node_close_with_rst"); ok {
-			nodeCloseWithRst := v.(bool)
-			updatePool.Properties.Basic.NodeCloseWithReset = &nodeCloseWithRst
-		}
+		nodeCloseWithRst := d.Get("node_close_with_rst").(bool)
+		updatePool.Properties.Basic.NodeCloseWithReset = &nodeCloseWithRst
 		hasChanges = true
 	}
 
@@ -453,18 +451,14 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if d.HasChange("http_keepalive_non_idempotent") {
-		if v, ok := d.GetOk("http_keepalive_non_idempotent"); ok {
-			httpKeepAliveNonIdempotent := v.(bool)
-			updatePool.Properties.HTTP.HTTPKeepAliveNonIdempotent = &httpKeepAliveNonIdempotent
-		}
+		httpKeepAliveNonIdempotent := d.Get("http_keepalive_non_idempotent").(bool)
+		updatePool.Properties.HTTP.HTTPKeepAliveNonIdempotent = &httpKeepAliveNonIdempotent
 		hasChanges = true
 	}
 
 	if d.HasChange("load_balancing_priority_enabled") {
-		if v, ok := d.GetOk("load_balancing_priority_enabled"); ok {
-			loadBalancingPriorityEnabled := v.(bool)
-			updatePool.Properties.LoadBalancing.PriorityEnabled = &loadBalancingPriorityEnabled
-		}
+		loadBalancingPriorityEnabled := d.Get("load_balancing_priority_enabled").(bool)
+		updatePool.Properties.LoadBalancing.PriorityEnabled = &loadBalancingPriorityEnabled
 		hasChanges = true
 	}
 
