@@ -3,8 +3,8 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/go-brocade-vtm/api/virtualserver"
+	"github.com/sky-uk/go-rest-api"
 	"net/http"
 	"regexp"
 )
@@ -327,6 +327,7 @@ func buildSSLOCSPIssuers(ocspIssuers []interface{}) []virtualserver.OCSPIssuer {
 func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 
 	vtmClient := m.(*rest.Client)
+
 	var virtualServerName string
 	var virtualServer virtualserver.VirtualServer
 
@@ -421,10 +422,7 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 	createAPI := virtualserver.NewCreate(virtualServerName, virtualServer)
 	err := vtmClient.Do(createAPI)
 	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server Create failed for %s with error: %+v", virtualServerName, err))
-	}
-	if createAPI.StatusCode() != http.StatusCreated {
-		return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server Create failed for %s with http status code != 201 - error: %+v", virtualServerName, createAPI.ResponseObject().(*virtualserver.VirtualServer)))
+		return fmt.Errorf(fmt.Sprintf("BrocadeVTM Virtual Server error whilst creating %s: %v", virtualServerName, err))
 	}
 	d.SetId(virtualServerName)
 	return resourceVirtualServerRead(d, m)
@@ -443,11 +441,11 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 	getSingleAPI := virtualserver.NewGet(virtualServerName)
 	err := vtmClient.Do(getSingleAPI)
 	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server Read failed for %s with error: %+v", virtualServerName, err))
-	}
-	if getSingleAPI.StatusCode() == http.StatusNotFound {
-		d.SetId("")
-		return nil
+		if getSingleAPI.StatusCode() == http.StatusNotFound {
+			d.SetId("")
+			return nil
+		}
+		return fmt.Errorf(fmt.Sprintf("BrocadeVTM Virtual Server error whilst retrieving %s: %v", virtualServerName, err))
 	}
 
 	virtualServer = *getSingleAPI.ResponseObject().(*virtualserver.VirtualServer)
@@ -642,11 +640,7 @@ func resourceVirtualServerUpdate(d *schema.ResourceData, m interface{}) error {
 		updateAPI := virtualserver.NewUpdate(virtualServerName, virtualServer)
 		err := vtmClient.Do(updateAPI)
 		if err != nil {
-			return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server update failed for %s", virtualServerName))
-		}
-		responseCode := updateAPI.StatusCode()
-		if responseCode != http.StatusOK {
-			return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server update failed for %s with invalid response code %d - response: %+v", virtualServerName, responseCode, updateAPI.ResponseObject().(*virtualserver.VirtualServer)))
+			return fmt.Errorf(fmt.Sprintf("BrocadeVTM Virtual Server error whilst updating %s: %v", virtualServerName, err))
 		}
 	}
 	return resourceVirtualServerRead(d, m)
@@ -660,23 +654,11 @@ func resourceVirtualServerDelete(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("name"); ok && v != "" {
 		virtualServerName = v.(string)
 	}
-	getVirtualServer := virtualserver.NewGet(virtualServerName)
-	err := vtmClient.Do(getVirtualServer)
-	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server delete failed for %s - error: %+v", virtualServerName, err))
-	}
-	if getVirtualServer.StatusCode() == http.StatusNotFound {
-		d.SetId("")
-		return nil
-	}
+
 	deleteAPI := virtualserver.NewDelete(virtualServerName)
-	err = vtmClient.Do(deleteAPI)
-	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server delete failed for %s - error: %+v", virtualServerName, err))
-	}
-	responseCode := deleteAPI.StatusCode()
-	if responseCode != http.StatusNoContent {
-		return fmt.Errorf(fmt.Sprintf("Brocade vTM Virtual Server delete returned an invalid http response code %d for %s", responseCode, virtualServerName))
+	err := vtmClient.Do(deleteAPI)
+	if err != nil && deleteAPI.StatusCode() != http.StatusNotFound {
+		return fmt.Errorf(fmt.Sprintf("BrocadeVTM Virtual Server error whilst deleting %s: %v", virtualServerName, err))
 	}
 
 	d.SetId("")

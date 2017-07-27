@@ -3,9 +3,9 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/go-brocade-vtm/api/pool"
-	"log"
+	"github.com/sky-uk/go-rest-api"
+	"net/http"
 	"regexp"
 )
 
@@ -162,13 +162,13 @@ func validateState(v interface{}, k string) (ws []string, errors []error) {
 func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 
 	vtmClient := m.(*rest.Client)
+
 	var createPool pool.Pool
 	var poolName string
 	if v, ok := d.GetOk("name"); ok {
 		poolName = v.(string)
-	} else {
-		return fmt.Errorf("Pool name argument required")
 	}
+
 	if v, ok := d.GetOk("node"); ok {
 		if nodes, ok := v.(*schema.Set); ok {
 			nodeList := []pool.MemberNode{}
@@ -192,7 +192,6 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 			}
 			createPool.Properties.Basic.NodesTable = nodeList
 		}
-
 	}
 	if v, ok := d.GetOk("max_connection_attempts"); ok {
 		createPool.Properties.Basic.MaxConnectionAttempts = v.(int)
@@ -254,10 +253,7 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	createAPI := pool.NewCreate(poolName, createPool)
 	err := vtmClient.Do(createAPI)
 	if err != nil {
-		return fmt.Errorf("Could not create pool: %+v", err)
-	}
-	if createAPI.StatusCode() != 201 && createAPI.StatusCode() != 200 {
-		return fmt.Errorf("Invalid HTTP response code %+v returned. Response object was %+v", createAPI.StatusCode(), createAPI.ResponseObject())
+		return fmt.Errorf("BrocadeVTM Pool error whilst creating %s: %v", poolName, err)
 	}
 
 	d.SetId(poolName)
@@ -267,98 +263,20 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 // resourcePoolRead - Reads a  pool resource
 func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	vtmClient := m.(*rest.Client)
-	//var readPool pool.Pool
 	var poolName string
+
 	if v, ok := d.GetOk("name"); ok {
 		poolName = v.(string)
 	}
-	/*
-	if v, ok := d.GetOk("node"); ok {
-		if nodes, ok := v.(*schema.Set); ok {
-			nodeList := []pool.MemberNode{}
-			for _, value := range nodes.List() {
-				nodeObject := value.(map[string]interface{})
-				newNode := pool.MemberNode{}
-				if nodeValue, ok := nodeObject["node"].(string); ok {
-					newNode.Node = nodeValue
-				}
-				if priorityValue, ok := nodeObject["priority"].(int); ok {
-					newNode.Priority = priorityValue
-				}
-				if stateValue, ok := nodeObject["state"].(string); ok {
-					newNode.State = stateValue
-				}
-				if weightValue, ok := nodeObject["weight"].(int); ok {
-					newNode.Weight = weightValue
-				}
-				nodeList = append(nodeList, newNode)
-
-			}
-			readPool.Properties.Basic.NodesTable = nodeList
-		}
-
-	}
-	if v, ok := d.GetOk("max_connection_attempts"); ok {
-		readPool.Properties.Basic.MaxConnectionAttempts = v.(int)
-	}
-	if v, ok := d.GetOk("max_idle_connections_pernode"); ok {
-		readPool.Properties.Basic.MaxIdleConnectionsPerNode = v.(int)
-	}
-	if v, ok := d.GetOk("max_timed_out_connection_attempts"); ok {
-		readPool.Properties.Basic.MaxTimeoutConnectionAttempts = v.(int)
-	}
-	if v, ok := d.GetOk("monitorlist"); ok {
-		originalMonitors := v.([]interface{})
-		monitors := make([]string, len(originalMonitors))
-		for i, monitor := range originalMonitors {
-			monitors[i] = monitor.(string)
-		}
-		readPool.Properties.Basic.Monitors = monitors
-	}
-	if v, ok := d.GetOk("node_close_with_rst"); ok {
-		nodeCloseWithRst := v.(bool)
-		readPool.Properties.Basic.NodeCloseWithReset = &nodeCloseWithRst
-	}
-	if v, ok := d.GetOk("max_connection_timeout"); ok {
-		readPool.Properties.Connection.MaxConnectTime = v.(int)
-	}
-	if v, ok := d.GetOk("max_connections_per_node"); ok {
-		readPool.Properties.Connection.MaxConnectionsPerNode = v.(int)
-	}
-	if v, ok := d.GetOk("max_queue_size"); ok {
-		readPool.Properties.Connection.MaxQueueSize = v.(int)
-	}
-	if v, ok := d.GetOk("max_reply_time"); ok {
-		readPool.Properties.Connection.MaxReplyTime = v.(int)
-	}
-	if v, ok := d.GetOk("queue_timeout"); ok {
-		readPool.Properties.Connection.QueueTimeout = v.(int)
-	}
-	if v, ok := d.GetOk("http_keepalive"); ok {
-		httpKeepAlive := v.(bool)
-		readPool.Properties.HTTP.HTTPKeepAlive = &httpKeepAlive
-	}
-	if v, ok := d.GetOk("http_keepalive_non_idempotent"); ok {
-		httpKeepAliveNonIdempotent := v.(bool)
-		readPool.Properties.HTTP.HTTPKeepAliveNonIdempotent = &httpKeepAliveNonIdempotent
-	}
-	if v, ok := d.GetOk("load_balancing_priority_enabled"); ok {
-		loadBalancingPriorityEnabled := v.(bool)
-		readPool.Properties.LoadBalancing.PriorityEnabled = &loadBalancingPriorityEnabled
-	}
-	if v, ok := d.GetOk("load_balancing_priority_nodes"); ok {
-		readPool.Properties.LoadBalancing.PriorityNodes = v.(int)
-	}
-	if v, ok := d.GetOk("tcp_nagle"); ok {
-		tcpNagle := v.(bool)
-		readPool.Properties.TCP.Nagle = &tcpNagle
-	}
-	*/
 
 	getAPI := pool.NewGet(poolName)
 	readErr := vtmClient.Do(getAPI)
 	if readErr != nil {
-		return fmt.Errorf("Error reading pool:", readErr)
+		if getAPI.StatusCode() == http.StatusNotFound {
+			d.SetId("")
+			return nil
+		}
+		return fmt.Errorf("BrocadeVTM Pool error whilst retrieving %s: %v", poolName, readErr)
 	}
 	response := getAPI.ResponseObject().(*pool.Pool)
 
@@ -374,29 +292,12 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("max_queue_size", response.Properties.Connection.MaxQueueSize)
 	d.Set("max_reply_time", response.Properties.Connection.MaxReplyTime)
 	d.Set("queue_timeout", response.Properties.Connection.QueueTimeout)
-	d.Set("http_keepalive", response.Properties.HTTP.HTTPKeepAlive)
+	d.Set("http_keepalive", *response.Properties.HTTP.HTTPKeepAlive)
 	d.Set("http_keepalive_non_idempotent", response.Properties.HTTP.HTTPKeepAliveNonIdempotent)
 	d.Set("load_balancing_priority_enabled", response.Properties.LoadBalancing.PriorityEnabled)
 	d.Set("load_balancing_priority_nodes", response.Properties.LoadBalancing.PriorityNodes)
-	d.Set("tcp_nagle", response.Properties.TCP.Nagle)
+	d.Set("tcp_nagle", *response.Properties.TCP.Nagle)
 
-	return nil
-}
-
-// resourcePoolDelete - Deletes a pool resource
-
-func resourcePoolDelete(d *schema.ResourceData, m interface{}) error {
-	vtmClient := m.(*rest.Client)
-	var poolName string
-	if v, ok := d.GetOk("name"); ok {
-		poolName = v.(string)
-	}
-	deleteAPI := pool.NewDelete(poolName)
-	deleteErr := vtmClient.Do(deleteAPI)
-	if deleteErr != nil {
-		log.Println("Error Deleting the pool:", deleteErr)
-	}
-	d.SetId("")
 	return nil
 }
 
@@ -408,8 +309,6 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("name"); ok {
 		poolName = v.(string)
 
-	} else {
-		return fmt.Errorf("Pool name argument required")
 	}
 
 	if d.HasChange("node") {
@@ -542,9 +441,27 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	updatePoolAPI := pool.NewUpdate(poolName, updatePool)
 	updatePoolErr := vtmClient.Do(updatePoolAPI)
 	if updatePoolErr != nil {
-		return fmt.Errorf("Error updating pool %s", updatePoolErr)
+		return fmt.Errorf("BrocadeVTM Pool error whilst updating %s: %v", poolName, updatePoolErr)
 	}
 
 	return resourcePoolRead(d, m)
 
+}
+
+// resourcePoolDelete - Deletes a pool resource
+func resourcePoolDelete(d *schema.ResourceData, m interface{}) error {
+
+	vtmClient := m.(*rest.Client)
+	var poolName string
+	if v, ok := d.GetOk("name"); ok {
+		poolName = v.(string)
+	}
+
+	deleteAPI := pool.NewDelete(poolName)
+	deleteErr := vtmClient.Do(deleteAPI)
+	if deleteErr != nil && deleteAPI.StatusCode() != http.StatusNotFound {
+		return fmt.Errorf(fmt.Sprintf("BrocadeVTM Pool error whilst deleting %s: %v", poolName, deleteErr))
+	}
+	d.SetId("")
+	return nil
 }

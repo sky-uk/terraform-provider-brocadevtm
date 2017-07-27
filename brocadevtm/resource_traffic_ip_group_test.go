@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/go-brocade-vtm/api/traffic_ip_group"
+	"github.com/sky-uk/go-rest-api"
 	"regexp"
 	"testing"
 )
@@ -130,10 +130,10 @@ func testAccBrocadeVTMTrafficIPGroupExists(trafficIPGroupName, trafficIPGroupRes
 		}
 		for _, trafficIPGroupChild := range getAllAPI.ResponseObject().(*trafficIpGroups.TrafficIPGroupList).Children {
 			if trafficIPGroupChild.Name == trafficIPGroupName {
-				return fmt.Errorf("Brocade vTM Traffic IP Group %s not found on remote vTM", trafficIPGroupName)
+				return nil
 			}
 		}
-		return nil
+		return fmt.Errorf("Brocade vTM Traffic IP Group %s not found on remote vTM", trafficIPGroupName)
 	}
 }
 

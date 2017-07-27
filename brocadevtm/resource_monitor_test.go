@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/go-brocade-vtm/api/monitor"
+	"github.com/sky-uk/go-rest-api"
 	"regexp"
 	"testing"
 )
@@ -28,7 +28,7 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccBrocadeVTMMonitorInvalidName(),
-				ExpectError: regexp.MustCompile(`Response object was \{\"error_id\":\"http.invalid_path\",\"error_text\":\"The path \'/api/tm/3.8/config/active/monitors/../virtual_servers/some_random_virtual_server\' is invalid`),
+				ExpectError: regexp.MustCompile(`BrocadeVTM Monitor error whilst creating ../virtual_servers/some_random_virtual_server: Response status code: 400`),
 			},
 			{
 				Config: testAccBrocadeVTMMonitorCreateTemplate(monitorName),
@@ -112,10 +112,10 @@ func testAccBrocadeVTMMonitorExists(monitorName, monitorResourceName string) res
 		}
 		for _, monitorChild := range getAllAPI.ResponseObject().(*monitor.MonitorsList).Children {
 			if monitorChild.Name == monitorName {
-				return fmt.Errorf("Brocade vTM Monitor %s not found on remote vTM", monitorName)
+				return nil
 			}
 		}
-		return nil
+		return fmt.Errorf("Brocade vTM Monitor %s not found on remote vTM", monitorName)
 	}
 }
 

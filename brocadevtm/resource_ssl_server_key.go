@@ -3,8 +3,9 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/go-brocade-vtm/api/ssl_server_key"
+	"github.com/sky-uk/go-rest-api"
+	"net/http"
 )
 
 func resourceSSLServerKey() *schema.Resource {
@@ -55,8 +56,6 @@ func resourceSSLServerKeyCreate(d *schema.ResourceData, meta interface{}) error 
 
 	if v, ok := d.GetOk("name"); ok {
 		name = v.(string)
-	} else {
-		return fmt.Errorf("BrocadeVTM Create Error: name argument required")
 	}
 	if v, ok := d.GetOk("note"); ok {
 		payloadObject.Properties.Basic.Note = v.(string)
@@ -75,7 +74,7 @@ func resourceSSLServerKeyCreate(d *schema.ResourceData, meta interface{}) error 
 	err := vtmClient.Do(createSSLServerKey)
 	if err != nil && createSSLServerKey.StatusCode() != 201 {
 		d.SetId("")
-		return fmt.Errorf("BrocadeVTM Create Error: %+v", err)
+		return fmt.Errorf("BrocadeVTM SSL Server Key error whilst creating %s: %v", name, err)
 	}
 
 	d.SetId(name)
@@ -83,22 +82,24 @@ func resourceSSLServerKeyCreate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceSSLServerKeyRead(d *schema.ResourceData, meta interface{}) error {
+
 	vtmClient := meta.(*rest.Client)
 	var name string
 
 	if v, ok := d.GetOk("name"); ok {
 		name = v.(string)
-	} else {
-		return fmt.Errorf("BrocadeVTM Read Error: name argument required")
 	}
 	getSSLServerKey := sslServerKey.NewGet(name)
 	err := vtmClient.Do(getSSLServerKey)
-	if err != nil && getSSLServerKey.StatusCode() != 200 {
-		d.SetId("")
-		return fmt.Errorf("BrocadeVTM Read Error: %+v", err)
+	if err != nil {
+		if getSSLServerKey.StatusCode() == http.StatusNotFound {
+			d.SetId("")
+			return nil
+		}
+		return fmt.Errorf("BrocadeVTM SSL Server Key error whilst retrieving %s: %v", name, err)
 	}
 
-	sslServerKey := getSSLServerKey.ResponseObject().(sslServerKey.SSLServerKey)
+	sslServerKey := getSSLServerKey.ResponseObject().(*sslServerKey.SSLServerKey)
 	d.Set("note", sslServerKey.Properties.Basic.Note)
 	// TODO: API doesn't return the private key back, so we ignore it,
 	// otherwise plan is always changing it.
@@ -117,8 +118,6 @@ func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error 
 
 	if v, ok := d.GetOk("name"); ok {
 		name = v.(string)
-	} else {
-		return fmt.Errorf("BrocadeVTM Update Error: name argument required")
 	}
 	if d.HasChange("note") {
 		if v, ok := d.GetOk("note"); ok {
@@ -149,38 +148,27 @@ func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error 
 		updateSSLServerKey := sslServerKey.NewUpdate(name, payloadObject)
 		err := vtmClient.Do(updateSSLServerKey)
 		if err != nil {
+			// TODO this is odd? Why?
 			d.SetId("")
-			return fmt.Errorf("BrocadeVTM Update Error: %+v", err)
+			return fmt.Errorf("BrocadeVTM SSL Server Key error whilst updating %s: %v", name, err)
 		}
 	}
 	return resourceSSLServerKeyRead(d, meta)
 }
 
 func resourceSSLServerKeyDelete(d *schema.ResourceData, meta interface{}) error {
-	vtmClient := meta.(*rest.Client)
 
+	vtmClient := meta.(*rest.Client)
 	var name string
 
 	if v, ok := d.GetOk("name"); ok {
 		name = v.(string)
-	} else {
-		return fmt.Errorf("BrocadeVTM Delete Error: name argument required")
-	}
-
-	getSSLServerKey := sslServerKey.NewGet(name)
-	err := vtmClient.Do(getSSLServerKey)
-	if err != nil {
-		return fmt.Errorf("BrocadeVTM Delete: SSL Server key already doesn't exist, %s", name)
-	}
-	if getSSLServerKey.StatusCode() == 404 {
-		d.SetId("")
-		return nil
 	}
 
 	deleteAPI := sslServerKey.NewDelete(name)
-	err = vtmClient.Do(deleteAPI)
-	if err != nil || deleteAPI.StatusCode() != 204 {
-		return fmt.Errorf("BrocadeVTM Delete: Error deleting SSLServerKey %s. Return code != 204. Error: %+v", name, err)
+	err := vtmClient.Do(deleteAPI)
+	if err != nil && deleteAPI.StatusCode() != http.StatusNotFound {
+		return fmt.Errorf("BrocadeVTM SSL Server Key error whilst deleting %s: %v", name, err)
 	}
 
 	d.SetId("")

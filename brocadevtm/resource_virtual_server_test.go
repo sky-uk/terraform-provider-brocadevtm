@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/go-brocade-vtm/api/virtualserver"
+	"github.com/sky-uk/go-rest-api"
 	"regexp"
 	"testing"
 )

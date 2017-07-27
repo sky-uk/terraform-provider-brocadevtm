@@ -26,7 +26,6 @@ func TestAccPool_Basic(t *testing.T) {
 				Config:      testAccPoolNoName(),
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
-
 			{
 				Config:      testAccPoolNoNodes(poolName),
 				ExpectError: regexp.MustCompile(`required field is not set`),

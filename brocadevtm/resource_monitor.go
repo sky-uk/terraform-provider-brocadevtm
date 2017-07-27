@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api/monitor"
 	"github.com/sky-uk/go-rest-api"
+	"net/http"
 )
 
 func resourceMonitor() *schema.Resource {
@@ -21,21 +22,21 @@ func resourceMonitor() *schema.Resource {
 				ForceNew: true,
 			},
 			"delay": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Computed:     true,
 				ValidateFunc: validateMonitorUnsignedInteger,
 			},
 			"timeout": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Computed:     true,
 				ValidateFunc: validateMonitorUnsignedInteger,
 			},
 			"failures": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Computed:     true,
 				ValidateFunc: validateMonitorUnsignedInteger,
 			},
 			"verbose": {
@@ -126,13 +127,9 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 
 	err := vtmClient.Do(createAPI)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Create Error: %v", err)
+		return fmt.Errorf("BrocadeVTM Monitor error whilst creating %s: %v", name, err)
 	}
-/*
-	if createAPI.StatusCode() != 201 && createAPI.StatusCode() != 200 {
-		return fmt.Errorf("BrocadeVTM Create Error: Invalid HTTP response code %+v returned. Response object was %+v", createAPI.StatusCode(), createAPI.ResponseObject().(*monitor.Monitor))
-	}
-*/
+
 	d.SetId(name)
 	return resourceMonitorRead(d, m)
 
@@ -145,24 +142,19 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 
 	if v, ok := d.GetOk("name"); ok {
 		readName = v.(string)
-	} else {
-		return fmt.Errorf("BrocadeVTM Read Error: name argument required")
-	}
-
-	getAllAPI := monitor.NewGetAll()
-	err := vtmClient.Do(getAllAPI)
-	if err != nil {
-		return fmt.Errorf("BrocadeVTM Read Error: %+v", err)
 	}
 
 	getSingleMonitorAPI := monitor.NewGet(readName)
-	err = vtmClient.Do(getSingleMonitorAPI)
+	err := vtmClient.Do(getSingleMonitorAPI)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Read Error: %+v", err)
+		if getSingleMonitorAPI.StatusCode() == http.StatusNotFound {
+			d.SetId("")
+			return nil
+		}
+		return fmt.Errorf("BrocadeVTM Monitor error whilst retrieving %s: %v", readName, err)
 	}
 
-	getMonitorProperties := getSingleMonitorAPI.ResponseObject().(monitor.Monitor)
-
+	getMonitorProperties := getSingleMonitorAPI.ResponseObject().(*monitor.Monitor)
 	d.Set("name", readName)
 	d.Set("delay", getMonitorProperties.Properties.Basic.Delay)
 	d.Set("timeout", getMonitorProperties.Properties.Basic.Timeout)
@@ -246,11 +238,7 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 		updateAPI := monitor.NewUpdate(readName, updateMonitor)
 		err := vtmClient.Do(updateAPI)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM Update Error: %+v", err)
-		}
-
-		if updateAPI.StatusCode() != 201 && updateAPI.StatusCode() != 200 {
-			return fmt.Errorf("BrocadeVTM Update Error: Invalid HTTP response code %+v returned. Response object was %+v", updateAPI.StatusCode(), updateAPI.ResponseObject())
+			return fmt.Errorf("BrocadeVTM Monitor error whilst updating %s: %v", readName, err)
 		}
 	}
 	return resourceMonitorRead(d, m)
@@ -263,24 +251,12 @@ func resourceMonitorDelete(d *schema.ResourceData, m interface{}) error {
 
 	if v, ok := d.GetOk("name"); ok {
 		readName = v.(string)
-	} else {
-		return fmt.Errorf("BrocadeVTM Delete Error: name argument required")
-	}
-
-	getAllAPI := monitor.NewGet(readName)
-	err := vtmClient.Do(getAllAPI)
-	if err != nil {
-		return fmt.Errorf("BrocadeVTM Delete: Error fetching monitor %s", readName)
-	}
-	if getAllAPI.StatusCode() == 404 {
-		d.SetId("")
-		return nil
 	}
 
 	deleteAPI := monitor.NewDelete(readName)
-	err = vtmClient.Do(deleteAPI)
-	if err != nil || deleteAPI.StatusCode() != 204 {
-		return fmt.Errorf("BrocadeVTM Delete: Error deleting monitor %s. Return code != 204. Error: %+v", readName, err)
+	err := vtmClient.Do(deleteAPI)
+	if err != nil && deleteAPI.StatusCode() != http.StatusNotFound {
+		return fmt.Errorf("BrocadeVTM Monitor error whilst deleting %s: %v", readName, err)
 	}
 
 	d.SetId("")
