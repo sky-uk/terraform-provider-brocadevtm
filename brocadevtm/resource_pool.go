@@ -125,8 +125,8 @@ func resourcePool() *schema.Resource {
 				Default:      1,
 			},
 			"load_balancing_algorithm": {
-				Type: schema.TypeString,
-				Optional: true,
+				Type:         schema.TypeString,
+				Optional:     true,
 				ValidateFunc: validatePoolLBAlgo,
 			},
 			"tcp_nagle": {
@@ -269,7 +269,7 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("load_balancing_priority_nodes"); ok {
 		createPool.Properties.LoadBalancing.PriorityNodes = v.(int)
 	}
-	if v, ok := d.GetOk("load_balancing_algorithm"); ok && v!= "" {
+	if v, ok := d.GetOk("load_balancing_algorithm"); ok && v != "" {
 		createPool.Properties.LoadBalancing.Algorithm = v.(string)
 	}
 	if v, _ := d.GetOk("tcp_nagle"); v != nil {
