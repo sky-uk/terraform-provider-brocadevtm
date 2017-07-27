@@ -124,6 +124,11 @@ func resourcePool() *schema.Resource {
 				ValidateFunc: validatePoolUnsignedInteger,
 				Default:      1,
 			},
+			"load_balancing_algorithm": {
+				Type: schema.TypeString,
+				Optional: true,
+				ValidateFunc: validatePoolLBAlgo,
+			},
 			"tcp_nagle": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -131,6 +136,15 @@ func resourcePool() *schema.Resource {
 		},
 	}
 
+}
+
+func validatePoolLBAlgo(v interface{}, k string) (ws []string, errors []error) {
+	algo := v.(string)
+	algoOptions := regexp.MustCompile(`^(fastest_response_time|least_connections|perceptive|random|round_robin|weighted_least_connections|weighted_round_robin)$`)
+	if !algoOptions.MatchString(algo) {
+		errors = append(errors, fmt.Errorf("%q must be one of fastest_response_time, least_connections, perceptive, random, round_robin, weighted_least_connections, weighted_round_robin", k))
+	}
+	return
 }
 
 func validatePoolUnsignedInteger(v interface{}, k string) (ws []string, errors []error) {
@@ -255,6 +269,9 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("load_balancing_priority_nodes"); ok {
 		createPool.Properties.LoadBalancing.PriorityNodes = v.(int)
 	}
+	if v, ok := d.GetOk("load_balancing_algorithm"); ok && v!= "" {
+		createPool.Properties.LoadBalancing.Algorithm = v.(string)
+	}
 	if v, _ := d.GetOk("tcp_nagle"); v != nil {
 		tcpNagle := v.(bool)
 		createPool.Properties.TCP.Nagle = &tcpNagle
@@ -307,6 +324,7 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("http_keepalive_non_idempotent", *response.Properties.HTTP.HTTPKeepAliveNonIdempotent)
 	d.Set("load_balancing_priority_enabled", *response.Properties.LoadBalancing.PriorityEnabled)
 	d.Set("load_balancing_priority_nodes", response.Properties.LoadBalancing.PriorityNodes)
+	d.Set("load_balancing_algorithm", response.Properties.LoadBalancing.Algorithm)
 	d.Set("tcp_nagle", *response.Properties.TCP.Nagle)
 
 	return nil
@@ -453,6 +471,13 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	if d.HasChange("load_balancing_priority_nodes") {
 		if v, ok := d.GetOk("load_balancing_priority_nodes"); ok {
 			updatePool.Properties.LoadBalancing.PriorityNodes = v.(int)
+		}
+		hasChanges = true
+	}
+
+	if d.HasChange("load_balancing_algorithm") {
+		if v, ok := d.GetOk("load_balancing_algorithm"); ok && v != "" {
+			updatePool.Properties.LoadBalancing.Algorithm = v.(string)
 		}
 		hasChanges = true
 	}

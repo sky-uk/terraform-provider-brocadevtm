@@ -23,6 +23,10 @@ func TestAccPool_Basic(t *testing.T) {
 		CheckDestroy: testAccPoolCheckDestroy,
 		Steps: []resource.TestStep{
 			{
+				Config:      testAccPoolNodeInvalidAlgo(poolName),
+				ExpectError: regexp.MustCompile(`must be one of fastest_response_time, least_connections, perceptive, random, round_robin, weighted_least_connections, weighted_round_robin`),
+			},
+			{
 				Config:      testAccPoolNodeUnsignedInt(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
@@ -161,6 +165,35 @@ func testCheckPoolExists(name string) resource.TestCheckFunc {
 	}
 }
 
+func testAccPoolNodeInvalidAlgo(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  monitorlist = ["ping"]
+  node {
+    node="127.0.0.1:80"
+    priority=1
+    state="active"
+    weight=1
+  }
+  max_connection_attempts = -10
+  max_idle_connections_pernode = 20
+  max_timed_out_connection_attempts = 20
+  node_close_with_rst = false
+  max_connection_timeout = 60
+  max_connections_per_node = 10
+  max_queue_size = 20
+  max_reply_time = 60
+  queue_timeout = 60
+  http_keepalive = false
+  http_keepalive_non_idempotent = false
+  load_balancing_priority_enabled = false
+  load_balancing_priority_nodes = 8
+  load_balancing_algorithm = "INVALID_ALGO"
+  tcp_nagle = false
+}`, poolName)
+}
+
 func testAccPoolNodeUnsignedInt(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
@@ -185,6 +218,7 @@ resource "brocadevtm_pool" "acctest" {
   http_keepalive_non_idempotent = false
   load_balancing_priority_enabled = false
   load_balancing_priority_nodes = 8
+  load_balancing_algorithm = "least_connections"
   tcp_nagle = false
 }`, poolName)
 }
@@ -213,6 +247,7 @@ resource "brocadevtm_pool" "acctest" {
   http_keepalive_non_idempotent = false
   load_balancing_priority_enabled = false
   load_balancing_priority_nodes = 8
+  load_balancing_algorithm = "least_connections"
   tcp_nagle = false
 }`, poolName)
 }
@@ -241,6 +276,7 @@ resource "brocadevtm_pool" "acctest" {
   http_keepalive_non_idempotent = false
   load_balancing_priority_enabled = false
   load_balancing_priority_nodes = 8
+  load_balancing_algorithm = "least_connections"
   tcp_nagle = false
 }`, poolName)
 }
@@ -282,6 +318,7 @@ resource "brocadevtm_pool" "acctest" {
   http_keepalive_non_idempotent = false
   load_balancing_priority_enabled = false
   load_balancing_priority_nodes = 8
+  load_balancing_algorithm = "least_connections"
   tcp_nagle = false
 }`)
 }
@@ -304,6 +341,7 @@ resource "brocadevtm_pool" "acctest" {
   http_keepalive_non_idempotent = false
   load_balancing_priority_enabled = false
   load_balancing_priority_nodes = 8
+  load_balancing_algorithm = "least_connections"
   tcp_nagle = false
 }`, poolName)
 }
@@ -384,6 +422,7 @@ resource "brocadevtm_pool" "acctest" {
   http_keepalive_non_idempotent = false
   load_balancing_priority_enabled = false
   load_balancing_priority_nodes = 8
+  load_balancing_algorithm = "least_connections"
   tcp_nagle = false
 }`, poolName)
 }
@@ -418,6 +457,7 @@ resource "brocadevtm_pool" "acctest" {
   http_keepalive_non_idempotent = true
   load_balancing_priority_enabled = true
   load_balancing_priority_nodes = 16
+  load_balancing_algorithm = "least_connections"
   tcp_nagle = true
 }`, poolName)
 }
