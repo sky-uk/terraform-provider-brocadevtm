@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/pool"
+	"github.com/sky-uk/go-rest-api"
 	"regexp"
 	"testing"
 )
@@ -23,10 +23,17 @@ func TestAccPool_Basic(t *testing.T) {
 		CheckDestroy: testAccPoolCheckDestroy,
 		Steps: []resource.TestStep{
 			{
+				Config:      testAccPoolNodeInvalidAlgo(poolName),
+				ExpectError: regexp.MustCompile(`must be one of fastest_response_time, least_connections, perceptive, random, round_robin, weighted_least_connections, weighted_round_robin`),
+			},
+			{
+				Config:      testAccPoolNodeUnsignedInt(poolName),
+				ExpectError: regexp.MustCompile(`can't be negative`),
+			},
+			{
 				Config:      testAccPoolNoName(),
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
-
 			{
 				Config:      testAccPoolNoNodes(poolName),
 				ExpectError: regexp.MustCompile(`required field is not set`),
@@ -69,17 +76,17 @@ func TestAccPool_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "10"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_idle_connections_pernode", "20"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_timed_out_connection_attempts", "20"),
-					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_timeout", "60"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connections_per_node", "10"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_queue_size", "20"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_reply_time", "60"),
 					resource.TestCheckResourceAttr(poolResourceName, "queue_timeout", "60"),
-					resource.TestCheckResourceAttr(poolResourceName, "http_keepalive", "false"),
-					resource.TestCheckResourceAttr(poolResourceName, "http_keepalive_non_idempotent", "false"),
-					resource.TestCheckResourceAttr(poolResourceName, "load_balancing_priority_enabled", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "http_keepalive", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "http_keepalive_non_idempotent", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "load_balancing_priority_enabled", "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "load_balancing_priority_nodes", "8"),
-					resource.TestCheckResourceAttr(poolResourceName, "tcp_nagle", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "tcp_nagle", "true"),
 				),
 			},
 			{
@@ -91,17 +98,17 @@ func TestAccPool_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "20"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_idle_connections_pernode", "40"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_timed_out_connection_attempts", "40"),
-					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "false"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_timeout", "120"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connections_per_node", "20"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_queue_size", "40"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_reply_time", "120"),
 					resource.TestCheckResourceAttr(poolResourceName, "queue_timeout", "120"),
-					resource.TestCheckResourceAttr(poolResourceName, "http_keepalive", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "http_keepalive_non_idempotent", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "load_balancing_priority_enabled", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "http_keepalive", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "http_keepalive_non_idempotent", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "load_balancing_priority_enabled", "false"),
 					resource.TestCheckResourceAttr(poolResourceName, "load_balancing_priority_nodes", "16"),
-					resource.TestCheckResourceAttr(poolResourceName, "tcp_nagle", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "tcp_nagle", "false"),
 				),
 			},
 		},
@@ -109,7 +116,7 @@ func TestAccPool_Basic(t *testing.T) {
 }
 
 func testAccPoolCheckDestroy(s *terraform.State) error {
-	vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
+	vtmClient := testAccProvider.Meta().(*rest.Client)
 	var name string
 	for _, r := range s.RootModule().Resources {
 		if r.Type != "brocadevtm_pool" {
@@ -120,7 +127,7 @@ func testAccPoolCheckDestroy(s *terraform.State) error {
 			return nil
 		}
 
-		api := pool.NewGetSingle(name)
+		api := pool.NewGet(name)
 		err := vtmClient.Do(api)
 
 		if err != nil {
@@ -145,9 +152,9 @@ func testCheckPoolExists(name string) resource.TestCheckFunc {
 			return fmt.Errorf("No pool name is set")
 		}
 
-		vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
+		vtmClient := testAccProvider.Meta().(*rest.Client)
 
-		api := pool.NewGetSingle(rs.Primary.Attributes["name"])
+		api := pool.NewGet(rs.Primary.Attributes["name"])
 		err := vtmClient.Do(api)
 
 		if err != nil {
@@ -156,6 +163,64 @@ func testCheckPoolExists(name string) resource.TestCheckFunc {
 
 		return nil
 	}
+}
+
+func testAccPoolNodeInvalidAlgo(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  monitorlist = ["ping"]
+  node {
+    node="127.0.0.1:80"
+    priority=1
+    state="active"
+    weight=1
+  }
+  max_connection_attempts = -10
+  max_idle_connections_pernode = 20
+  max_timed_out_connection_attempts = 20
+  node_close_with_rst = false
+  max_connection_timeout = 60
+  max_connections_per_node = 10
+  max_queue_size = 20
+  max_reply_time = 60
+  queue_timeout = 60
+  http_keepalive = false
+  http_keepalive_non_idempotent = false
+  load_balancing_priority_enabled = false
+  load_balancing_priority_nodes = 8
+  load_balancing_algorithm = "INVALID_ALGO"
+  tcp_nagle = false
+}`, poolName)
+}
+
+func testAccPoolNodeUnsignedInt(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  monitorlist = ["ping"]
+  node {
+    node="127.0.0.1:80"
+    priority=1
+    state="active"
+    weight=1
+  }
+  max_connection_attempts = -10
+  max_idle_connections_pernode = 20
+  max_timed_out_connection_attempts = 20
+  node_close_with_rst = false
+  max_connection_timeout = 60
+  max_connections_per_node = 10
+  max_queue_size = 20
+  max_reply_time = 60
+  queue_timeout = 60
+  http_keepalive = false
+  http_keepalive_non_idempotent = false
+  load_balancing_priority_enabled = false
+  load_balancing_priority_nodes = 8
+  load_balancing_algorithm = "least_connections"
+  tcp_nagle = false
+}`, poolName)
 }
 
 func testAccPoolInvalidNodeNoPort(poolName string) string {
@@ -182,6 +247,7 @@ resource "brocadevtm_pool" "acctest" {
   http_keepalive_non_idempotent = false
   load_balancing_priority_enabled = false
   load_balancing_priority_nodes = 8
+  load_balancing_algorithm = "least_connections"
   tcp_nagle = false
 }`, poolName)
 }
@@ -210,6 +276,7 @@ resource "brocadevtm_pool" "acctest" {
   http_keepalive_non_idempotent = false
   load_balancing_priority_enabled = false
   load_balancing_priority_nodes = 8
+  load_balancing_algorithm = "least_connections"
   tcp_nagle = false
 }`, poolName)
 }
@@ -251,6 +318,7 @@ resource "brocadevtm_pool" "acctest" {
   http_keepalive_non_idempotent = false
   load_balancing_priority_enabled = false
   load_balancing_priority_nodes = 8
+  load_balancing_algorithm = "least_connections"
   tcp_nagle = false
 }`)
 }
@@ -273,6 +341,7 @@ resource "brocadevtm_pool" "acctest" {
   http_keepalive_non_idempotent = false
   load_balancing_priority_enabled = false
   load_balancing_priority_nodes = 8
+  load_balancing_algorithm = "least_connections"
   tcp_nagle = false
 }`, poolName)
 }
@@ -343,17 +412,18 @@ resource "brocadevtm_pool" "acctest" {
   max_connection_attempts = 10
   max_idle_connections_pernode = 20
   max_timed_out_connection_attempts = 20
-  node_close_with_rst = false
+  node_close_with_rst = true
   max_connection_timeout = 60
   max_connections_per_node = 10
   max_queue_size = 20
   max_reply_time = 60
   queue_timeout = 60
-  http_keepalive = false
-  http_keepalive_non_idempotent = false
-  load_balancing_priority_enabled = false
+  http_keepalive = true
+  http_keepalive_non_idempotent = true
+  load_balancing_priority_enabled = true
   load_balancing_priority_nodes = 8
-  tcp_nagle = false
+  load_balancing_algorithm = "least_connections"
+  tcp_nagle = true
 }`, poolName)
 }
 
@@ -377,16 +447,17 @@ resource "brocadevtm_pool" "acctest" {
   max_connection_attempts = 20
   max_idle_connections_pernode = 40
   max_timed_out_connection_attempts = 40
-  node_close_with_rst = true
+  node_close_with_rst = false
   max_connection_timeout = 120
   max_connections_per_node = 20
   max_queue_size = 40
   max_reply_time = 120
   queue_timeout = 120
-  http_keepalive = true
-  http_keepalive_non_idempotent = true
-  load_balancing_priority_enabled = true
+  http_keepalive = false
+  http_keepalive_non_idempotent = false
+  load_balancing_priority_enabled = false
   load_balancing_priority_nodes = 16
-  tcp_nagle = true
+  load_balancing_algorithm = "least_connections"
+  tcp_nagle = false
 }`, poolName)
 }

@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/ssl_server_key"
+	"github.com/sky-uk/go-rest-api"
 	"regexp"
 	"testing"
 )
@@ -61,7 +61,7 @@ func TestAccBrocadeVTMSSLServerKeyBasic(t *testing.T) {
 
 func testAccBrocadeVTMSSLServerKeyCheckDestroy(state *terraform.State, sslServerKeyName string) error {
 
-	vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
+	vtmClient := testAccProvider.Meta().(*rest.Client)
 	for _, rs := range state.RootModule().Resources {
 
 		if rs.Type != "brocadevtm_ssl_server_key" {
@@ -73,7 +73,7 @@ func testAccBrocadeVTMSSLServerKeyCheckDestroy(state *terraform.State, sslServer
 		if err != nil {
 			return nil
 		}
-		for _, sslKey := range api.GetResponse().Children {
+		for _, sslKey := range api.ResponseObject().(*sslServerKey.SSLServerKeysList).Children {
 			if sslKey.Name == sslServerKeyName {
 				return fmt.Errorf("Brocade vTM SSL Server Key %s still exists", sslServerKeyName)
 			}
@@ -93,13 +93,13 @@ func testAccBrocadeVTMSSLServerKeyExists(sslServerKeyName, sslServerKeyResourceN
 			return fmt.Errorf("\nBrocade vTM SSL Server Key ID not set for %s in resources", sslServerKeyName)
 		}
 
-		vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
+		vtmClient := testAccProvider.Meta().(*rest.Client)
 		api := sslServerKey.NewGetAll()
 		err := vtmClient.Do(api)
 		if err != nil {
 			return fmt.Errorf("Error: %v", err)
 		}
-		for _, sslKey := range api.GetResponse().Children {
+		for _, sslKey := range api.ResponseObject().(*sslServerKey.SSLServerKeysList).Children {
 			if sslKey.Name == sslServerKeyName {
 				return nil
 			}

@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/monitor"
+	"github.com/sky-uk/go-rest-api"
 	"regexp"
 	"testing"
 )
@@ -26,6 +26,10 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 			return testAccBrocadeVTMMonitorCheckDestroy(state, monitorName)
 		},
 		Steps: []resource.TestStep{
+			{
+				Config:      testAccBrocadeVTMMonitorInvalidName(),
+				ExpectError: regexp.MustCompile(`BrocadeVTM Monitor error whilst creating ../virtual_servers/some_random_virtual_server: Response status code: 400`),
+			},
 			{
 				Config: testAccBrocadeVTMMonitorCreateTemplate(monitorName),
 				Check: resource.ComposeTestCheckFunc(
@@ -58,17 +62,13 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(monitorResourceName, "http_path", "/some/other/status/page"),
 				),
 			},
-			{
-				Config:      testAccBrocadeVTMMonitorInvalidName(),
-				ExpectError: regexp.MustCompile(`Invalid HTTP response code 400 returned. Response object was \{\"error_id\":\"http.invalid_path\",\"error_text\":\"The path \'/api/tm/3.8/config/active/monitors/../virtual_servers/some_random_virtual_server\' is invalid`),
-			},
 		},
 	})
 }
 
 func testAccBrocadeVTMMonitorCheckDestroy(state *terraform.State, name string) error {
 
-	vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
+	vtmClient := testAccProvider.Meta().(*rest.Client)
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "brocadevtm_monitor" {
@@ -83,8 +83,10 @@ func testAccBrocadeVTMMonitorCheckDestroy(state *terraform.State, name string) e
 		if err != nil {
 			return nil
 		}
-		if api.GetResponse().FilterByName(name).Name == name {
-			return fmt.Errorf("Brocade vTM monitor %s still exists", name)
+		for _, monitorChild := range api.ResponseObject().(*monitor.MonitorsList).Children {
+			if monitorChild.Name == name {
+				return fmt.Errorf("Brocade vTM monitor %s still exists", name)
+			}
 		}
 	}
 	return nil
@@ -101,18 +103,19 @@ func testAccBrocadeVTMMonitorExists(monitorName, monitorResourceName string) res
 			return fmt.Errorf("\nBrocade vTM Monitor ID not set in resources")
 		}
 
-		vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
+		vtmClient := testAccProvider.Meta().(*rest.Client)
 		getAllAPI := monitor.NewGetAll()
 
 		err := vtmClient.Do(getAllAPI)
 		if err != nil {
 			return fmt.Errorf("Error: %+v", err)
 		}
-		foundMonitor := getAllAPI.GetResponse().FilterByName(monitorName)
-		if foundMonitor.Name != monitorName {
-			return fmt.Errorf("Brocade vTM Monitor %s not found on remote vTM", monitorName)
+		for _, monitorChild := range getAllAPI.ResponseObject().(*monitor.MonitorsList).Children {
+			if monitorChild.Name == monitorName {
+				return nil
+			}
 		}
-		return nil
+		return fmt.Errorf("Brocade vTM Monitor %s not found on remote vTM", monitorName)
 	}
 }
 

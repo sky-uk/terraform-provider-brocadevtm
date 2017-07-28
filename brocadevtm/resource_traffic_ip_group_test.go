@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/traffic_ip_group"
+	"github.com/sky-uk/go-rest-api"
 	"regexp"
 	"testing"
 )
@@ -86,7 +86,7 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 
 func testAccBrocadeVTMTrafficIPGroupCheckDestroy(state *terraform.State, name string) error {
 
-	vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
+	vtmClient := testAccProvider.Meta().(*rest.Client)
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "brocadevtm_traffic_ip_group" {
@@ -99,10 +99,12 @@ func testAccBrocadeVTMTrafficIPGroupCheckDestroy(state *terraform.State, name st
 		api := trafficIpGroups.NewGetAll()
 		err := vtmClient.Do(api)
 		if err != nil {
-			return nil
+			return fmt.Errorf("Brocade vTM traffic IP group error retrieving the list of traffic IP groups")
 		}
-		if api.GetResponse().FilterByName(name).Name == name {
-			return fmt.Errorf("Brocade vTM traffic IP group %s still exists", name)
+		for _, trafficIPGroupChild := range api.ResponseObject().(*trafficIpGroups.TrafficIPGroupList).Children {
+			if trafficIPGroupChild.Name == name {
+				return fmt.Errorf("Brocade vTM traffic IP group %s still exists", name)
+			}
 		}
 	}
 	return nil
@@ -119,18 +121,19 @@ func testAccBrocadeVTMTrafficIPGroupExists(trafficIPGroupName, trafficIPGroupRes
 			return fmt.Errorf("\nBrocade vTM Traffic IP Group ID not set in resources")
 		}
 
-		vtmClient := testAccProvider.Meta().(*brocadevtm.VTMClient)
+		vtmClient := testAccProvider.Meta().(*rest.Client)
 		getAllAPI := trafficIpGroups.NewGetAll()
 
 		err := vtmClient.Do(getAllAPI)
 		if err != nil {
 			return fmt.Errorf("Error: %+v", err)
 		}
-		foundTrafficIPGroup := getAllAPI.GetResponse().FilterByName(trafficIPGroupName)
-		if foundTrafficIPGroup.Name != trafficIPGroupName {
-			return fmt.Errorf("Brocade vTM Traffic IP Group %s not found on remote vTM", trafficIPGroupName)
+		for _, trafficIPGroupChild := range getAllAPI.ResponseObject().(*trafficIpGroups.TrafficIPGroupList).Children {
+			if trafficIPGroupChild.Name == trafficIPGroupName {
+				return nil
+			}
 		}
-		return nil
+		return fmt.Errorf("Brocade vTM Traffic IP Group %s not found on remote vTM", trafficIPGroupName)
 	}
 }
 

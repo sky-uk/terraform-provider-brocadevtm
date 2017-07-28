@@ -13,10 +13,10 @@ type Properties struct {
 
 // Basic : Basic monitor configration
 type Basic struct {
-	Delay    int    `json:"delay,omitempty"`
-	Failures int    `json:"failures,omitempty"`
+	Delay    uint   `json:"delay,omitempty"`
+	Failures uint   `json:"failures,omitempty"`
 	Type     string `json:"type,omitempty"`
-	Timeout  int    `json:"timeout,omitempty"`
+	Timeout  uint   `json:"timeout,omitempty"`
 	UseSSL   *bool  `json:"use_ssl,omitempty"`
 	Verbose  *bool  `json:"verbose,omitempty"`
 }
@@ -27,6 +27,7 @@ type HTTP struct {
 	BodyRegex      string `json:"body_regex,omitempty"`
 	HostHeader     string `json:"host_header,omitempty"`
 	URIPath        string `json:"path,omitempty"`
+	StatusRegex    string `json:"status_regex,omitempty"`
 }
 
 // MonitorsList : List of nodes monitored

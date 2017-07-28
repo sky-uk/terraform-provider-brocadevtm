@@ -1,4 +1,4 @@
-package api
+package rest
 
 // BaseAPI  - Base API struct.
 type BaseAPI struct {
@@ -6,15 +6,21 @@ type BaseAPI struct {
 	endpoint       string
 	requestObject  interface{}
 	responseObject interface{}
-
-	statusCode  int
-	rawResponse []byte
-	err         error
+	errorObject    interface{}
+	statusCode     int
+	rawResponse    []byte
+	err            error
 }
 
 // NewBaseAPI - Returns a new object of the BaseAPI.
-func NewBaseAPI(method string, endpoint string, requestObject interface{}, responseObject interface{}) *BaseAPI {
-	return &BaseAPI{method, endpoint, requestObject, responseObject, 0, nil, nil}
+func NewBaseAPI(
+	method string,
+	endpoint string,
+	requestObject interface{},
+	responseObject interface{},
+	errorObject interface{},
+) *BaseAPI {
+	return &BaseAPI{method, endpoint, requestObject, responseObject, errorObject, 0, nil, nil}
 }
 
 // RequestObject - Returns the request object of the BaseAPI
@@ -25,6 +31,11 @@ func (b *BaseAPI) RequestObject() interface{} {
 // ResponseObject - Returns the ResponseObject interface.
 func (b *BaseAPI) ResponseObject() interface{} {
 	return b.responseObject
+}
+
+// ErrorObject - Returns the ErrorObject interface.
+func (b *BaseAPI) ErrorObject() interface{} {
+	return b.errorObject
 }
 
 // Method - Returns the Method string, i.e. GET, PUT, POST.
@@ -67,7 +78,12 @@ func (b *BaseAPI) SetError(err error) {
 	b.err = err
 }
 
-// SetResponseObject - Sets the responseObject on api.
+// SetResponseObject - Sets the responseObject
 func (b *BaseAPI) SetResponseObject(res interface{}) {
 	b.responseObject = res
+}
+
+// SetErrorObject - Sets the errorObject
+func (b *BaseAPI) SetErrorObject(res interface{}) {
+	b.errorObject = res
 }

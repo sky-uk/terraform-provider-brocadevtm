@@ -3,8 +3,9 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm"
 	"github.com/sky-uk/go-brocade-vtm/api/traffic_ip_group"
+	"github.com/sky-uk/go-brocade-vtm/api/traffic_ip_group_manager"
+	"github.com/sky-uk/go-rest-api"
 	"net/http"
 	"regexp"
 )
@@ -85,16 +86,16 @@ func validateTrafficIPGroupMulticastIP(v interface{}, k string) (ws []string, er
 }
 
 func getTrafficManagers(m interface{}) ([]string, error) {
-	vtmClient := m.(*brocadevtm.VTMClient)
-	getTrafficManagersAPI := trafficIpGroups.NewGetTrafficManagerList()
+	vtmClient := m.(*rest.Client)
+	getTrafficManagersAPI := trafficIpGroupManager.NewGetAll()
 	var trafficManagers []string
 
 	err := vtmClient.Do(getTrafficManagersAPI)
 	if err != nil {
-		return trafficManagers, fmt.Errorf("error retrieving a list of traffic managers")
+		return trafficManagers, fmt.Errorf("BrocadeVTM Traffic Managers error whilst retrieving the list of Traffic Managers: %v", err)
 	}
 
-	response := getTrafficManagersAPI.GetResponse()
+	response := getTrafficManagersAPI.ResponseObject().(*trafficIpGroupManager.TrafficManagerChildren)
 	for _, trafficManager := range response.Children {
 		trafficManagers = append(trafficManagers, trafficManager.Name)
 	}
@@ -110,21 +111,19 @@ func buildIPAddresses(ipAddresses interface{}) []string {
 }
 
 func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 	var createTrafficIPGroup trafficIpGroups.TrafficIPGroup
 	var tipgName string
 
 	// Retrieve the list of Brocade vTM traffic managers and assign it to Machines
 	trafficManagers, err := getTrafficManagers(m)
 	if err != nil {
-		return fmt.Errorf("Traffic IP Group create %v", err)
+		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst creating %s: %v", tipgName, err)
 	}
 	createTrafficIPGroup.Properties.Basic.Machines = trafficManagers
 
 	if v, ok := d.GetOk("name"); ok && v != "" {
 		tipgName = v.(string)
-	} else {
-		return fmt.Errorf("Traffic IP Group create requires name argument")
 	}
 	if v, _ := d.GetOk("enabled"); v != nil {
 		enableTrafficIPGroup := v.(bool)
@@ -147,10 +146,7 @@ func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
 	createAPI := trafficIpGroups.NewCreate(tipgName, createTrafficIPGroup)
 	err = vtmClient.Do(createAPI)
 	if err != nil {
-		return fmt.Errorf("Traffic IP Group create error when creating traffic IP group %s: %+v", tipgName, err)
-	}
-	if createAPI.StatusCode() != http.StatusCreated && createAPI.StatusCode() != http.StatusOK {
-		return fmt.Errorf("Invalid HTTP response code %d returned when creating traffic IP group %s. Response object was %+v", createAPI.StatusCode(), tipgName, createAPI.ResponseObject())
+		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst creating %s: %v", tipgName, err)
 	}
 
 	d.SetId(tipgName)
@@ -158,27 +154,26 @@ func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
-	vtmClient := m.(*brocadevtm.VTMClient)
+
+	vtmClient := m.(*rest.Client)
 	var readTrafficIPGroup trafficIpGroups.TrafficIPGroup
 	var tipgName string
 
 	if v, ok := d.GetOk("name"); ok {
 		tipgName = v.(string)
-	} else {
-		return fmt.Errorf("Traffic IP Group read error: name argument required")
 	}
 
-	getSingleAPI := trafficIpGroups.NewGetSingle(tipgName)
+	getSingleAPI := trafficIpGroups.NewGet(tipgName)
 	err := vtmClient.Do(getSingleAPI)
 	if err != nil {
-		return fmt.Errorf("Traffic IP Group read error while reading Traffic IP Group %s: %+v", tipgName, err)
-	}
-	if getSingleAPI.StatusCode() == http.StatusNotFound {
-		d.SetId("")
-		return nil
+		if getSingleAPI.StatusCode() == http.StatusNotFound {
+			d.SetId("")
+			return nil
+		}
+		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst retrieving %s: %v", tipgName, err)
 	}
 
-	readTrafficIPGroup = *getSingleAPI.GetResponse()
+	readTrafficIPGroup = *getSingleAPI.ResponseObject().(*trafficIpGroups.TrafficIPGroup)
 	d.Set("name", tipgName)
 	d.Set("enabled", *readTrafficIPGroup.Properties.Basic.Enabled)
 	d.Set("hashsourceport", *readTrafficIPGroup.Properties.Basic.HashSourcePort)
@@ -192,15 +187,13 @@ func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 
 func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 	var trafficIPGroupName string
 	var updateTrafficIPGroup trafficIpGroups.TrafficIPGroup
 	hasChanges := false
 
 	if v, ok := d.GetOk("name"); ok && v != "" {
 		trafficIPGroupName = v.(string)
-	} else {
-		return fmt.Errorf("Traffic IP Group update error: name attribute required")
 	}
 	if d.HasChange("enabled") {
 		enableTrafficIPGroup := d.Get("enabled").(bool)
@@ -235,20 +228,17 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 		// On all updates refresh the list of traffic managers
 		trafficManagers, err := getTrafficManagers(m)
 		if err != nil {
-			return fmt.Errorf("Traffic IP Group update error while updating %s: %v", trafficIPGroupName, err)
+			return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst updating %s: %v", trafficIPGroupName, err)
 		}
 		updateTrafficIPGroup.Properties.Basic.Machines = trafficManagers
 
 		updateAPI := trafficIpGroups.NewUpdate(trafficIPGroupName, updateTrafficIPGroup)
 		err = vtmClient.Do(updateAPI)
 		if err != nil {
-			return fmt.Errorf("Traffic IP Group update error while updating %s: %v", trafficIPGroupName, err)
-		}
-		if updateAPI.StatusCode() != http.StatusOK {
-			return fmt.Errorf("Traffic IP Group update error while updating %s: received invalid http return code %d", trafficIPGroupName, updateAPI.StatusCode())
+			return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst updating %s: %v", trafficIPGroupName, err)
 		}
 
-		updateResponse := updateAPI.GetResponse()
+		updateResponse := updateAPI.ResponseObject().(*trafficIpGroups.TrafficIPGroup)
 		d.SetId(trafficIPGroupName)
 		d.Set("enabled", *updateResponse.Properties.Basic.Enabled)
 		d.Set("hashsourceport", *updateResponse.Properties.Basic.HashSourcePort)
@@ -262,7 +252,7 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceTrafficIPGroupDelete(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*brocadevtm.VTMClient)
+	vtmClient := m.(*rest.Client)
 	var name string
 
 	if v, ok := d.GetOk("name"); ok {
@@ -271,22 +261,10 @@ func resourceTrafficIPGroupDelete(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Traffic IP Group delete error: name argument required")
 	}
 
-	getTrafficIPGroup := trafficIpGroups.NewGetSingle(name)
-	err := vtmClient.Do(getTrafficIPGroup)
-	if err != nil {
-		return fmt.Errorf("Traffic IP Group delete error while fetching traffic IP group %s: %v", name, err)
-	}
-	if getTrafficIPGroup.StatusCode() == http.StatusNotFound {
-		d.SetId("")
-		return nil
-	}
 	deleteAPI := trafficIpGroups.NewDelete(name)
-	err = vtmClient.Do(deleteAPI)
-	if err != nil {
-		return fmt.Errorf("Traffic IP Group delete error while deleting traffic IP group %s: %v", name, err)
-	}
-	if deleteAPI.StatusCode() != http.StatusNoContent {
-		return fmt.Errorf("Traffic IP Group delete error: received invalid http return code %d while deleting %s", deleteAPI.StatusCode(), name)
+	err := vtmClient.Do(deleteAPI)
+	if err != nil && deleteAPI.StatusCode() != http.StatusNotFound {
+		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst deleting %s: %v", name, err)
 	}
 
 	d.SetId("")

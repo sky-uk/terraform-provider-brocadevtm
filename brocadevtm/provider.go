@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/terraform/helper/mutexkv"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
+	"time"
 )
 
 // Provider is a basic structure that describes a provider: the configuration
@@ -51,6 +52,7 @@ func Provider() terraform.ResourceProvider {
 			"brocadevtm_ssl_server_key":   resourceSSLServerKey(),
 			"brocadevtm_traffic_ip_group": resourceTrafficIPGroup(),
 			"brocadevtm_virtual_server":   resourceVirtualServer(),
+			"brocadevtm_rule":             resourceRule(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
@@ -77,12 +79,18 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		return nil, fmt.Errorf("vtm_server must be provided")
 	}
 
+	var timeout time.Duration = 30
+	headers := make(map[string]string)
+	headers["Content-Type"] = "application/json"
+
 	config := Config{
 		Debug:       clientDebug,
 		Insecure:    allowUnverifiedSSL,
 		VTMUser:     vtmUser,
 		VTMPassword: vtmPassword,
 		VTMServer:   vtmServer,
+		Headers:     headers,
+		Timeout:     timeout,
 	}
 
 	return config.Client()
