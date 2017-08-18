@@ -16,8 +16,8 @@ Building The Provider
 Clone repository to: `$GOPATH/src/github.com/sky-uk/terraform-provider-brocadevtm`
 
 ```sh
-$ mkdir -p $GOPATH/src/github.com/terraform-providers; cd $GOPATH/src/github.com/terraform-providers
-$ git clone git@github.com:sky-uk/terraform-provider-brocadevtm
+$ mkdir -p $GOPATH/src/github.com/sky-uk/; cd $GOPATH/src/github.com/sky-uk/
+$ git clone https://github.com/sky-uk/terraform-provider-brocadevtm
 ```
 
 Enter the provider directory and build the provider
@@ -64,9 +64,9 @@ $ make testacc
 Example Templates
 ------------------
 
-To help people understand how resources can be created we have put together a collection of examples that will allow you to do so . 
+To help people understand how resources can be created we have put together a collection of examples that will allow you to do so.
 
-Pool Resource 
+Pool Resource
 --------------
 
 

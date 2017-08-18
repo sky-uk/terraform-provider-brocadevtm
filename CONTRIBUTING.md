@@ -13,7 +13,7 @@ All Contributions are more than welcome but must be submitted using **Pull reque
 * Don't delete any existing tests unless absolutely necessary
 * Don't change too much in one pull request, small changes pull requests are quickly reviewed and merged and save everybody time.
 * Separate out different changes into different pull requests
-* Please mention in your pull requests if your changes are not backwards compatiabile so that we can increase appropriate vesion number.
+* Please mention in your pull requests if your changes are not backwards compatible so that we can increase appropriate version number.
 
 ## Code Style
 
