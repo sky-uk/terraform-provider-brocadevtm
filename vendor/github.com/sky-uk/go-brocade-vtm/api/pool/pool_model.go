@@ -21,14 +21,14 @@ type Properties struct {
 type Basic struct {
 	BandwidthClass               string       `json:"bandwidth_class,omitempty"`
 	FailurePool                  string       `json:"failure_pool,omitempty"`
-	MaxConnectionAttempts        int          `json:"max_connection_attempts,omitempty"`
-	MaxIdleConnectionsPerNode    int          `json:"max_idle_connections_pernode,omitempty"`
-	MaxTimeoutConnectionAttempts int          `json:"max_timed_out_connection_attempts,omitempty"`
+	MaxConnectionAttempts        uint         `json:"max_connection_attempts,omitempty"`
+	MaxIdleConnectionsPerNode    uint         `json:"max_idle_connections_pernode,omitempty"`
+	MaxTimeoutConnectionAttempts uint         `json:"max_timed_out_connection_attempts,omitempty"`
 	Monitors                     []string     `json:"monitors,omitempty"`
 	NodeCloseWithReset           *bool        `json:"node_close_with_rst,omitempty"`
-	NodeConnectionAttempts       int          `json:"node_connection_attempts,omitempty"`
+	NodeConnectionAttempts       uint         `json:"node_connection_attempts,omitempty"`
 	NodeDeleteBehavior           string       `json:"node_delete_behavior,omitempty"`
-	NodeDrainDeleteTimeout       int          `json:"node_drain_to_delete_timeout"`
+	NodeDrainDeleteTimeout       uint         `json:"node_drain_to_delete_timeout"`
 	NodesTable                   []MemberNode `json:"nodes_table,omitempty"`
 	Note                         string       `json:"note,omitempty"`
 	PassiveMonitoring            *bool        `json:"passive_monitoring,omitempty"`
@@ -38,11 +38,11 @@ type Basic struct {
 
 // Connection - Connection setting
 type Connection struct {
-	MaxConnectTime        int `json:"max_connect_time,omitempty"`
-	MaxConnectionsPerNode int `json:"max_connections_per_node,omitempty"`
-	MaxQueueSize          int `json:"max_queue_size,omitempty"`
-	MaxReplyTime          int `json:"max_reply_time,omitempty"`
-	QueueTimeout          int `json:"queue_timeout,omitempty"`
+	MaxConnectTime        uint `json:"max_connect_time,omitempty"`
+	MaxConnectionsPerNode uint `json:"max_connections_per_node,omitempty"`
+	MaxQueueSize          uint `json:"max_queue_size,omitempty"`
+	MaxReplyTime          uint `json:"max_reply_time,omitempty"`
+	QueueTimeout          uint `json:"queue_timeout,omitempty"`
 }
 
 // HTTP - http settings
@@ -55,7 +55,7 @@ type HTTP struct {
 type LoadBalancing struct {
 	Algorithm       string `json:"algorithm,omitempty"`
 	PriorityEnabled *bool  `json:"priority_enabled,omitempty"`
-	PriorityNodes   int    `json:"priority_nodes,omitempty"`
+	PriorityNodes   uint   `json:"priority_nodes,omitempty"`
 }
 
 // Node - Node Specific settings

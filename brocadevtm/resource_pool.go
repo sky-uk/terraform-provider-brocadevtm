@@ -226,13 +226,13 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 		createPool.Properties.Basic.Monitors = monitors
 	}
 	if v, ok := d.GetOk("max_connection_attempts"); ok {
-		createPool.Properties.Basic.MaxConnectionAttempts = v.(int)
+		createPool.Properties.Basic.MaxConnectionAttempts = uint(v.(int))
 	}
 	if v, ok := d.GetOk("max_idle_connections_pernode"); ok {
-		createPool.Properties.Basic.MaxIdleConnectionsPerNode = v.(int)
+		createPool.Properties.Basic.MaxIdleConnectionsPerNode = uint(v.(int))
 	}
 	if v, ok := d.GetOk("max_timed_out_connection_attempts"); ok {
-		createPool.Properties.Basic.MaxTimeoutConnectionAttempts = v.(int)
+		createPool.Properties.Basic.MaxTimeoutConnectionAttempts = uint(v.(int))
 	}
 	if v, _ := d.GetOk("node_close_with_rst"); v != nil {
 		nodeCloseWithReset := v.(bool)
@@ -240,19 +240,19 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if v, ok := d.GetOk("max_connection_timeout"); ok {
-		createPool.Properties.Connection.MaxConnectTime = v.(int)
+		createPool.Properties.Connection.MaxConnectTime = uint(v.(int))
 	}
 	if v, ok := d.GetOk("max_connections_per_node"); ok {
-		createPool.Properties.Connection.MaxConnectionsPerNode = v.(int)
+		createPool.Properties.Connection.MaxConnectionsPerNode = uint(v.(int))
 	}
 	if v, ok := d.GetOk("max_queue_size"); ok {
-		createPool.Properties.Connection.MaxQueueSize = v.(int)
+		createPool.Properties.Connection.MaxQueueSize = uint(v.(int))
 	}
 	if v, ok := d.GetOk("max_reply_time"); ok {
-		createPool.Properties.Connection.MaxReplyTime = v.(int)
+		createPool.Properties.Connection.MaxReplyTime = uint(v.(int))
 	}
 	if v, ok := d.GetOk("queue_timeout"); ok {
-		createPool.Properties.Connection.QueueTimeout = v.(int)
+		createPool.Properties.Connection.QueueTimeout = uint(v.(int))
 	}
 	if v, _ := d.GetOk("http_keepalive"); v != nil {
 		httpKeepAlive := v.(bool)
@@ -267,7 +267,7 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 		createPool.Properties.LoadBalancing.PriorityEnabled = &loadBalancingPriorityEnabled
 	}
 	if v, ok := d.GetOk("load_balancing_priority_nodes"); ok {
-		createPool.Properties.LoadBalancing.PriorityNodes = v.(int)
+		createPool.Properties.LoadBalancing.PriorityNodes = uint(v.(int))
 	}
 	if v, ok := d.GetOk("load_balancing_algorithm"); ok && v != "" {
 		createPool.Properties.LoadBalancing.Algorithm = v.(string)
@@ -384,21 +384,21 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 
 	if d.HasChange("max_connection_attempts") {
 		if v, ok := d.GetOk("max_connection_attempts"); ok {
-			updatePool.Properties.Basic.MaxConnectionAttempts = v.(int)
+			updatePool.Properties.Basic.MaxConnectionAttempts = uint(v.(int))
 		}
 		hasChanges = true
 	}
 
 	if d.HasChange("max_idle_connections_pernode") {
 		if v, ok := d.GetOk("max_idle_connections_pernode"); ok {
-			updatePool.Properties.Basic.MaxIdleConnectionsPerNode = v.(int)
+			updatePool.Properties.Basic.MaxIdleConnectionsPerNode = uint(v.(int))
 		}
 		hasChanges = true
 	}
 
 	if d.HasChange("max_timed_out_connection_attempts") {
 		if v, ok := d.GetOk("max_timed_out_connection_attempts"); ok {
-			updatePool.Properties.Basic.MaxTimeoutConnectionAttempts = v.(int)
+			updatePool.Properties.Basic.MaxTimeoutConnectionAttempts = uint(v.(int))
 		}
 		hasChanges = true
 	}
@@ -411,35 +411,35 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 
 	if d.HasChange("max_connection_timeout") {
 		if v, ok := d.GetOk("max_connection_timeout"); ok {
-			updatePool.Properties.Connection.MaxConnectTime = v.(int)
+			updatePool.Properties.Connection.MaxConnectTime = uint(v.(int))
 		}
 		hasChanges = true
 	}
 
 	if d.HasChange("max_connections_per_node") {
 		if v, ok := d.GetOk("max_connections_per_node"); ok {
-			updatePool.Properties.Connection.MaxConnectionsPerNode = v.(int)
+			updatePool.Properties.Connection.MaxConnectionsPerNode = uint(v.(int))
 		}
 		hasChanges = true
 	}
 
 	if d.HasChange("max_queue_size") {
 		if v, ok := d.GetOk("max_queue_size"); ok {
-			updatePool.Properties.Connection.MaxQueueSize = v.(int)
+			updatePool.Properties.Connection.MaxQueueSize = uint(v.(int))
 		}
 		hasChanges = true
 	}
 
 	if d.HasChange("max_reply_time") {
 		if v, ok := d.GetOk("max_reply_time"); ok {
-			updatePool.Properties.Connection.MaxReplyTime = v.(int)
+			updatePool.Properties.Connection.MaxReplyTime = uint(v.(int))
 		}
 		hasChanges = true
 	}
 
 	if d.HasChange("queue_timeout") {
 		if v, ok := d.GetOk("queue_timeout"); ok {
-			updatePool.Properties.Connection.QueueTimeout = v.(int)
+			updatePool.Properties.Connection.QueueTimeout = uint(v.(int))
 		}
 		hasChanges = true
 	}
@@ -464,7 +464,7 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 
 	if d.HasChange("load_balancing_priority_nodes") {
 		if v, ok := d.GetOk("load_balancing_priority_nodes"); ok {
-			updatePool.Properties.LoadBalancing.PriorityNodes = v.(int)
+			updatePool.Properties.LoadBalancing.PriorityNodes = uint(v.(int))
 		}
 		hasChanges = true
 	}
