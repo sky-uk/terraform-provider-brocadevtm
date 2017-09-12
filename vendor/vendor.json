@@ -493,12 +493,12 @@
 			"versionExact": "0.2.0"
 		},
 		{
-			"checksumSHA1": "R7h6dqkXdL6X9vSyzW4WpEKoRJk=",
+			"checksumSHA1": "yW8+D2aILAOrRGWwVzA9p7bqJWM=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api/pool",
-			"revision": "6bc034b653ab5d8d3fbc2ed3e1f3f3c099867056",
-			"revisionTime": "2017-07-27T10:44:05Z",
-			"version": "0.2.0",
-			"versionExact": "0.2.0"
+			"revision": "5116dacbfd25415fb6859badf450c52c3ad4c6b3",
+			"revisionTime": "2017-09-12T10:55:23Z",
+			"version": "0.2.1",
+			"versionExact": "0.2.1"
 		},
 		{
 			"checksumSHA1": "kN3xblWb/5nn7MPK7IyYkf9b19s=",
@@ -545,7 +545,7 @@
 			"path": "github.com/sky-uk/go-rest-api",
 			"revision": "17b996374ad01ce0a04b31b037dcf3018cc07362",
 			"revisionTime": "2017-07-25T09:28:20Z",
-			"version": "0.0.1",
+			"version": "0.2.1",
 			"versionExact": "0.0.1"
 		},
 		{
@@ -603,7 +603,16 @@
 			"path": "golang.org/x/net/html/atom",
 			"revision": "dfe83d419c9403b40b19d08cdba2afec27b002f7",
 			"revisionTime": "2017-06-09T23:50:55Z"
+		},
+		{
+			"path": "package-spec",
+			"revision": ""
+		},
+		{
+			"path": "package-spec=github.com/sky-uk/go-rest-api",
+			"revision": "0.2.1",
+			"version": "0.2.1"
 		}
 	],
-	"rootPath": "github.com/sky-uk/terraform-provider-brocadevtm"
+	"rootPath": "/github.com/sky-uk/terraform-provider-brocadevtm"
 }
