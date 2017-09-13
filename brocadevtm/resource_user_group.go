@@ -65,7 +65,7 @@ func ValidateAccessLevel(v interface{}, k string) (ws []string, errors []error) 
 		"full":
 		return
 	}
-	errors = append(errors, fmt.Errorf("%q must be one of NONE, RO or FULL", k))
+	errors = append(errors, fmt.Errorf("Access level must be one of NONE, RO or FULL", k))
 	return
 }
 
@@ -159,11 +159,11 @@ func resourceUserGroupUpdate(d *schema.ResourceData, m interface{}) error {
 		hasChanges = true
 	}
 	if d.HasChange("password_expire_time") {
-		updatedUserGroup.Properties.Basic.PasswordExpireTime = d.Get("password_expire_time").(uint)
+		updatedUserGroup.Properties.Basic.PasswordExpireTime = uint(d.Get("password_expire_time").(int))
 		hasChanges = true
 	}
 	if d.HasChange("timeout") {
-		updatedUserGroup.Properties.Basic.Timeout = d.Get("timeout").(uint)
+		updatedUserGroup.Properties.Basic.Timeout = uint(d.Get("timeout").(int))
 		hasChanges = true
 	}
 	if d.HasChange("permissions") {
