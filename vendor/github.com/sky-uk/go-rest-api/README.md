@@ -39,7 +39,7 @@ import(
 
 ```
     // Prepare a request...
-    api := rest.NewRestAPI(
+    api := rest.NewBaseAPI(
         http.MethodGet,         // request method
         "/",                    // request path
         nil,                    // request payload object
