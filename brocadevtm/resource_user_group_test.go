@@ -5,11 +5,11 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/sky-uk/go-brocade-vtm/api/user_groups"
 	"github.com/sky-uk/go-rest-api"
+	"net/http"
 	"regexp"
 	"testing"
-	"github.com/sky-uk/go-brocade-vtm/api/user_groups"
-	"net/http"
 )
 
 func TestAccBrocadeVTMUserGroupBasic(t *testing.T) {
@@ -25,7 +25,7 @@ func TestAccBrocadeVTMUserGroupBasic(t *testing.T) {
 		},
 		Providers: testAccProviders,
 		CheckDestroy: func(state *terraform.State) error {
-			return testAccBrocadeVTMUserGroupCheckDestroy(state,userGroupName)
+			return testAccBrocadeVTMUserGroupCheckDestroy(state, userGroupName)
 		},
 		Steps: []resource.TestStep{
 			{
@@ -62,7 +62,7 @@ func TestAccBrocadeVTMUserGroupBasic(t *testing.T) {
 	})
 }
 
-func testAccBrocadeVTMUserGroupCheckDestroy(state *terraform.State,name string) error {
+func testAccBrocadeVTMUserGroupCheckDestroy(state *terraform.State, name string) error {
 	vtmClient := testAccProvider.Meta().(*rest.Client)
 
 	for _, rs := range state.RootModule().Resources {
