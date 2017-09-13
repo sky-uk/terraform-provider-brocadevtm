@@ -53,6 +53,7 @@ func Provider() terraform.ResourceProvider {
 			"brocadevtm_traffic_ip_group": resourceTrafficIPGroup(),
 			"brocadevtm_virtual_server":   resourceVirtualServer(),
 			"brocadevtm_rule":             resourceRule(),
+			"brocadevtm_user_group":       resourceUserGroup(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
