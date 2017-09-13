@@ -57,6 +57,7 @@ func resourceUserGroup() *schema.Resource {
 	}
 }
 
+// ValidateAccessLevel : Validates that the access level entered is correct
 func ValidateAccessLevel(v interface{}, k string) (ws []string, errors []error) {
 	switch strings.ToLower(v.(string)) {
 	case
