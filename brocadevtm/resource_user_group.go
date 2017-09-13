@@ -3,8 +3,6 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm/api/monitor"
-	"github.com/sky-uk/go-brocade-vtm/api/rule"
 	"github.com/sky-uk/go-brocade-vtm/api/user_groups"
 	"github.com/sky-uk/go-rest-api"
 	"net/http"
@@ -185,14 +183,14 @@ func resourceUserGroupUpdate(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			return fmt.Errorf("BrocadeVTM User Group error whilst updating %s: %vv", d.Id(), err)
 		}
-		return resourceRuleRead(d, m)
+		return resourceUserGroupRead(d, m)
 	}
-	return resourceUserGroupRead(d, m)
+	return nil
 }
 
 func resourceUserGroupDelete(d *schema.ResourceData, m interface{}) error {
 	vtmClient := m.(*rest.Client)
-	deleteAPI := rule.NewDelete(d.Id())
+	deleteAPI := usergroups.NewDelete(d.Id())
 	err := vtmClient.Do(deleteAPI)
 	if err != nil && deleteAPI.StatusCode() != http.StatusNotFound {
 		return fmt.Errorf("BrocadeVTM User Group error whilst deleting %s: %v", d.Id(), err)
