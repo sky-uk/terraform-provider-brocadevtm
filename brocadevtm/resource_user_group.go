@@ -66,7 +66,7 @@ func ValidateAccessLevel(v interface{}, k string) (ws []string, errors []error) 
 		"full":
 		return
 	}
-	errors = append(errors, fmt.Errorf("Access level must be one of NONE, RO or FULL", k))
+	errors = append(errors, fmt.Errorf("Access level must be one of NONE, RO or FULL"))
 	return
 }
 
