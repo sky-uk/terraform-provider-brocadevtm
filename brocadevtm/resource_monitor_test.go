@@ -44,6 +44,18 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(monitorResourceName, "http_authentication", "admin:password"),
 					resource.TestCheckResourceAttr(monitorResourceName, "http_body_regex", "^ok"),
 					resource.TestCheckResourceAttr(monitorResourceName, "http_path", "/some/status/page"),
+					resource.TestCheckResourceAttr(monitorResourceName, "rtsp_status_regex", "^[234][0-9][0-9]$"),
+					resource.TestCheckResourceAttr(monitorResourceName, "rtsp_body_regex", ""),
+					resource.TestCheckResourceAttr(monitorResourceName, "rtsp_path", "/"),
+					resource.TestCheckResourceAttr(monitorResourceName, "script_program", ""),
+					resource.TestCheckResourceAttr(monitorResourceName, "sip_body_regex", ""),
+					resource.TestCheckResourceAttr(monitorResourceName, "sip_status_regex", "^[234][0-9][0-9]$"),
+					resource.TestCheckResourceAttr(monitorResourceName, "sip_transport", "udp"),
+					resource.TestCheckResourceAttr(monitorResourceName, "tcp_close_string", ""),
+					resource.TestCheckResourceAttr(monitorResourceName, "tcp_max_response_len", "4048"),
+					resource.TestCheckResourceAttr(monitorResourceName, "tcp_response_regex", ".*"),
+					resource.TestCheckResourceAttr(monitorResourceName, "tcp_write_string", ""),
+					resource.TestCheckResourceAttr(monitorResourceName, "udp_accept_all", "false"),
 				),
 			},
 			{
@@ -60,6 +72,18 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(monitorResourceName, "http_authentication", "some_authentication"),
 					resource.TestCheckResourceAttr(monitorResourceName, "http_body_regex", "^healthy"),
 					resource.TestCheckResourceAttr(monitorResourceName, "http_path", "/some/other/status/page"),
+					resource.TestCheckResourceAttr(monitorResourceName, "rtsp_status_regex", "^[234][0-9][0-9]$"),
+					resource.TestCheckResourceAttr(monitorResourceName, "rtsp_body_regex", "something"),
+					resource.TestCheckResourceAttr(monitorResourceName, "rtsp_path", "/"),
+					resource.TestCheckResourceAttr(monitorResourceName, "script_program", "dns.pl"),
+					resource.TestCheckResourceAttr(monitorResourceName, "sip_body_regex", ""),
+					resource.TestCheckResourceAttr(monitorResourceName, "sip_status_regex", "^[234][0-9][0-9]$"),
+					resource.TestCheckResourceAttr(monitorResourceName, "sip_transport", "udp"),
+					resource.TestCheckResourceAttr(monitorResourceName, "tcp_close_string", ""),
+					resource.TestCheckResourceAttr(monitorResourceName, "tcp_max_response_len", "2048"),
+					resource.TestCheckResourceAttr(monitorResourceName, "tcp_response_regex", ".+"),
+					resource.TestCheckResourceAttr(monitorResourceName, "tcp_write_string", ""),
+					resource.TestCheckResourceAttr(monitorResourceName, "udp_accept_all", "false"),
 				),
 			},
 		},
@@ -132,6 +156,23 @@ resource "brocadevtm_monitor" "acctest" {
   http_authentication = "admin:password"
   http_body_regex = "^ok"
   http_path = "/some/status/page"
+  rtsp_status_regex = "^[234][0-9][0-9]$"
+  rtsp_body_regex = ""
+  rtsp_path = "/"
+  script_arguments {
+    name="test1"
+    description="paas test"
+    value="dns.pl"
+  }
+  script_program = ""
+  sip_body_regex = ""
+  sip_status_regex = "^[234][0-9][0-9]$"
+  sip_transport = "udp"
+  tcp_close_string = ""
+  tcp_max_response_len = "4048"
+  tcp_response_regex = ".*"
+  tcp_write_string = ""
+  udp_accept_all = false
 }
 `, monitorName)
 }
@@ -149,6 +190,23 @@ resource "brocadevtm_monitor" "acctest" {
   http_authentication = "some_authentication"
   http_body_regex = "^healthy"
   http_path = "/some/other/status/page"
+  rtsp_status_regex = "^[234][0-9][0-9]$"
+  rtsp_body_regex = "something"
+  rtsp_path = "/"
+  script_arguments {
+    name="test2"
+    description="paas test2"
+    value="bla.pl"
+  }
+  script_program = "dns.pl"
+  sip_body_regex = ""
+  sip_status_regex = "^[234][0-9][0-9]$"
+  sip_transport = "udp"
+  tcp_close_string = ""
+  tcp_max_response_len = "2048"
+  tcp_response_regex = ".+"
+  tcp_write_string = ""
+  udp_accept_all = false
 }
 `, monitorName)
 }

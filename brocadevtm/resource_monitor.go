@@ -69,6 +69,95 @@ func resourceMonitor() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+			"http_status_regex": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"rtsp_body_regex": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"rtsp_status_regex": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"rtsp_path": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"script_program": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"script_arguments": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+
+						"name": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"description": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"value": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+					},
+				},
+			},
+			"sip_body_regex": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"sip_status_regex": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"sip_transport": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"tcp_close_string": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"tcp_max_response_len": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+			},
+			"tcp_response_regex": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"tcp_write_string": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"udp_accept_all": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -122,7 +211,68 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("http_body_regex"); ok {
 		createMonitor.Properties.HTTP.BodyRegex = v.(string)
 	}
+	if v, ok := d.GetOk("http_status_regex"); ok {
+		createMonitor.Properties.HTTP.StatusRegex = v.(string)
+	}
+	if v, ok := d.GetOk("rtsp_body_regex"); ok {
+		createMonitor.Properties.RTSP.BodyRegex = v.(string)
+	}
+	if v, ok := d.GetOk("rtsp_status_regex"); ok {
+		createMonitor.Properties.RTSP.StatusRegex = v.(string)
+	}
+	if v, ok := d.GetOk("rtsp_path"); ok {
+		createMonitor.Properties.RTSP.URIPath = v.(string)
+	}
+	if v, ok := d.GetOk("script_program"); ok {
+		createMonitor.Properties.SCRIPT.Program = v.(string)
+	}
+	if v, ok := d.GetOk("script_arguments"); ok {
+		if arguments, ok := v.(*schema.Set); ok {
+			argumentsList := []monitor.ArgumentIssue{}
+			for _, value := range arguments.List() {
+				argumentsObject := value.(map[string]interface{})
+				newArguments := monitor.ArgumentIssue{}
+				if nameValue, ok := argumentsObject["name"].(string); ok {
+					newArguments.Name = nameValue
+				}
+				if descriptionValue, ok := argumentsObject["description"].(string); ok {
+					newArguments.Description = descriptionValue
+				}
+				if valueValue, ok := argumentsObject["value"].(string); ok {
+					newArguments.Value = valueValue
+				}
+				argumentsList = append(argumentsList, newArguments)
 
+			}
+			createMonitor.Properties.SCRIPT.Arguments = argumentsList
+		}
+	}
+
+	if v, ok := d.GetOk("sip_body_regex"); ok {
+		createMonitor.Properties.SIP.BodyRegex = v.(string)
+	}
+	if v, ok := d.GetOk("sip_status_regex"); ok {
+		createMonitor.Properties.SIP.StatusRegex = v.(string)
+	}
+	if v, ok := d.GetOk("sip_transport"); ok {
+		createMonitor.Properties.SIP.Transport = v.(string)
+	}
+	if v, ok := d.GetOk("tcp_close_string"); ok {
+		createMonitor.Properties.TCP.CloseString = v.(string)
+	}
+	if v, ok := d.GetOk("tcp_max_response_len"); ok {
+		createMonitor.Properties.TCP.MaxResponseLen = uint(v.(int))
+	}
+	if v, ok := d.GetOk("tcp_response_regex"); ok {
+		createMonitor.Properties.TCP.ResponseRegex = v.(string)
+	}
+	if v, ok := d.GetOk("tcp_write_string"); ok {
+		createMonitor.Properties.TCP.WriteString = v.(string)
+	}
+	if v, ok := d.GetOk("udp_accept_all"); ok {
+		monitorAcceptAll := v.(bool)
+		createMonitor.Properties.UDP.AcceptAll = &monitorAcceptAll
+	}
 	createAPI := monitor.NewCreate(name, createMonitor)
 
 	err := vtmClient.Do(createAPI)
@@ -165,6 +315,20 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("http_path", getMonitorProperties.Properties.HTTP.URIPath)
 	d.Set("http_authentication", getMonitorProperties.Properties.HTTP.Authentication)
 	d.Set("http_body_regex", getMonitorProperties.Properties.HTTP.BodyRegex)
+	d.Set("http_status_regex", getMonitorProperties.Properties.HTTP.StatusRegex)
+	d.Set("rtsp_body_regex", getMonitorProperties.Properties.RTSP.BodyRegex)
+	d.Set("rtsp_status_regex", getMonitorProperties.Properties.RTSP.StatusRegex)
+	d.Set("rtsp_path", getMonitorProperties.Properties.RTSP.URIPath)
+	d.Set("script_program", getMonitorProperties.Properties.SCRIPT.Program)
+	d.Set("script_arguments", getMonitorProperties.Properties.SCRIPT.Arguments)
+	d.Set("sip_body_regex", getMonitorProperties.Properties.SIP.BodyRegex)
+	d.Set("sip_status_regex", getMonitorProperties.Properties.SIP.StatusRegex)
+	d.Set("sip_transport", getMonitorProperties.Properties.SIP.Transport)
+	d.Set("tcp_close_string", getMonitorProperties.Properties.TCP.CloseString)
+	d.Set("tcp_max_response_len", getMonitorProperties.Properties.TCP.MaxResponseLen)
+	d.Set("tcp_response_regex", getMonitorProperties.Properties.TCP.ResponseRegex)
+	d.Set("tcp_write_string", getMonitorProperties.Properties.TCP.WriteString)
+	d.Set("udp_accept_all", getMonitorProperties.Properties.UDP.AcceptAll)
 	return nil
 }
 
@@ -233,7 +397,109 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 		hasChanges = true
 	}
+	if d.HasChange("http_status_regex") {
+		if v, ok := d.GetOk("http_status_regex"); ok {
+			updateMonitor.Properties.HTTP.StatusRegex = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("rtsp_status_regex") {
+		if v, ok := d.GetOk("rtsp_status_regex"); ok {
+			updateMonitor.Properties.RTSP.StatusRegex = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("rtsp_body_regex") {
+		if v, ok := d.GetOk("rtsp_body_regex"); ok {
+			updateMonitor.Properties.RTSP.BodyRegex = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("rtsp_path") {
+		if v, ok := d.GetOk("rtsp_path"); ok {
+			updateMonitor.Properties.RTSP.URIPath = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("script_arguments") {
+		if v, ok := d.GetOk("script_arguments"); ok {
+			if arguments, ok := v.(*schema.Set); ok {
+				argumentsList := []monitor.ArgumentIssue{}
+				for _, value := range arguments.List() {
+					argumentsObject := value.(map[string]interface{})
+					newArguments := monitor.ArgumentIssue{}
+					if nameValue, ok := argumentsObject["name"].(string); ok {
+						newArguments.Name = nameValue
+					}
+					if descriptionValue, ok := argumentsObject["description"].(string); ok {
+						newArguments.Description = descriptionValue
+					}
+					if valueValue, ok := argumentsObject["value"].(string); ok {
+						newArguments.Value = valueValue
+					}
+					argumentsList = append(argumentsList, newArguments)
 
+				}
+				updateMonitor.Properties.SCRIPT.Arguments = argumentsList
+			}
+			hasChanges = true
+		}
+	}
+	if d.HasChange("script_program") {
+		if v, ok := d.GetOk("script_program"); ok {
+			updateMonitor.Properties.SCRIPT.Program = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("sip_body_regex") {
+		if v, ok := d.GetOk("sip_body_regex"); ok {
+			updateMonitor.Properties.SIP.BodyRegex = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("sip_status_regex") {
+		if v, ok := d.GetOk("sip_status_regex"); ok {
+			updateMonitor.Properties.SIP.StatusRegex = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("sip_transport") {
+		if v, ok := d.GetOk("sip_transport"); ok {
+			updateMonitor.Properties.SIP.StatusRegex = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("tcp_close_string") {
+		if v, ok := d.GetOk("tcp_close_string"); ok {
+			updateMonitor.Properties.TCP.CloseString = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("tcp_max_response_len") {
+		if v, ok := d.GetOk("tcp_max_response_len"); ok {
+			updateMonitor.Properties.TCP.MaxResponseLen = uint(v.(int))
+		}
+		hasChanges = true
+	}
+	if d.HasChange("tcp_response_regex") {
+		if v, ok := d.GetOk("tcp_response_regex"); ok {
+			updateMonitor.Properties.TCP.ResponseRegex = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("tcp_write_string") {
+		if v, ok := d.GetOk("tcp_write_string"); ok {
+			updateMonitor.Properties.TCP.WriteString = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("udp_accept_all") {
+		if v, ok := d.GetOk("udp_accept_all"); ok {
+			monitorAcceptAll := v.(bool)
+			updateMonitor.Properties.UDP.AcceptAll = &monitorAcceptAll
+		}
+		hasChanges = true
+	}
 	if hasChanges {
 		updateAPI := monitor.NewUpdate(readName, updateMonitor)
 		err := vtmClient.Do(updateAPI)
