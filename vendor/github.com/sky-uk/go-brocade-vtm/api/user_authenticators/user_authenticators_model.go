@@ -8,14 +8,14 @@ type UserAuthenticator struct {
 // Properties : Properties contains the overall UserAuthenticator configuration
 type Properties struct {
 	Basic      Basic      `json:"basic"`
-	LDAP       LDAP       `json:"ldap"`
-	Radius     Radius     `json:"radius"`
-	TACACSPlus TACACSPlus `json:"tacacs_plus"`
+	LDAP       LDAP       `json:"ldap,omitempty"`
+	Radius     Radius     `json:"radius,omitempty"`
+	TACACSPlus TACACSPlus `json:"tacacs_plus,omitempty"`
 }
 
 // Basic : Properties contains the Basic UserAuthenticator configuration
 type Basic struct {
-	Description string `json:"string,omitempty"`
+	Description string `json:"description,omitempty"`
 	Enabled     bool   `json:"enabled"`
 	Type        string `json:"type,omitempty"`
 }
@@ -40,8 +40,8 @@ type LDAP struct {
 // Radius : Data structure representing the Radius access control system
 type Radius struct {
 	FallbackGroup  string `json:"fallback_group,omitempty"`
-	GroupAttribute string `json:"group_attribute"`
-	GroupVendor    string `json:"group_vendor"`
+	GroupAttribute uint   `json:"group_attribute"`
+	GroupVendor    uint   `json:"group_vendor"`
 	NasIdentifier  string `json:"nas_identifier,omitempty"`
 	NasIPAddress   string `json:"nas_ip_address,omitempty"`
 	Port           uint   `json:"port"`
@@ -52,10 +52,10 @@ type Radius struct {
 
 // TACACSPlus : Data structure representing the TACACSPlus access control system
 type TACACSPlus struct {
-	AuthType      string `json:"auth_type"`
+	AuthType      string `json:"auth_type,omitempty"`
 	FallbackGroup string `json:"fallback_group,omitempty"`
-	GroupField    string `json:"group_field"`
-	GroupService  string `json:"group_service"`
+	GroupField    string `json:"group_field,omitempty"`
+	GroupService  string `json:"group_service,omitempty"`
 	Port          uint   `json:"port"`
 	Secret        string `json:"secret,omitempty"`
 	Server        string `json:"server,omitempty"`

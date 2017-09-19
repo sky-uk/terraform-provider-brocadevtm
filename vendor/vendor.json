@@ -533,12 +533,12 @@
 			"versionExact": "0.2.0"
 		},
 		{
-			"checksumSHA1": "ARGgtyd/k0SXusYG7TFafPTRulE=",
+			"checksumSHA1": "+zPrryXYkCZIIoTsrIlBrloqYsw=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api/user_authenticators",
-			"revision": "8d705d7876860dbf4bcb4994289aec769d67c89d",
-			"revisionTime": "2017-09-14T15:36:19Z",
-			"version": "0.2.3",
-			"versionExact": "0.2.3"
+			"revision": "6f4e3c6f825d7a822e64863e675f31fb7f5a68c4",
+			"revisionTime": "2017-09-18T15:36:18Z",
+			"version": "0.2.5",
+			"versionExact": "0.2.5"
 		},
 		{
 			"checksumSHA1": "zrDzIn23ElFNKOZLlkLVZRWXMj4=",
