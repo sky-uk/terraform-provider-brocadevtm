@@ -37,10 +37,9 @@ func resourceUserAuthenticator() *schema.Resource {
 				ValidateFunc: validateAuthenticationType,
 			},
 			"ldap": {
-				Type:          schema.TypeSet,
-				Optional:      true,
-				ConflictsWith: []string{"radius", "tacacs_plus"},
-				MaxItems:      1,
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"base_dn": {
@@ -116,10 +115,9 @@ func resourceUserAuthenticator() *schema.Resource {
 				},
 			},
 			"radius": {
-				Type:          schema.TypeSet,
-				Optional:      true,
-				ConflictsWith: []string{"ldap", "tacacs_plus"},
-				MaxItems:      1,
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"fallback_group": {
@@ -176,10 +174,9 @@ func resourceUserAuthenticator() *schema.Resource {
 				},
 			},
 			"tacacs_plus": {
-				Type:          schema.TypeSet,
-				Optional:      true,
-				ConflictsWith: []string{"ldap", "radius"},
-				MaxItems:      1,
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"auth_type": {
@@ -294,16 +291,32 @@ func resourceUserAuthenticatorCreate(d *schema.ResourceData, m interface{}) erro
 	}
 	if v, ok := d.GetOk("type"); ok {
 		userAuthenticator.Properties.Basic.Type = v.(string)
-		switch v.(string) {
-		case "ldap":
-			userAuthenticator.LDAP = assignLDAPValues(d)
-		case "radius":
-			userAuthenticator.Radius = assignRadiusValues(d)
-		case "tacas_plus":
-			userAuthenticator.TACACSPlus = assignTACASPlusValues(d)
-		}
-
 	}
+
+	if v, ok := d.GetOk("ldap"); ok {
+		ldapList := []map[string]interface{}{}
+		for _, ldap := range v.([]interface{}) {
+			ldapList = append(ldapList, ldap.(map[string]interface{}))
+		}
+		userAuthenticator.LDAP = assignLDAPValues(ldapList)
+	}
+
+	if v, ok := d.GetOk("radius"); ok {
+		radiusList := []map[string]interface{}{}
+		for _, radius := range v.([]interface{}) {
+			radiusList = append(radiusList, radius.(map[string]interface{}))
+		}
+		userAuthenticator.Radius = assignRadiusValues(radiusList)
+	}
+
+	if v, ok := d.GetOk("tacas_plus"); ok {
+		tacasPlusList := []map[string]interface{}{}
+		for _, tacasPlus := range v.([]interface{}) {
+			tacasPlusList = append(tacasPlusList, tacasPlus.(map[string]interface{}))
+		}
+		userAuthenticator.TACACSPlus = assignTACASPlusValues(tacasPlusList)
+	}
+
 	createAPI := userauthenticators.NewPut(userAuthenticatorName, userAuthenticator)
 	err := vtmClient.Do(createAPI)
 	if err != nil {
@@ -330,25 +343,35 @@ func resourceUserAuthenticatorUpdate(d *schema.ResourceData, m interface{}) erro
 		updatedUserAuthenticator.Properties.Basic.Enabled = oldEnabled.(bool)
 	}
 
-	authenticationType := d.Get("type").(string)
-
 	if d.HasChange("type") {
-		updatedUserAuthenticator.Basic.Type = authenticationType
+		updatedUserAuthenticator.Properties.Basic.Type = d.Get("type").(string)
 	}
 
-	switch authenticationType {
-	case "ldap":
-		if d.HasChange("ldap") {
-			updatedUserAuthenticator.Properties.LDAP = assignLDAPValues(d)
+	if d.HasChange("ldap") {
+		ldaps := []map[string]interface{}{}
+		for _, ldap := range d.Get("ldap").([]interface{}) {
+			ldaps = append(ldaps, ldap.(map[string]interface{}))
 		}
-	case "radius":
-		if d.HasChange("radius") {
-			updatedUserAuthenticator.Properties.Radius = assignRadiusValues(d)
+		updatedUserAuthenticator.LDAP = assignLDAPValues(ldaps)
+		hasChanges = true
+	}
+
+	if d.HasChange("radius") {
+		radiusList := []map[string]interface{}{}
+		for _, radius := range d.Get("radius").([]interface{}) {
+			radiusList = append(radiusList, radius.(map[string]interface{}))
 		}
-	case "tacas_plus":
-		if d.HasChange("tacas_plus") {
-			updatedUserAuthenticator.Properties.TACACSPlus = assignTACASPlusValues(d)
+		updatedUserAuthenticator.Radius = assignRadiusValues(radiusList)
+		hasChanges = true
+	}
+
+	if d.HasChange("tacas_plus") {
+		tacasPlusList := []map[string]interface{}{}
+		for _, tacasPlus := range d.Get("radius").([]interface{}) {
+			tacasPlusList = append(tacasPlusList, tacasPlus.(map[string]interface{}))
 		}
+		updatedUserAuthenticator.Properties.TACACSPlus = assignTACASPlusValues(tacasPlusList)
+		hasChanges = true
 	}
 
 	if hasChanges {
@@ -391,9 +414,12 @@ func resourceUserAuthenticatorRead(d *schema.ResourceData, m interface{}) error 
 	d.Set("description", returnedUserAuthenticator.Properties.Basic.Description)
 	d.Set("enabled", returnedUserAuthenticator.Properties.Basic.Enabled)
 	d.Set("type", returnedUserAuthenticator.Properties.Basic.Type)
-	//d.Set("ldap", returnedUserAuthenticator.Properties.LDAP)
-	//d.Set("radius", returnedUserAuthenticator.Properties.Radius)
-	//d.Set("tacas_plus", returnedUserAuthenticator.Properties.TACACSPlus)
+	ldapList := []userauthenticators.LDAP{returnedUserAuthenticator.Properties.LDAP}
+	d.Set("ldap", ldapList)
+	radiusList := []userauthenticators.Radius{returnedUserAuthenticator.Properties.Radius}
+	d.Set("radius", radiusList)
+	tacasPlusList := []userauthenticators.TACACSPlus{returnedUserAuthenticator.Properties.TACACSPlus}
+	d.Set("tacas_plus", tacasPlusList)
 	return nil
 }
 
@@ -408,120 +434,110 @@ func resourceUserAuthenticatorDelete(d *schema.ResourceData, m interface{}) erro
 	return nil
 }
 
-func assignLDAPValues(d *schema.ResourceData) (ldapStruct userauthenticators.LDAP) {
-	if v, ok := d.GetOk("ldap"); ok {
-		vL := v.(*schema.Set).List()[0]
-		ldapBlock := vL.(map[string]interface{})
+func assignLDAPValues(ldapList []map[string]interface{}) (ldapStruct userauthenticators.LDAP) {
 
-		if v, ok := ldapBlock["base_dn"].(string); ok && v != "" {
-			ldapStruct.BaseDN = v
-		}
-		if v, ok := ldapBlock["bind_dn"].(string); ok && v != "" {
-			ldapStruct.BindDN = v
-		}
-		if v, ok := ldapBlock["dn_method"].(string); ok && v != "" {
-			ldapStruct.DNMethod = strings.ToLower(v)
-		}
-		if v, ok := ldapBlock["fallback_group"].(string); ok && v != "" {
-			ldapStruct.FallbackGroup = v
-		}
-		if v, ok := ldapBlock["filter"].(string); ok && v != "" {
-			ldapStruct.Filter = v
-		}
-		if v, ok := ldapBlock["group_attribute"].(string); ok && v != "" {
-			ldapStruct.GroupAttribute = v
-		}
-		if v, ok := ldapBlock["group_field"].(string); ok && v != "" {
-			ldapStruct.GroupField = v
-		}
-		if v, ok := ldapBlock["group_filter"].(string); ok && v != "" {
-			ldapStruct.GroupFilter = v
-		}
-		if v, ok := ldapBlock["port"].(int); ok {
-			ldapStruct.Port = uint(v)
-		}
-		if v, ok := ldapBlock["search_dn"].(string); ok && v != "" {
-			ldapStruct.SearchDN = v
-		}
-		if v, ok := ldapBlock["search_password"].(string); ok && v != "" {
-			ldapStruct.SearchPassword = v
-		}
-		if v, ok := ldapBlock["server"].(string); ok && v != "" {
-			ldapStruct.Server = v
-		}
-		if v, ok := ldapBlock["timeout"].(int); ok {
-			ldapStruct.Timeout = uint(v)
-		}
+	if v, ok := ldapList[0]["base_dn"].(string); ok && v != "" {
+		ldapStruct.BaseDN = v
 	}
-	return
-}
-
-func assignRadiusValues(d *schema.ResourceData) (radiusStruct userauthenticators.Radius) {
-	if v, ok := d.GetOk("radius"); ok {
-		vL := v.(*schema.Set).List()[0]
-		radiusBlock := vL.(map[string]interface{})
-
-		if v, ok := radiusBlock["fallback_group"].(string); ok {
-			radiusStruct.FallbackGroup = v
-		}
-		if v, ok := radiusBlock["group_attribute"].(int); ok {
-			radiusStruct.GroupAttribute = uint(v)
-		}
-		if v, ok := radiusBlock["group_vendor"].(int); ok {
-			radiusStruct.GroupVendor = uint(v)
-		}
-		if v, ok := radiusBlock["nas_identifier"].(string); ok {
-			radiusStruct.NasIdentifier = v
-		}
-		if v, ok := radiusBlock["nas_ip_address"].(string); ok {
-			radiusStruct.NasIPAddress = v
-		}
-		if v, ok := radiusBlock["port"].(int); ok {
-			radiusStruct.Port = uint(v)
-		}
-		if v, ok := radiusBlock["secret"].(string); ok {
-			radiusStruct.Secret = v
-		}
-		if v, ok := radiusBlock["server"].(string); ok {
-			radiusStruct.Server = v
-		}
-		if v, ok := radiusBlock["timeout"].(int); ok {
-			radiusStruct.Timeout = uint(v)
-		}
+	if v, ok := ldapList[0]["bind_dn"].(string); ok && v != "" {
+		ldapStruct.BindDN = v
+	}
+	if v, ok := ldapList[0]["dn_method"].(string); ok && v != "" {
+		ldapStruct.DNMethod = strings.ToLower(v)
+	}
+	if v, ok := ldapList[0]["fallback_group"].(string); ok && v != "" {
+		ldapStruct.FallbackGroup = v
+	}
+	if v, ok := ldapList[0]["filter"].(string); ok && v != "" {
+		ldapStruct.Filter = v
+	}
+	if v, ok := ldapList[0]["group_attribute"].(string); ok && v != "" {
+		ldapStruct.GroupAttribute = v
+	}
+	if v, ok := ldapList[0]["group_field"].(string); ok && v != "" {
+		ldapStruct.GroupField = v
+	}
+	if v, ok := ldapList[0]["group_filter"].(string); ok && v != "" {
+		ldapStruct.GroupFilter = v
+	}
+	if v, ok := ldapList[0]["port"].(int); ok {
+		ldapStruct.Port = uint(v)
+	}
+	if v, ok := ldapList[0]["search_dn"].(string); ok && v != "" {
+		ldapStruct.SearchDN = v
+	}
+	if v, ok := ldapList[0]["search_password"].(string); ok && v != "" {
+		ldapStruct.SearchPassword = v
+	}
+	if v, ok := ldapList[0]["server"].(string); ok && v != "" {
+		ldapStruct.Server = v
+	}
+	if v, ok := ldapList[0]["timeout"].(int); ok {
+		ldapStruct.Timeout = uint(v)
 	}
 
 	return
 }
 
-func assignTACASPlusValues(d *schema.ResourceData) (tacasPlusStruct userauthenticators.TACACSPlus) {
-	if v, ok := d.GetOk("tacas_plus"); ok {
-		vL := v.(*schema.Set).List()[0]
-		tacasPlusBlock := vL.(map[string]interface{})
+func assignRadiusValues(radiusList []map[string]interface{}) (radiusStruct userauthenticators.Radius) {
 
-		if v, ok := tacasPlusBlock["auth_type"].(string); ok {
-			tacasPlusStruct.AuthType = v
-		}
-		if v, ok := tacasPlusBlock["fallback_group"].(string); ok {
-			tacasPlusStruct.FallbackGroup = v
-		}
-		if v, ok := tacasPlusBlock["group_field"].(string); ok {
-			tacasPlusStruct.GroupField = v
-		}
-		if v, ok := tacasPlusBlock["group_service"].(string); ok {
-			tacasPlusStruct.GroupService = v
-		}
-		if v, ok := tacasPlusBlock["port"].(int); ok {
-			tacasPlusStruct.Port = uint(v)
-		}
-		if v, ok := tacasPlusBlock["secret"].(string); ok {
-			tacasPlusStruct.Secret = v
-		}
-		if v, ok := tacasPlusBlock["server"].(string); ok {
-			tacasPlusStruct.Server = v
-		}
-		if v, ok := tacasPlusBlock["timeout"].(int); ok {
-			tacasPlusStruct.Port = uint(v)
-		}
+	if v, ok := radiusList[0]["fallback_group"].(string); ok {
+		radiusStruct.FallbackGroup = v
 	}
+	if v, ok := radiusList[0]["group_attribute"].(int); ok {
+		radiusStruct.GroupAttribute = uint(v)
+	}
+	if v, ok := radiusList[0]["group_vendor"].(int); ok {
+		radiusStruct.GroupVendor = uint(v)
+	}
+	if v, ok := radiusList[0]["nas_identifier"].(string); ok {
+		radiusStruct.NasIdentifier = v
+	}
+	if v, ok := radiusList[0]["nas_ip_address"].(string); ok {
+		radiusStruct.NasIPAddress = v
+	}
+	if v, ok := radiusList[0]["port"].(int); ok {
+		radiusStruct.Port = uint(v)
+	}
+	if v, ok := radiusList[0]["secret"].(string); ok {
+		radiusStruct.Secret = v
+	}
+	if v, ok := radiusList[0]["server"].(string); ok {
+		radiusStruct.Server = v
+	}
+	if v, ok := radiusList[0]["timeout"].(int); ok {
+		radiusStruct.Timeout = uint(v)
+	}
+
+	return
+}
+
+func assignTACASPlusValues(tacasPlusList []map[string]interface{}) (tacasPlusStruct userauthenticators.TACACSPlus) {
+
+	if v, ok := tacasPlusList[0]["auth_type"].(string); ok {
+		tacasPlusStruct.AuthType = v
+	}
+	if v, ok := tacasPlusList[0]["fallback_group"].(string); ok {
+		tacasPlusStruct.FallbackGroup = v
+	}
+	if v, ok := tacasPlusList[0]["group_field"].(string); ok {
+		tacasPlusStruct.GroupField = v
+	}
+	if v, ok := tacasPlusList[0]["group_service"].(string); ok {
+		tacasPlusStruct.GroupService = v
+	}
+	if v, ok := tacasPlusList[0]["port"].(int); ok {
+		tacasPlusStruct.Port = uint(v)
+	}
+	if v, ok := tacasPlusList[0]["secret"].(string); ok {
+		tacasPlusStruct.Secret = v
+	}
+	if v, ok := tacasPlusList[0]["server"].(string); ok {
+		tacasPlusStruct.Server = v
+	}
+	if v, ok := tacasPlusList[0]["timeout"].(int); ok {
+		tacasPlusStruct.Port = uint(v)
+	}
+
 	return
 }
