@@ -533,6 +533,14 @@
 			"versionExact": "0.2.0"
 		},
 		{
+			"checksumSHA1": "+zPrryXYkCZIIoTsrIlBrloqYsw=",
+			"path": "github.com/sky-uk/go-brocade-vtm/api/user_authenticators",
+			"revision": "6f4e3c6f825d7a822e64863e675f31fb7f5a68c4",
+			"revisionTime": "2017-09-18T15:36:18Z",
+			"version": "0.2.5",
+			"versionExact": "0.2.5"
+		},
+		{
 			"checksumSHA1": "zrDzIn23ElFNKOZLlkLVZRWXMj4=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api/user_groups",
 			"revision": "5116dacbfd25415fb6859badf450c52c3ad4c6b3",
@@ -622,5 +630,5 @@
 			"version": "0.2.1"
 		}
 	],
-	"rootPath": "/github.com/sky-uk/terraform-provider-brocadevtm"
+	"rootPath": "github.com/sky-uk/terraform-provider-brocadevtm"
 }
