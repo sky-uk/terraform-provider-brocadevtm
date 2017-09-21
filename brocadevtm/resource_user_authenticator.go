@@ -239,7 +239,7 @@ func validateAuthenticationType(v interface{}, k string) (ws []string, errors []
 	case
 		"ldap",
 		"radius",
-		"tacus+plus":
+		"tacus_plus":
 		return
 	}
 	errors = append(errors, fmt.Errorf("Access level must be one of ldap, radius or tacas_plus"))
