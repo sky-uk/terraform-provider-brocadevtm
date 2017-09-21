@@ -5,12 +5,12 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/sky-uk/go-brocade-vtm/api/user_authenticators"
 	"github.com/sky-uk/go-brocade-vtm/api/user_groups"
 	"github.com/sky-uk/go-rest-api"
 	"net/http"
 	"regexp"
 	"testing"
-	"github.com/sky-uk/go-brocade-vtm/api/user_authenticators"
 )
 
 func TestAccBrocadeVTMUserAuthenticatorBasic(t *testing.T) {
@@ -30,29 +30,29 @@ func TestAccBrocadeVTMUserAuthenticatorBasic(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: testAccBrocadeUserAuthenticatorNoName(),
+				Config:      testAccBrocadeUserAuthenticatorNoName(),
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
-				Config: testAccBrocadeUserAuthenticatorInvalidType(),
+				Config:      testAccBrocadeUserAuthenticatorInvalidType(),
 				ExpectError: regexp.MustCompile(`Access level must be one of ldap, radius or tacas_plus`),
 			},
 			/*
-			{
+				{
 
-				Config: testAccBrocadeUserAuthenticatorCreate(userAuthenticatorName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccBrocadeVTMUserAuthenticatorExists(userAuthenticatorName, userAuthenticatorResourceName),
-					resource.TestCheckResourceAttr(userAuthenticatorResourceName, "name", userAuthenticatorName),
-				),
-			},
-			{
-				Config: testAccBrocadeUserAuthenticatorUpdate(userAuthenticatorName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccBrocadeVTMUserAuthenticatorExists(userAuthenticatorName, userAuthenticatorResourceName),
-					resource.TestCheckResourceAttr(userAuthenticatorResourceName, "name", userAuthenticatorName),
-				),
-			},
+					Config: testAccBrocadeUserAuthenticatorCreate(userAuthenticatorName),
+					Check: resource.ComposeTestCheckFunc(
+						testAccBrocadeVTMUserAuthenticatorExists(userAuthenticatorName, userAuthenticatorResourceName),
+						resource.TestCheckResourceAttr(userAuthenticatorResourceName, "name", userAuthenticatorName),
+					),
+				},
+				{
+					Config: testAccBrocadeUserAuthenticatorUpdate(userAuthenticatorName),
+					Check: resource.ComposeTestCheckFunc(
+						testAccBrocadeVTMUserAuthenticatorExists(userAuthenticatorName, userAuthenticatorResourceName),
+						resource.TestCheckResourceAttr(userAuthenticatorResourceName, "name", userAuthenticatorName),
+					),
+				},
 			*/
 		},
 	})
