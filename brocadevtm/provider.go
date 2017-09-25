@@ -47,6 +47,7 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
+			"brocadevtm_location":           resourceLocation(),
 			"brocadevtm_monitor":            resourceMonitor(),
 			"brocadevtm_pool":               resourcePool(),
 			"brocadevtm_ssl_server_key":     resourceSSLServerKey(),
