@@ -345,6 +345,7 @@ func resourceUserAuthenticatorUpdate(d *schema.ResourceData, m interface{}) erro
 
 	if d.HasChange("type") {
 		updatedUserAuthenticator.Properties.Basic.Type = d.Get("type").(string)
+		hasChanges = true
 	}
 
 	if d.HasChange("ldap") {
