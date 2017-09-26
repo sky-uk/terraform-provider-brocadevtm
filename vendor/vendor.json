@@ -517,20 +517,20 @@
 			"versionExact": "0.2.11"
 		},
 		{
-			"checksumSHA1": "gzfp2mnvZIlQWPYjhfTYcERq59U=",
+			"checksumSHA1": "ojqzQvFbRcNtXw0OkGn4/LvEwGg=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api/monitor",
-			"revision": "10f241f75e6d57db3086c5a1a9a843385e8713de",
-			"revisionTime": "2017-09-21T14:12:20Z",
-			"version": "0.2.6",
-			"versionExact": "0.2.6"
+			"revision": "fc1724f4aa850f568895465c654428b3560dd0a0",
+			"revisionTime": "2017-09-22T15:36:19Z",
+			"version": "0.2.7",
+			"versionExact": "0.2.7"
 		},
 		{
-			"checksumSHA1": "yW8+D2aILAOrRGWwVzA9p7bqJWM=",
+			"checksumSHA1": "cqlkZiFELdquCfhXVQg3Em+2/Pw=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api/pool",
-			"revision": "5116dacbfd25415fb6859badf450c52c3ad4c6b3",
-			"revisionTime": "2017-09-12T10:55:23Z",
-			"version": "0.2.1",
-			"versionExact": "0.2.1"
+			"revision": "fc1724f4aa850f568895465c654428b3560dd0a0",
+			"revisionTime": "2017-09-22T15:36:19Z",
+			"version": "0.2.7",
+			"versionExact": "0.2.7"
 		},
 		{
 			"checksumSHA1": "kN3xblWb/5nn7MPK7IyYkf9b19s=",
@@ -581,12 +581,12 @@
 			"versionExact": "0.2.1"
 		},
 		{
-			"checksumSHA1": "x85LUqHevzIJijUu0PwHiqU72E8=",
+			"checksumSHA1": "7+sIiUuTk2Gh2MXE718YqVkfS5s=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api/virtualserver",
-			"revision": "6bc034b653ab5d8d3fbc2ed3e1f3f3c099867056",
-			"revisionTime": "2017-07-27T10:44:05Z",
-			"version": "0.2.0",
-			"versionExact": "0.2.0"
+			"revision": "fc1724f4aa850f568895465c654428b3560dd0a0",
+			"revisionTime": "2017-09-22T15:36:19Z",
+			"version": "0.2.7",
+			"versionExact": "0.2.7"
 		},
 		{
 			"checksumSHA1": "i+osz/kyJFBOCkb2ij2gAH88Ahw=",
