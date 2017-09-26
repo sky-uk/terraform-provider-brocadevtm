@@ -27,12 +27,32 @@ func TestAccBrocadeVTMLocationBasic(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccBrocadeVTMLocationNoName(),
+				Config:      testAccBrocadeVTMLocationNoNameTemplate(),
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
-				Config:      testAccBrocadeVTMLocationNoLocationID(locationName),
+				Config:      testAccBrocadeVTMLocationNoLocationIDTemplate(locationName),
 				ExpectError: regexp.MustCompile(`required field is not set`),
+			},
+			{
+				Config:      testAccBrocadeVTMLocationInvalidLatitudeTemplate(locationName),
+				ExpectError: regexp.MustCompile(`must be between -90 and 90 degrees inclusive`),
+			},
+			{
+				Config:      testAccBrocadeVTMLocationInvalidLatitude2Template(locationName),
+				ExpectError: regexp.MustCompile(`must be between -90 and 90 degrees inclusive`),
+			},
+			{
+				Config:      testAccBrocadeVTMLocationInvalidLongitudeTemplate(locationName),
+				ExpectError: regexp.MustCompile(`must be between -180 and 180 degrees inclusive`),
+			},
+			{
+				Config:      testAccBrocadeVTMLocationInvalidLongitude2Template(locationName),
+				ExpectError: regexp.MustCompile(`must be between -180 and 180 degrees inclusive`),
+			},
+			{
+				Config:      testAccBrocadeVTMLocationInvalidTypeTemplate(locationName),
+				ExpectError: regexp.MustCompile(`must be one of config or glb`),
 			},
 			{
 				Config: testAccBrocadeVTMLocationCreateTemplate(locationName),
@@ -113,7 +133,7 @@ func testAccBrocadeVTMLocationExists(locationName, locationResourceName string) 
 	}
 }
 
-func testAccBrocadeVTMLocationNoName() string {
+func testAccBrocadeVTMLocationNoNameTemplate() string {
 	return fmt.Sprintf(`
 resource "brocadevtm_location" "acctest" {
   location_id = 32001
@@ -125,7 +145,7 @@ resource "brocadevtm_location" "acctest" {
 `)
 }
 
-func testAccBrocadeVTMLocationNoLocationID(locationName string) string {
+func testAccBrocadeVTMLocationNoLocationIDTemplate(locationName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_location" "acctest" {
   name = "%s"
@@ -133,6 +153,71 @@ resource "brocadevtm_location" "acctest" {
   longitude = 146.687568
   note = "Acceptance test location"
   type = "glb"
+}
+`, locationName)
+}
+
+func testAccBrocadeVTMLocationInvalidTypeTemplate(locationName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_location" "acctest" {
+  name = "%s"
+  location_id = 32001
+  latitude = -36.353417
+  longitude = 146.687568
+  note = "Acceptance test location"
+  type = "SOME_INVALID_TYPE"
+}
+`, locationName)
+}
+
+func testAccBrocadeVTMLocationInvalidLatitudeTemplate(locationName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_location" "acctest" {
+  name = "%s"
+  location_id = 32001
+  latitude = 180.562456
+  longitude = 146.687568
+  note = "Acceptance test location"
+  type = "config"
+}
+`, locationName)
+}
+
+func testAccBrocadeVTMLocationInvalidLatitude2Template(locationName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_location" "acctest" {
+  name = "%s"
+  location_id = 32001
+  latitude = -180.562456
+  longitude = 146.687568
+  note = "Acceptance test location"
+  type = "config"
+}
+`, locationName)
+}
+
+func testAccBrocadeVTMLocationInvalidLongitudeTemplate(locationName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_location" "acctest" {
+  name = "%s"
+  location_id = 32001
+  latitude = -36.353417
+  longitude = 196.687568
+  note = "Acceptance test location"
+  type = "config"
+}
+`, locationName)
+}
+
+func testAccBrocadeVTMLocationInvalidLongitude2Template(locationName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_location" "acctest" {
+  name = "%s"
+  location_id = 32001
+  latitude = -36.353417
+  longitude = -196.687568
+  note = "Acceptance test location"
+  type = "config"
 }
 `, locationName)
 }

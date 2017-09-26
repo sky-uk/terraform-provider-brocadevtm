@@ -30,16 +30,18 @@ func resourceLocation() *schema.Resource {
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"latitude": {
-				Type:        schema.TypeFloat,
-				Optional:    true,
-				Default:     0.0,
-				Description: "The latitude of the location",
+				Type:         schema.TypeFloat,
+				Optional:     true,
+				Default:      0.0,
+				Description:  "The latitude of the location",
+				ValidateFunc: checkLatitudeWithinRange,
 			},
 			"longitude": {
-				Type:        schema.TypeFloat,
-				Optional:    true,
-				Default:     0.0,
-				Description: "The longitude of the location",
+				Type:         schema.TypeFloat,
+				Optional:     true,
+				Default:      0.0,
+				Description:  "The longitude of the location",
+				ValidateFunc: checkLongitudeWithinRange,
 			},
 			"note": {
 				Type:        schema.TypeString,
@@ -62,6 +64,22 @@ func checkValidLocationType(v interface{}, k string) (ws []string, errors []erro
 	locationType := v.(string)
 	if locationType != "config" && locationType != "glb" {
 		errors = append(errors, fmt.Errorf("%q must be one of config or glb", k))
+	}
+	return
+}
+
+func checkLatitudeWithinRange(v interface{}, k string) (ws []string, errors []error) {
+	latitude := v.(float64)
+	if latitude < -90 || latitude > 90 {
+		errors = append(errors, fmt.Errorf("%q must be between -90 and 90 degrees inclusive", k))
+	}
+	return
+}
+
+func checkLongitudeWithinRange(v interface{}, k string) (ws []string, errors []error) {
+	longitude := v.(float64)
+	if longitude < -180 || longitude > 180 {
+		errors = append(errors, fmt.Errorf("%q must be between -180 and 180 degrees inclusive", k))
 	}
 	return
 }
