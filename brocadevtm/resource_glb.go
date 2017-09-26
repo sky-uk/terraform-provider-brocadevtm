@@ -3,8 +3,8 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"regexp"
 	"github.com/sky-uk/terraform-provider-infoblox/infoblox/util"
+	"regexp"
 )
 
 func resourceGLB() *schema.Resource {
@@ -66,10 +66,10 @@ func resourceGLB() *schema.Resource {
 				ValidateFunc: validateGeoEffect,
 			},
 			"peer_health_timeout": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Default:     10,
-				Description: "Reported monitor timeout in seconds",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Default:      10,
+				Description:  "Reported monitor timeout in seconds",
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"return_ips_on_fail": {
