@@ -53,7 +53,7 @@ func resourceLocation() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
-				Description:  "Is the location used by traffic managers or for GLBs?",
+				Description:  "Is the location used by traffic managers or GLBs?",
 				ValidateFunc: checkValidLocationType,
 			},
 		},
