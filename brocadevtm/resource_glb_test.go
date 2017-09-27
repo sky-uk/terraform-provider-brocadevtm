@@ -22,6 +22,10 @@ func TestAccBrocadeVTMGLBBasic(t *testing.T) {
 	domainsSetPattern := regexp.MustCompile(`domains\.[0-9]+`)
 	lastResortResponsePattern := regexp.MustCompile(`last_resort_response\.[0-9]+`)
 	locationDrainingPattern := regexp.MustCompile(`location_draining\.[0-9]+`)
+	locationSettingsIPPattern := regexp.MustCompile(`location_settings\.[0-9]+\.ip_addresses\.[0-9]+`)
+	locationSettingsLocationPattern := regexp.MustCompile(`location_settings\.[0-9]+\.location`)
+	locationSettingsWeightPattern := regexp.MustCompile(`location_settings\.[0-9]+\.weight`)
+	locationSettingsMonitorPattern := regexp.MustCompile(`location_settings\.[0-9]+\.monitors\.[0-9]+`)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -69,6 +73,17 @@ func TestAccBrocadeVTMGLBBasic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(glbResourceName, lastResortResponsePattern, "192.168.120.10"),
 					util.AccTestCheckValueInKeyPattern(glbResourceName, lastResortResponsePattern, "192.168.12.10"),
 					util.AccTestCheckValueInKeyPattern(glbResourceName, locationDrainingPattern, "example-location-one"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsIPPattern, "192.168.234.56"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsIPPattern, "192.0.2.2"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsLocationPattern, "example-location-one"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsWeightPattern, "34"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsMonitorPattern, "glb-example-monitor"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsMonitorPattern, "glb-example-monitor2"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsIPPattern, "192.168.17.56"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsIPPattern, "192.168.8.22"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsLocationPattern, "example-location-two"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsWeightPattern, "66"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsMonitorPattern, "glb-example-monitor"),
 				),
 			},
 			{
@@ -93,6 +108,18 @@ func TestAccBrocadeVTMGLBBasic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(glbResourceName, lastResortResponsePattern, "192.168.120.10"),
 					util.AccTestCheckValueInKeyPattern(glbResourceName, locationDrainingPattern, "example-location-one"),
 					util.AccTestCheckValueInKeyPattern(glbResourceName, locationDrainingPattern, "example-location-two"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationDrainingPattern, "example-location-one"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsIPPattern, "10.56.78.34"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsIPPattern, "10.23.189.47"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsLocationPattern, "example-location-two"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsWeightPattern, "50"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsMonitorPattern, "glb-example-monitor"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsIPPattern, "192.168.6.12"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsIPPattern, "192.168.89.11"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsLocationPattern, "example-location-three"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsWeightPattern, "78"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsMonitorPattern, "glb-example-monitor2"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsMonitorPattern, "glb-example-monitor3"),
 				),
 			},
 		},
@@ -194,6 +221,20 @@ resource "brocadevtm_glb" "acctest" {
   domains = [ "example.com", "another-example.com" ]
   last_resort_response = [ "192.168.12.10", "192.168.120.10" ]
   location_draining = [ "example-location-one" ]
+  location_settings = [
+    {
+      ip_addresses = [ "192.168.234.56", "192.0.2.2" ]
+      location = "example-location-one"
+      weight = 34
+      monitors = [ "glb-example-monitor", "glb-example-monitor2" ]
+    },
+    {
+      ip_addresses = [ "192.168.17.56", "192.168.8.22" ]
+      location = "example-location-two"
+      weight = 66
+      monitors = [ "glb-example-monitor" ]
+    },
+  ]
 }
 `, glbName)
 }
@@ -216,6 +257,20 @@ resource "brocadevtm_glb" "acctest" {
   domains = [ "example.com" ]
   last_resort_response = [ "192.168.120.10" ]
   location_draining = [ "example-location-one", "example-location-two" ]
+  location_settings = [
+    {
+      ip_addresses = [ "10.56.78.34", "10.23.189.47" ]
+      location = "example-location-two"
+      weight = 50
+      monitors = [ "glb-example-monitor" ]
+    },
+    {
+      ip_addresses = [ "192.168.6.12", "192.168.89.11" ]
+      location = "example-location-three"
+      weight = 78
+      monitors = [ "glb-example-monitor2", "glb-example-monitor3" ]
+    },
+  ]
 }
 `, glbName)
 }

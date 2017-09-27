@@ -120,7 +120,7 @@ func resourceGLB() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"location_settings": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Description: "Table which contains location specific settings",
 				Optional:    true,
 				Elem: &schema.Resource{
@@ -151,7 +151,7 @@ func resourceGLB() *schema.Resource {
 				},
 			},
 			"dns_sec_keys": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Description: "Maps keys to domains",
 				Optional:    true,
 				Elem: &schema.Resource{
@@ -208,6 +208,32 @@ func validateGeoEffect(v interface{}, k string) (ws []string, errors []error) {
 	return
 }
 
+func buildLocationSettings(locationSettingsSet *schema.Set) []glb.LocationSetting {
+
+	locationSettingObjects := make([]glb.LocationSetting, 0)
+
+	for _, locationSettingItem := range locationSettingsSet.List() {
+
+		locationSetting := locationSettingItem.(map[string]interface{})
+		locationSettingObject := glb.LocationSetting{}
+		if location, ok := locationSetting["location"].(string); ok {
+			locationSettingObject.Location = location
+		}
+		if weight, ok := locationSetting["weight"].(int); ok {
+			locationSettingObject.Weight = uint(weight)
+		}
+		if ipAddresses, ok := locationSetting["ip_addresses"]; ok {
+			locationSettingObject.IPS = util.BuildStringArrayFromInterface(ipAddresses)
+		}
+		if monitors, ok := locationSetting["monitors"]; ok {
+			locationSettingObject.Monitors = util.BuildStringArrayFromInterface(monitors)
+		}
+		locationSettingObjects = append(locationSettingObjects, locationSettingObject)
+
+	}
+	return locationSettingObjects
+}
+
 func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 
 	vtmClient := m.(*rest.Client)
@@ -252,13 +278,16 @@ func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 		createGLB.Properties.Basic.Rules = util.BuildStringArrayFromInterface(v)
 	}
 	if v, ok := d.GetOk("domains"); ok {
-		createGLB.Properties.Basic.Domains = util.BuildStringSetFromInterface(v.(*schema.Set))
+		createGLB.Properties.Basic.Domains = util.BuildStringListFromSet(v.(*schema.Set))
 	}
 	if v, ok := d.GetOk("last_resort_response"); ok {
-		createGLB.Properties.Basic.LastResortResponse = util.BuildStringSetFromInterface(v.(*schema.Set))
+		createGLB.Properties.Basic.LastResortResponse = util.BuildStringListFromSet(v.(*schema.Set))
 	}
 	if v, ok := d.GetOk("location_draining"); ok {
-		createGLB.Properties.Basic.LocationDraining = util.BuildStringSetFromInterface(v.(*schema.Set))
+		createGLB.Properties.Basic.LocationDraining = util.BuildStringListFromSet(v.(*schema.Set))
+	}
+	if v, ok := d.GetOk("location_settings"); ok {
+		createGLB.Properties.Basic.LocationSettings = buildLocationSettings(v.(*schema.Set))
 	}
 
 	createGLBAPI := glb.NewCreate(name, createGLB)
@@ -301,6 +330,7 @@ func resourceGLBRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("domains", getGLBObject.Properties.Basic.Domains)
 	d.Set("last_resort_response", getGLBObject.Properties.Basic.LastResortResponse)
 	d.Set("location_draining", getGLBObject.Properties.Basic.LocationDraining)
+	d.Set("location_settings", getGLBObject.Properties.Basic.LocationSettings)
 	return nil
 }
 
@@ -367,21 +397,26 @@ func resourceGLBUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 	if d.HasChange("domains") {
 		if v, ok := d.GetOk("domains"); ok {
-			updateGLB.Properties.Basic.Domains = util.BuildStringSetFromInterface(v.(*schema.Set))
+			updateGLB.Properties.Basic.Domains = util.BuildStringListFromSet(v.(*schema.Set))
 		}
 		hasChanges = true
 	}
 	if d.HasChange("last_resort_response") {
 		if v, ok := d.GetOk("last_resort_response"); ok {
-			updateGLB.Properties.Basic.LastResortResponse = util.BuildStringSetFromInterface(v.(*schema.Set))
+			updateGLB.Properties.Basic.LastResortResponse = util.BuildStringListFromSet(v.(*schema.Set))
 		}
 		hasChanges = true
 	}
 	if d.HasChange("location_draining") {
 		if v, ok := d.GetOk("location_draining"); ok {
-			updateGLB.Properties.Basic.LocationDraining = util.BuildStringSetFromInterface(v.(*schema.Set))
+			updateGLB.Properties.Basic.LocationDraining = util.BuildStringListFromSet(v.(*schema.Set))
 		}
 		hasChanges = true
+	}
+	if d.HasChange("location_settings") {
+		if v, ok := d.GetOk("location_settings"); ok {
+			updateGLB.Properties.Basic.LocationSettings = buildLocationSettings(v.(*schema.Set))
+		}
 	}
 
 	if hasChanges {

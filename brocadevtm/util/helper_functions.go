@@ -12,7 +12,7 @@ func BuildStringArrayFromInterface(strings interface{}) []string {
 }
 
 // BuildStringSetFromInterface : take an interface and convert it into an array of strings
-func BuildStringSetFromInterface(strings *schema.Set) []string {
+func BuildStringListFromSet(strings *schema.Set) []string {
 	stringList := make([]string, 0)
 	for _, stringValue := range strings.List() {
 		stringList = append(stringList, stringValue.(string))
