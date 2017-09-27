@@ -189,10 +189,11 @@ func resourceLocationUpdate(d *schema.ResourceData, m interface{}) error {
 		updateLocationAPI := location.NewUpdate(name, updateLocation)
 		err := vtmClient.Do(updateLocationAPI)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM Monitor error whilst location %s: %v", name, updateLocationAPI.ErrorObject())
+			return fmt.Errorf("BrocadeVTM Location error whilst updating %s: %v", name, updateLocationAPI.ErrorObject())
 		}
 	}
 
+	d.SetId(name)
 	return resourceLocationRead(d, m)
 }
 

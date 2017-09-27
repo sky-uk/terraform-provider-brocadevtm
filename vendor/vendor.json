@@ -485,6 +485,14 @@
 			"versionExact": "0.2.6"
 		},
 		{
+			"checksumSHA1": "GpM/ng1MRIm8721SMvAZ/HXM/P8=",
+			"path": "github.com/sky-uk/go-brocade-vtm/api/glb",
+			"revision": "883e893e827513264644088fbccf61ccf6713340",
+			"revisionTime": "2017-09-27T10:38:18Z",
+			"version": "0.3.3",
+			"versionExact": "0.3.3"
+		},
+		{
 			"checksumSHA1": "oe4khZnW6GzVfIkVwlEHkO61m3Q=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api/location",
 			"revision": "e2e4ebe657ac2eb62d217737f9018432d04346b3",
