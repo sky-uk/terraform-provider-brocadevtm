@@ -6,7 +6,6 @@ import (
 	"github.com/sky-uk/go-brocade-vtm/api/glb"
 	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
-	"log"
 	"net/http"
 	"regexp"
 )
@@ -123,9 +122,11 @@ func resourceGLB() *schema.Resource {
 							Optional:    true,
 						},
 						"weight": {
-							Type:        schema.TypeInt,
-							Description: "Weight to be given to this location when using the weighted random algorithm",
-							Optional:    true,
+							Type:         schema.TypeInt,
+							Description:  "Weight to be given to this location when using the weighted random algorithm",
+							Optional:     true,
+							Default:      1,
+							ValidateFunc: validateLocationWeight,
 						},
 						"ip_addresses": {
 							Type:        schema.TypeList,
@@ -200,6 +201,14 @@ func validateGeoEffect(v interface{}, k string) (ws []string, errors []error) {
 	return
 }
 
+func validateLocationWeight(v interface{}, k string) (ws []string, errors []error) {
+	weight := v.(int)
+	if weight < 1 || weight > 100 {
+		errors = append(errors, fmt.Errorf("%q must be a whole number between 1 and 100", k))
+	}
+	return
+}
+
 func buildLocationSettings(locationSettingsSet *schema.Set) []glb.LocationSetting {
 
 	locationSettingObjects := make([]glb.LocationSetting, 0)
@@ -221,7 +230,6 @@ func buildLocationSettings(locationSettingsSet *schema.Set) []glb.LocationSettin
 			locationSettingObject.Monitors = util.BuildStringArrayFromInterface(monitors)
 		}
 		locationSettingObjects = append(locationSettingObjects, locationSettingObject)
-
 	}
 	return locationSettingObjects
 }
@@ -295,14 +303,13 @@ func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	createGLB.Properties.Log.Enabled = d.Get("logging_enabled").(bool)
+
 	if v, ok := d.GetOk("log_file_name"); ok && v != "" {
 		createGLB.Properties.Log.Filename = v.(string)
 	}
 	if v, ok := d.GetOk("log_format"); ok && v != "" {
 		createGLB.Properties.Log.Format = v.(string)
 	}
-
-	log.Printf(fmt.Sprintf("[DEBUG] Create - logging is %t", createGLB.Properties.Log.Enabled))
 
 	createGLBAPI := glb.NewCreate(name, createGLB)
 	err := vtmClient.Do(createGLBAPI)
@@ -349,8 +356,6 @@ func resourceGLBRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("logging_enabled", getGLBObject.Properties.Log.Enabled)
 	d.Set("log_file_name", getGLBObject.Properties.Log.Filename)
 	d.Set("log_format", getGLBObject.Properties.Log.Format)
-
-	log.Printf(fmt.Sprintf("[DEBUG] Get - logging is %t", getGLBObject.Properties.Log.Enabled))
 
 	return nil
 }

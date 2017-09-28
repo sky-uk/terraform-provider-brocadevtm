@@ -51,6 +51,10 @@ func TestAccBrocadeVTMGLBBasic(t *testing.T) {
 				ExpectError: regexp.MustCompile(`must be a whole number between 0 and 100 \(percentage\)`),
 			},
 			{
+				Config:      testAccBrocadeVTMGLBInvalidLocationWeightTemplate(glbName),
+				ExpectError: regexp.MustCompile(`must be a whole number between 1 and 100`),
+			},
+			{
 				Config: testAccBrocadeGLBCreateTemplate(glbName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMGLBExists(glbName, glbResourceName),
@@ -158,7 +162,7 @@ func testAccBrocadeVTMGLBCheckDestroy(state *terraform.State, name string) error
 		api := glb.NewGetAll()
 		err := vtmClient.Do(api)
 		if err != nil {
-			return fmt.Errorf("Brocade vTM GLB - error occurred while retrieving a list of all GLBs")
+			return fmt.Errorf("Brocade vTM GLB - error occurred whilst retrieving a list of all GLBs")
 		}
 		for _, glb := range api.ResponseObject().(*glb.GlobalLoadBalancers).Children {
 			if glb.Name == name {
@@ -221,6 +225,22 @@ resource "brocadevtm_glb" "acctest" {
 `, name)
 }
 
+func testAccBrocadeVTMGLBInvalidLocationWeightTemplate(name string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_glb" "acctest" {
+  name = "%s"
+  location_settings = [
+    {
+      ip_addresses = [ "192.168.234.56", "192.0.2.2" ]
+      location = "example-location-one"
+      weight = 101
+      monitors = [ "glb-example-monitor", "glb-example-monitor2" ]
+    },
+  ]
+}
+`, name)
+}
+
 func testAccBrocadeGLBCreateTemplate(glbName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_glb" "acctest" {
@@ -265,7 +285,7 @@ resource "brocadevtm_glb" "acctest" {
   ]
   logging_enabled = true
   log_file_name = "/var/log/brocadevtm/test.log"
-  log_format = ""
+  //log_format = ""
 }
 `, glbName)
 }
@@ -314,7 +334,7 @@ resource "brocadevtm_glb" "acctest" {
   ]
   logging_enabled = false
   log_file_name = "/var/log/brocadevtm/updated-test.log"
-  log_format = ""
+  //log_format = ""
 }
 `, glbName)
 }
