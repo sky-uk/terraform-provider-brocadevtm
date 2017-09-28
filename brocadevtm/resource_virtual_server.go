@@ -5,7 +5,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api/virtualserver"
 	"github.com/sky-uk/go-rest-api"
-	"github.com/sky-uk/terraform-provider-infoblox/infoblox/util"
+	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"net/http"
 	"regexp"
 )
@@ -129,13 +129,13 @@ func resourceVirtualServer() *schema.Resource {
 			"pool": {
 				Type:        schema.TypeString,
 				Description: "The default pool to use for traffic.",
-				Optional:    true,
+				Required:    true,
 			},
 			"port": {
 				Type:         schema.TypeInt,
 				Description:  "The port on which to listen for incoming connections",
 				Required:     true,
-				ValidateFunc: util.ValidateUnsignedInteger,
+				ValidateFunc: util.ValidatePortNumber,
 			},
 			"protection_class": {
 				Type:        schema.TypeString,
@@ -201,6 +201,27 @@ func resourceVirtualServer() *schema.Resource {
 				Default:     false,
 			},
 
+			"error_file": {
+				Type:        schema.TypeString,
+				Description: "The error message to be sent to the client when the traffic manager detects an internal or backend error for the virtual server.",
+				Optional:    true,
+				Default:     "Default",
+			},
+
+			"expect_starttls": {
+				Type:        schema.TypeBool,
+				Description: "Whether or not the traffic manager should expect the connection to start off in plain text and then upgrade to SSL using STARTTLS when handling SMTP traffic",
+				Optional:    true,
+				Default:     false,
+			},
+
+			"proxy_close": {
+				Type:        schema.TypeBool,
+				Description: "If set to Yes the traffic manager will send the client FIN to the back-end server and wait for a server response instead of closing the connection immediately. ",
+				Optional:    true,
+				Default:     false,
+			},
+
 			"aptimizer": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -228,6 +249,7 @@ func resourceVirtualServer() *schema.Resource {
 										Type:        schema.TypeList,
 										Description: "The application scopes which apply to the acceleration profile.",
 										Required:    true,
+										Elem:        &schema.Schema{Type: schema.TypeString},
 									},
 								},
 							},
@@ -291,13 +313,6 @@ func resourceVirtualServer() *schema.Resource {
 						},
 					},
 				},
-			},
-
-			"error_file": {
-				Type:        schema.TypeString,
-				Description: "The error message to be sent to the client when the traffic manager detects an internal or backend error for the virtual server.",
-				Optional:    true,
-				Default:     "Default",
 			},
 
 			"cookie": {
@@ -877,13 +892,6 @@ func resourceVirtualServer() *schema.Resource {
 				},
 			},
 
-			"expect_starttls": {
-				Type:        schema.TypeBool,
-				Description: "Whether or not the traffic manager should expect the connection to start off in plain text and then upgrade to SSL using STARTTLS when handling SMTP traffic",
-				Optional:    true,
-				Default:     false,
-			},
-
 			"ssl": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -1138,13 +1146,6 @@ func resourceVirtualServer() *schema.Resource {
 				},
 			},
 
-			"proxy_close": {
-				Type:        schema.TypeBool,
-				Description: "If set to Yes the traffic manager will send the client FIN to the back-end server and wait for a server response instead of closing the connection immediately. ",
-				Optional:    true,
-				Default:     false,
-			},
-
 			"udp": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -1223,6 +1224,7 @@ func resourceVirtualServer() *schema.Resource {
 			},
 		},
 	}
+
 }
 
 func validateVirtualServerOCSPRequired(v interface{}, k string) (ws []string, errors []error) {
@@ -1312,7 +1314,6 @@ func validateCompressLevel(v interface{}, k string) (ws []string, errors []error
 func validateETagRewrite(v interface{}, k string) (ws []string, errors []error) {
 	switch v.(string) {
 	case
-		"wrap",
 		"delete",
 		"ignore",
 		"weaken",
@@ -1429,8 +1430,7 @@ func buildSSLOCSPIssuers(ocspIssuers []interface{}) []virtualserver.OCSPIssuer {
 	for idx, value := range ocspIssuers {
 		issuerItem := value.(map[string]interface{})
 		ocspIssuer.Issuer = issuerItem["issuer"].(string)
-		ocspIssuerAIA := issuerItem["aia"].(bool)
-		ocspIssuer.AIA = &ocspIssuerAIA
+		ocspIssuer.AIA = issuerItem["aia"].(*bool)
 		ocspIssuer.Nonce = issuerItem["nonce"].(string)
 		ocspIssuer.Required = issuerItem["required"].(string)
 		ocspIssuer.ResponderCert = issuerItem["responder_cert"].(string)
@@ -1446,15 +1446,10 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 	vtmClient := m.(*rest.Client)
 	var virtualServer virtualserver.VirtualServer
 
-
 	virtualServerName := d.Get("name").(string)
+	virtualServer.Properties.Basic.AddClusterIP = d.Get("add_cluster_ip").(bool)
+	virtualServer.Properties.Basic.AddXForwarded = d.Get("add_x_forwarded_for").(bool)
 
-	if v, ok := d.GetOk("add_cluster_ip"); ok {
-		virtualServer.Properties.Basic.AddClusterIP = v.(bool)
-	}
-	if v, ok := d.GetOk("add_x_forwarded_for"); ok {
-		virtualServer.Properties.Basic.AddXForwarded = v.(bool)
-	}
 	if v, ok := d.GetOk("add_x_forwarded_proto"); ok {
 		virtualServer.Properties.Basic.AddXForwardedProto = v.(bool)
 	}
@@ -1464,6 +1459,90 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("autodetect_upgrade_headers"); ok {
 		virtualServer.Properties.Basic.AutoDetectUpgradeHeaders = v.(bool)
 	}
+	if v, ok := d.GetOk("bandwidth_class"); ok {
+		virtualServer.Properties.Basic.BandwidthClass = v.(string)
+	}
+	if v, ok := d.GetOk("close_with_rst"); ok {
+		virtualServer.Properties.Basic.CloseWithRst = v.(bool)
+	}
+	if v, ok := d.GetOk("completionrules"); ok {
+		virtualServer.Properties.Basic.CompletionRules = buildStringList(v)
+	}
+	if v, ok := d.GetOk("connect_timeout"); ok {
+		virtualServer.Properties.Basic.ConnectTimeout = uint(v.(int))
+	}
+	if v, ok := d.GetOk("enabled"); ok {
+		virtualServer.Properties.Basic.Enabled = v.(bool)
+	}
+	if v, ok := d.GetOk("ftp_force_server_secure"); ok {
+		virtualServer.Properties.Basic.FtpForceServerSecure = v.(bool)
+	}
+	if v, ok := d.GetOk("glb_services"); ok {
+		virtualServer.Properties.Basic.GlbServices = buildStringList(v)
+	}
+	if v, ok := d.GetOk("listen_on_any"); ok {
+		virtualServer.Properties.Basic.ListenOnAny = v.(bool)
+	}
+	if v, ok := d.GetOk("listen_on_hosts"); ok {
+		virtualServer.Properties.Basic.ListenOnHosts = buildStringList(v)
+	}
+	if v, ok := d.GetOk("listen_on_traffic_ips"); ok {
+		virtualServer.Properties.Basic.ListenOnTrafficIps = buildStringList(v)
+	}
+	if v, ok := d.GetOk("mss"); ok {
+		virtualServer.Properties.Basic.MSS = uint(v.(int))
+	}
+	if v, ok := d.GetOk("note"); ok {
+		virtualServer.Properties.Basic.Note = v.(string)
+	}
+	if v, ok := d.GetOk("pool"); ok {
+		virtualServer.Properties.Basic.Pool = v.(string)
+	}
+	if v, ok := d.GetOk("port"); ok {
+		virtualServer.Properties.Basic.Port = uint(v.(int))
+	}
+	if v, ok := d.GetOk("protection_class"); ok {
+		virtualServer.Properties.Basic.ProtectionClass = v.(string)
+	}
+
+	if v, ok := d.GetOk("protocol"); ok {
+		virtualServer.Properties.Basic.Protocol = v.(string)
+	}
+	if v, ok := d.GetOk("request_rules"); ok {
+		virtualServer.Properties.Basic.RequestRules = buildStringList(v)
+	}
+	if v, ok := d.GetOk("response_rules"); ok {
+		virtualServer.Properties.Basic.ResponseRules = buildStringList(v)
+	}
+	if v, ok := d.GetOk("slm_class"); ok {
+		virtualServer.Properties.Basic.SlmClass = v.(string)
+	}
+	if v, ok := d.GetOk("so_nagle"); ok {
+		virtualServer.Properties.Basic.SoNagle = v.(bool)
+	}
+	if v, ok := d.GetOk("ssl_client_cert_headers"); ok {
+		virtualServer.Properties.Basic.SslClientCertHeaders = v.(string)
+	}
+	if v, ok := d.GetOk("ssl_decrypt"); ok {
+		virtualServer.Properties.Basic.SslDecrypt = v.(bool)
+	}
+	if v, ok := d.GetOk("ssl_honor_fallback_scsv"); ok {
+		virtualServer.Properties.Basic.SslHonorFallbackScsv = v.(string)
+	}
+	if v, ok := d.GetOk("transparent"); ok {
+		virtualServer.Properties.Basic.Transparent = v.(bool)
+	}
+
+	if v, ok := d.GetOk("error_file"); ok {
+		virtualServer.Properties.ConnectionErrors.ErrorFile = v.(string)
+	}
+
+	expectSTARTTLS := d.Get("expect_starttls").(bool)
+	virtualServer.Properties.SMTP.ExpectSTARTTLS = &expectSTARTTLS
+
+	proxyClose := d.Get("proxy_close").(bool)
+	virtualServer.Properties.TCP.ProxyClose = &proxyClose
+
 
 	createAPI := virtualserver.NewCreate(virtualServerName, virtualServer)
 	err := vtmClient.Do(createAPI)
@@ -1471,7 +1550,7 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf(fmt.Sprintf("BrocadeVTM Virtual Server error whilst creating %s: %v", virtualServerName, err))
 	}
 	d.SetId(virtualServerName)
-	return resourceVirtualServerRead(d, m)
+	return nil
 }
 
 func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
@@ -1496,200 +1575,205 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 
 	virtualServer = *getSingleAPI.ResponseObject().(*virtualserver.VirtualServer)
 	d.SetId(virtualServerName)
-	d.Set("enabled", *virtualServer.Properties.Basic.Enabled)
-	d.Set("listen_on_any", *virtualServer.Properties.Basic.ListenOnAny)
+	d.Set("enabled", virtualServer.Properties.Basic.Enabled)
+	d.Set("listen_on_any", virtualServer.Properties.Basic.ListenOnAny)
 	d.Set("listen_traffic_ips", virtualServer.Properties.Basic.ListenOnTrafficIps)
 	d.Set("pool", virtualServer.Properties.Basic.Pool)
 	d.Set("port", virtualServer.Properties.Basic.Port)
 	d.Set("protocol", virtualServer.Properties.Basic.Protocol)
 	d.Set("request_rules", virtualServer.Properties.Basic.RequestRules)
-	d.Set("ssl_decrypt", *virtualServer.Properties.Basic.SslDecrypt)
-	d.Set("connection_keepalive", *virtualServer.Properties.Connection.Keepalive)
+	d.Set("ssl_decrypt", virtualServer.Properties.Basic.SslDecrypt)
+	d.Set("connection_keepalive", virtualServer.Properties.Connection.Keepalive)
 	d.Set("connection_keepalive_timeout", virtualServer.Properties.Connection.KeepaliveTimeout)
 	d.Set("connection_max_client_buffer", virtualServer.Properties.Connection.MaxClientBuffer)
 	d.Set("connection_max_server_buffer", virtualServer.Properties.Connection.MaxServerBuffer)
 	d.Set("connection_max_transaction_duration", virtualServer.Properties.Connection.MaxTransactionDuration)
 	d.Set("connection_server_first_banner", virtualServer.Properties.Connection.ServerFirstBanner)
 	d.Set("connection_timeout", virtualServer.Properties.Connection.Timeout)
-	d.Set("ssl_server_cert_default", virtualServer.Properties.Ssl.ServerCertDefault)
-	d.Set("ssl_support_ssl2", virtualServer.Properties.Ssl.SslSupportSsl2)
-	d.Set("ssl_support_ssl3", virtualServer.Properties.Ssl.SslSupportSsl3)
-	d.Set("ssl_support_tls1", virtualServer.Properties.Ssl.SslSupportTLS1)
-	d.Set("ssl_support_tls1_1", virtualServer.Properties.Ssl.SslSupportTLS1_1)
-	d.Set("ssl_support_tls1_2", virtualServer.Properties.Ssl.SslSupportTLS1_2)
-	d.Set("ssl_server_cert_host_mapping", virtualServer.Properties.Ssl.ServerCertHostMap)
-	d.Set("ocsp_enable", virtualServer.Properties.Ssl.OCSPEnable)
-	d.Set("ocsp_issuers", virtualServer.Properties.Ssl.OCSPIssuers)
+
+	/*
+		d.Set("ssl_server_cert_default", virtualServer.Properties.Ssl.ServerCertDefault)
+		d.Set("ssl_support_ssl2", virtualServer.Properties.Ssl.SslSupportSsl2)
+		d.Set("ssl_support_ssl3", virtualServer.Properties.Ssl.SslSupportSsl3)
+		d.Set("ssl_support_tls1", virtualServer.Properties.Ssl.SslSupportTLS1)
+		d.Set("ssl_support_tls1_1", virtualServer.Properties.Ssl.SslSupportTLS1_1)
+		d.Set("ssl_support_tls1_2", virtualServer.Properties.Ssl.SslSupportTLS1_2)
+		d.Set("ssl_server_cert_host_mapping", virtualServer.Properties.Ssl.ServerCertHostMap)
+		d.Set("ocsp_enable", virtualServer.Properties.Ssl.OCSPEnable)
+		d.Set("ocsp_issuers", virtualServer.Properties.Ssl.OCSPIssuers)
+	*/
 
 	return nil
 }
 
 func resourceVirtualServerUpdate(d *schema.ResourceData, m interface{}) error {
+	/*
+		vtmClient := m.(*rest.Client)
+		var virtualServerName string
+		var virtualServer virtualserver.VirtualServer
+		hasChanges := false
 
-	vtmClient := m.(*rest.Client)
-	var virtualServerName string
-	var virtualServer virtualserver.VirtualServer
-	hasChanges := false
+		if v, ok := d.GetOk("name"); ok && v != "" {
+			virtualServerName = v.(string)
+		}
+		if d.HasChange("enabled") {
+			virtualServerEnabled := d.Get("enabled").(bool)
+			virtualServer.Properties.Basic.Enabled = &virtualServerEnabled
+			hasChanges = true
+		}
 
-	if v, ok := d.GetOk("name"); ok && v != "" {
-		virtualServerName = v.(string)
-	}
-	if d.HasChange("enabled") {
-		virtualServerEnabled := d.Get("enabled").(bool)
-		virtualServer.Properties.Basic.Enabled = &virtualServerEnabled
-		hasChanges = true
-	}
+		if d.HasChange("listen_on_any") {
+			virtualServerListenAny := d.Get("listen_on_any").(bool)
+			virtualServer.Properties.Basic.ListenOnAny = &virtualServerListenAny
+			hasChanges = true
+		}
 
-	if d.HasChange("listen_on_any") {
-		virtualServerListenAny := d.Get("listen_on_any").(bool)
-		virtualServer.Properties.Basic.ListenOnAny = &virtualServerListenAny
-		hasChanges = true
-	}
+		if d.HasChange("pool") {
+			if v, ok := d.GetOk("pool"); ok && v != "" {
+				virtualServer.Properties.Basic.Pool = v.(string)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("port") {
+			if v, ok := d.GetOk("port"); ok && v != "" {
+				virtualServerPort := v.(int)
+				virtualServer.Properties.Basic.Port = uint(virtualServerPort)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("listen_traffic_ips") {
+			if v, ok := d.GetOk("listen_traffic_ips"); ok && v != "" {
+				virtualServer.Properties.Basic.ListenOnTrafficIps = buildStringList(v)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("protocol") {
+			if v, ok := d.GetOk("protocol"); ok && v != "" {
+				virtualServer.Properties.Basic.Protocol = v.(string)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("request_rules") {
+			if v, ok := d.GetOk("request_rules"); ok && v != "" {
+				virtualServer.Properties.Basic.RequestRules = buildStringList(v)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("ssl_decrypt") {
+			virtualServerSSLDeCrypt := d.Get("ssl_decrypt").(bool)
+			virtualServer.Properties.Basic.SslDecrypt = &virtualServerSSLDeCrypt
+			hasChanges = true
+		}
+		if d.HasChange("connection_keepalive") {
+			virtalServerConnectionKeepalive := d.Get("connection_keepalive").(bool)
+			virtualServer.Properties.Connection.Keepalive = &virtalServerConnectionKeepalive
+			hasChanges = true
+		}
+		if d.HasChange("connection_keepalive_timeout") {
+			if v, ok := d.GetOk("connection_keepalive_timeout"); ok {
+				virtualServerConnectionKeepaliveTimeout := v.(int)
+				virtualServer.Properties.Connection.KeepaliveTimeout = uint(virtualServerConnectionKeepaliveTimeout)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("connection_max_client_buffer") {
+			if v, ok := d.GetOk("connection_max_client_buffer"); ok {
+				virtualServerConnectionMaxClientBuffer := v.(int)
+				virtualServer.Properties.Connection.MaxClientBuffer = uint(virtualServerConnectionMaxClientBuffer)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("connection_max_server_buffer") {
+			if v, ok := d.GetOk("connection_max_server_buffer"); ok {
+				virtualServerConnectionMaxServerBuffer := v.(int)
+				virtualServer.Properties.Connection.MaxServerBuffer = uint(virtualServerConnectionMaxServerBuffer)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("connection_max_transaction_duration") {
+			if v, ok := d.GetOk("connection_max_transaction_duration"); ok {
+				virtualServerConnectionMaxTransActionDuration := v.(int)
+				virtualServer.Properties.Connection.MaxTransactionDuration = uint(virtualServerConnectionMaxTransActionDuration)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("connection_server_first_banner") {
+			if v, ok := d.GetOk("connection_server_first_banner"); ok && v != "" {
+				virtualServer.Properties.Connection.ServerFirstBanner = v.(string)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("connection_timeout") {
+			if v, ok := d.GetOk("connection_timeout"); ok {
+				virtualServerConnectionTimeout := v.(int)
+				virtualServer.Properties.Connection.Timeout = uint(virtualServerConnectionTimeout)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("ssl_server_cert_default") {
+			if v, ok := d.GetOk("ssl_server_cert_default"); ok && v != "" {
+				virtualServer.Properties.Ssl.ServerCertDefault = v.(string)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("ssl_support_ssl2") {
+			if v, ok := d.GetOk("ssl_support_ssl2"); ok && v != "" {
+				virtualServer.Properties.Ssl.SslSupportSsl2 = v.(string)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("ssl_support_ssl3") {
+			if v, ok := d.GetOk("ssl_support_ssl3"); ok && v != "" {
+				virtualServer.Properties.Ssl.SslSupportSsl3 = v.(string)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("ssl_support_tls1") {
+			if v, ok := d.GetOk("ssl_support_tls1"); ok && v != "" {
+				virtualServer.Properties.Ssl.SslSupportTLS1 = v.(string)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("ssl_support_tls1_1") {
+			if v, ok := d.GetOk("ssl_support_tls1_1"); ok && v != "" {
+				virtualServer.Properties.Ssl.SslSupportTLS1_1 = v.(string)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("ssl_support_tls1_2") {
+			if v, ok := d.GetOk("ssl_support_tls1_2"); ok && v != "" {
+				virtualServer.Properties.Ssl.SslSupportTLS1_2 = v.(string)
+			}
+			hasChanges = true
+		}
+		if d.HasChange("ssl_server_cert_host_mapping") {
+			if v, ok := d.GetOk("ssl_server_cert_host_mapping"); ok && v != "" {
+				virtualServer.Properties.Ssl.ServerCertHostMap = buildSSLCertMapping(v.([]interface{}))
+			}
+			hasChanges = true
+		}
+		if d.HasChange("ocsp_enable") {
+			virtualServerOCSPEnable := d.Get("ocsp_enable").(bool)
+			virtualServer.Properties.Ssl.OCSPEnable = &virtualServerOCSPEnable
+			hasChanges = true
+		}
+		if d.HasChange("ocsp_issuers") {
+			if v, ok := d.GetOk("ocsp_issuers"); ok {
+				virtualServer.Properties.Ssl.OCSPIssuers = buildSSLOCSPIssuers(v.([]interface{}))
+			}
+			hasChanges = true
+		}
 
-	if d.HasChange("pool") {
-		if v, ok := d.GetOk("pool"); ok && v != "" {
-			virtualServer.Properties.Basic.Pool = v.(string)
+		if hasChanges {
+			updateAPI := virtualserver.NewUpdate(virtualServerName, virtualServer)
+			err := vtmClient.Do(updateAPI)
+			if err != nil {
+				return fmt.Errorf(fmt.Sprintf("BrocadeVTM Virtual Server error whilst updating %s: %v", virtualServerName, err))
+			}
 		}
-		hasChanges = true
-	}
-	if d.HasChange("port") {
-		if v, ok := d.GetOk("port"); ok && v != "" {
-			virtualServerPort := v.(int)
-			virtualServer.Properties.Basic.Port = uint(virtualServerPort)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("listen_traffic_ips") {
-		if v, ok := d.GetOk("listen_traffic_ips"); ok && v != "" {
-			virtualServer.Properties.Basic.ListenOnTrafficIps = buildStringList(v)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("protocol") {
-		if v, ok := d.GetOk("protocol"); ok && v != "" {
-			virtualServer.Properties.Basic.Protocol = v.(string)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("request_rules") {
-		if v, ok := d.GetOk("request_rules"); ok && v != "" {
-			virtualServer.Properties.Basic.RequestRules = buildStringList(v)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("ssl_decrypt") {
-		virtualServerSSLDeCrypt := d.Get("ssl_decrypt").(bool)
-		virtualServer.Properties.Basic.SslDecrypt = &virtualServerSSLDeCrypt
-		hasChanges = true
-	}
-	if d.HasChange("connection_keepalive") {
-		virtalServerConnectionKeepalive := d.Get("connection_keepalive").(bool)
-		virtualServer.Properties.Connection.Keepalive = &virtalServerConnectionKeepalive
-		hasChanges = true
-	}
-	if d.HasChange("connection_keepalive_timeout") {
-		if v, ok := d.GetOk("connection_keepalive_timeout"); ok {
-			virtualServerConnectionKeepaliveTimeout := v.(int)
-			virtualServer.Properties.Connection.KeepaliveTimeout = uint(virtualServerConnectionKeepaliveTimeout)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("connection_max_client_buffer") {
-		if v, ok := d.GetOk("connection_max_client_buffer"); ok {
-			virtualServerConnectionMaxClientBuffer := v.(int)
-			virtualServer.Properties.Connection.MaxClientBuffer = uint(virtualServerConnectionMaxClientBuffer)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("connection_max_server_buffer") {
-		if v, ok := d.GetOk("connection_max_server_buffer"); ok {
-			virtualServerConnectionMaxServerBuffer := v.(int)
-			virtualServer.Properties.Connection.MaxServerBuffer = uint(virtualServerConnectionMaxServerBuffer)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("connection_max_transaction_duration") {
-		if v, ok := d.GetOk("connection_max_transaction_duration"); ok {
-			virtualServerConnectionMaxTransActionDuration := v.(int)
-			virtualServer.Properties.Connection.MaxTransactionDuration = uint(virtualServerConnectionMaxTransActionDuration)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("connection_server_first_banner") {
-		if v, ok := d.GetOk("connection_server_first_banner"); ok && v != "" {
-			virtualServer.Properties.Connection.ServerFirstBanner = v.(string)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("connection_timeout") {
-		if v, ok := d.GetOk("connection_timeout"); ok {
-			virtualServerConnectionTimeout := v.(int)
-			virtualServer.Properties.Connection.Timeout = uint(virtualServerConnectionTimeout)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("ssl_server_cert_default") {
-		if v, ok := d.GetOk("ssl_server_cert_default"); ok && v != "" {
-			virtualServer.Properties.Ssl.ServerCertDefault = v.(string)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("ssl_support_ssl2") {
-		if v, ok := d.GetOk("ssl_support_ssl2"); ok && v != "" {
-			virtualServer.Properties.Ssl.SslSupportSsl2 = v.(string)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("ssl_support_ssl3") {
-		if v, ok := d.GetOk("ssl_support_ssl3"); ok && v != "" {
-			virtualServer.Properties.Ssl.SslSupportSsl3 = v.(string)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("ssl_support_tls1") {
-		if v, ok := d.GetOk("ssl_support_tls1"); ok && v != "" {
-			virtualServer.Properties.Ssl.SslSupportTLS1 = v.(string)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("ssl_support_tls1_1") {
-		if v, ok := d.GetOk("ssl_support_tls1_1"); ok && v != "" {
-			virtualServer.Properties.Ssl.SslSupportTLS1_1 = v.(string)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("ssl_support_tls1_2") {
-		if v, ok := d.GetOk("ssl_support_tls1_2"); ok && v != "" {
-			virtualServer.Properties.Ssl.SslSupportTLS1_2 = v.(string)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("ssl_server_cert_host_mapping") {
-		if v, ok := d.GetOk("ssl_server_cert_host_mapping"); ok && v != "" {
-			virtualServer.Properties.Ssl.ServerCertHostMap = buildSSLCertMapping(v.([]interface{}))
-		}
-		hasChanges = true
-	}
-	if d.HasChange("ocsp_enable") {
-		virtualServerOCSPEnable := d.Get("ocsp_enable").(bool)
-		virtualServer.Properties.Ssl.OCSPEnable = &virtualServerOCSPEnable
-		hasChanges = true
-	}
-	if d.HasChange("ocsp_issuers") {
-		if v, ok := d.GetOk("ocsp_issuers"); ok {
-			virtualServer.Properties.Ssl.OCSPIssuers = buildSSLOCSPIssuers(v.([]interface{}))
-		}
-		hasChanges = true
-	}
-
-	if hasChanges {
-		updateAPI := virtualserver.NewUpdate(virtualServerName, virtualServer)
-		err := vtmClient.Do(updateAPI)
-		if err != nil {
-			return fmt.Errorf(fmt.Sprintf("BrocadeVTM Virtual Server error whilst updating %s: %v", virtualServerName, err))
-		}
-	}
-	return resourceVirtualServerRead(d, m)
+		return resourceVirtualServerRead(d, m)
+	*/
+	return nil
 }
 
 func resourceVirtualServerDelete(d *schema.ResourceData, m interface{}) error {
