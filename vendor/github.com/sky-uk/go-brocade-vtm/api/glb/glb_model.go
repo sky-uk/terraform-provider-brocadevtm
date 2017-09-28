@@ -26,10 +26,9 @@ type Basic struct {
 	LastResortResponse   []string          `json:"last_resort_response,omitempty"`
 	LocationDraining     []string          `json:"location_draining,omitempty"`
 	LocationSettings     []LocationSetting `json:"location_settings,omitempty"`
-	//PeerHealthTimeout    uint              `json:"peer_health_timeout"`
-	ReturnIPSOnFail bool     `json:"return_ips_on_fail"`
-	Rules           []string `json:"rules,omitempty"`
-	TTL             int      `json:"ttl"`
+	ReturnIPSOnFail      bool              `json:"return_ips_on_fail"`
+	Rules                []string          `json:"rules,omitempty"`
+	TTL                  int               `json:"ttl"`
 }
 
 // DNSSecKey : DNS Sec key struct

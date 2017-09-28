@@ -26,6 +26,8 @@ func TestAccBrocadeVTMGLBBasic(t *testing.T) {
 	locationSettingsLocationPattern := regexp.MustCompile(`location_settings\.[0-9]+\.location`)
 	locationSettingsWeightPattern := regexp.MustCompile(`location_settings\.[0-9]+\.weight`)
 	locationSettingsMonitorPattern := regexp.MustCompile(`location_settings\.[0-9]+\.monitors\.[0-9]+`)
+	dnsSecDomainPattern := regexp.MustCompile(`dns_sec_keys\.[0-9]+\.domain`)
+	dnsSecSSLKeysPattern := regexp.MustCompile(`dns_sec_keys\.[0-9]+\.ssl_keys\.[0-9]+`)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -84,6 +86,15 @@ func TestAccBrocadeVTMGLBBasic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsLocationPattern, "example-location-two"),
 					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsWeightPattern, "66"),
 					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsMonitorPattern, "glb-example-monitor"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, dnsSecDomainPattern, "example.com"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, dnsSecSSLKeysPattern, "another-example.com"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, dnsSecSSLKeysPattern, "example.com"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, dnsSecDomainPattern, "another-example.com"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, dnsSecSSLKeysPattern, "example.com"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, dnsSecSSLKeysPattern, "another-example.com"),
+					resource.TestCheckResourceAttr(glbResourceName, "logging_enabled", "true"),
+					resource.TestCheckResourceAttr(glbResourceName, "log_file_name", "/var/log/brocadevtm/test.log"),
+					//resource.TestCheckResourceAttr(glbResourceName, "log_format", "%g, %n, %d, %a, %t, %s, %l, %q"), Test gets data which looks like it has attempted to interpret % symbol. Commenting out until we have a solution.
 				),
 			},
 			{
@@ -120,6 +131,13 @@ func TestAccBrocadeVTMGLBBasic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsWeightPattern, "78"),
 					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsMonitorPattern, "glb-example-monitor2"),
 					util.AccTestCheckValueInKeyPattern(glbResourceName, locationSettingsMonitorPattern, "glb-example-monitor3"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, dnsSecDomainPattern, "another-example.com"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, dnsSecSSLKeysPattern, "another-example.com"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, dnsSecDomainPattern, "example.com"),
+					util.AccTestCheckValueInKeyPattern(glbResourceName, dnsSecSSLKeysPattern, "example.com"),
+					resource.TestCheckResourceAttr(glbResourceName, "logging_enabled", "false"),
+					resource.TestCheckResourceAttr(glbResourceName, "log_file_name", "/var/log/brocadevtm/updated-test.log"),
+					//resource.TestCheckResourceAttr(glbResourceName, "log_format", "%a, %t, %s, %l, %q"),
 				),
 			},
 		},
@@ -235,6 +253,19 @@ resource "brocadevtm_glb" "acctest" {
       monitors = [ "glb-example-monitor" ]
     },
   ]
+  dns_sec_keys = [
+    {
+      domain = "example.com"
+      ssl_keys = [ "another-example.com", "example.com" ]
+    },
+    {
+      domain = "another-example.com"
+      ssl_keys = [ "example.com", "another-example.com" ]
+    },
+  ]
+  logging_enabled = true
+  log_file_name = "/var/log/brocadevtm/test.log"
+  log_format = "%g, %n, %d, %a, %t, %s, %l, %q"
 }
 `, glbName)
 }
@@ -271,6 +302,19 @@ resource "brocadevtm_glb" "acctest" {
       monitors = [ "glb-example-monitor2", "glb-example-monitor3" ]
     },
   ]
+  dns_sec_keys = [
+    {
+      domain = "another-example.com"
+      ssl_keys = [ "another-example.com" ]
+    },
+    {
+      domain = "example.com"
+      ssl_keys = [ "example.com" ]
+    },
+  ]
+  logging_enabled = false
+  log_file_name = "/var/log/brocadevtm/updated-test.log"
+  log_format = "%a, %t, %s, %l, %q"
 }
 `, glbName)
 }

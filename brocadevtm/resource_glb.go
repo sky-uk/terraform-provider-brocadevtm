@@ -6,6 +6,7 @@ import (
 	"github.com/sky-uk/go-brocade-vtm/api/glb"
 	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
+	"log"
 	"net/http"
 	"regexp"
 )
@@ -74,15 +75,6 @@ func resourceGLB() *schema.Resource {
 				Description:  "How important the client's location is when deciding which location to use",
 				ValidateFunc: validateGeoEffect,
 			},
-			/* This attribute is on API doco, but doesn't appear in the actual API?????????
-			"peer_health_timeout": {
-				Type:         schema.TypeInt,
-				Optional:     true,
-				Default:      10,
-				Description:  "Reported monitor timeout in seconds",
-				//ValidateFunc: util.ValidateUnsignedInteger,
-			},
-			*/
 			"ttl": {
 				Type:        schema.TypeInt,
 				Optional:    true,
@@ -234,6 +226,25 @@ func buildLocationSettings(locationSettingsSet *schema.Set) []glb.LocationSettin
 	return locationSettingObjects
 }
 
+func buildDNSSecKeys(dnsSecKeysSet *schema.Set) []glb.DNSSecKey {
+
+	dnsSecKeyObjects := make([]glb.DNSSecKey, 0)
+
+	for _, dnsSecItem := range dnsSecKeysSet.List() {
+
+		dnsSec := dnsSecItem.(map[string]interface{})
+		dnsSecObject := glb.DNSSecKey{}
+		if domain, ok := dnsSec["domain"].(string); ok {
+			dnsSecObject.Domain = domain
+		}
+		if sslKeys, ok := dnsSec["ssl_keys"]; ok {
+			dnsSecObject.SSLKeys = util.BuildStringArrayFromInterface(sslKeys)
+		}
+		dnsSecKeyObjects = append(dnsSecKeyObjects, dnsSecObject)
+	}
+	return dnsSecKeyObjects
+}
+
 func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 
 	vtmClient := m.(*rest.Client)
@@ -246,24 +257,14 @@ func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("algorithm"); ok && v != "" {
 		createGLB.Properties.Basic.Algorithm = v.(string)
 	}
-	if v, ok := d.GetOk("all_monitors_needed"); ok {
-		createGLB.Properties.Basic.AllMonitorsNeeded = v.(bool)
-	}
-	if v, ok := d.GetOk("auto_recovery"); ok {
-		createGLB.Properties.Basic.AutoRecovery = v.(bool)
-	}
-	if v, ok := d.GetOk("chained_auto_failback"); ok {
-		createGLB.Properties.Basic.ChainedAutoFailback = v.(bool)
-	}
-	if v, ok := d.GetOk("disable_on_failure"); ok {
-		createGLB.Properties.Basic.DisableOnFailure = v.(bool)
-	}
-	if v, ok := d.GetOk("enabled"); ok {
-		createGLB.Properties.Basic.Enabled = v.(bool)
-	}
-	if v, ok := d.GetOk("return_ips_on_fail"); ok {
-		createGLB.Properties.Basic.ReturnIPSOnFail = v.(bool)
-	}
+
+	createGLB.Properties.Basic.AllMonitorsNeeded = d.Get("all_monitors_needed").(bool)
+	createGLB.Properties.Basic.AutoRecovery = d.Get("auto_recovery").(bool)
+	createGLB.Properties.Basic.ChainedAutoFailback = d.Get("chained_auto_failback").(bool)
+	createGLB.Properties.Basic.DisableOnFailure = d.Get("disable_on_failure").(bool)
+	createGLB.Properties.Basic.Enabled = d.Get("enabled").(bool)
+	createGLB.Properties.Basic.ReturnIPSOnFail = d.Get("return_ips_on_fail").(bool)
+
 	if v, ok := d.GetOk("geo_effect"); ok {
 		geoEffect := v.(int)
 		createGLB.Properties.Basic.GeoEffect = uint(geoEffect)
@@ -289,6 +290,19 @@ func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("location_settings"); ok {
 		createGLB.Properties.Basic.LocationSettings = buildLocationSettings(v.(*schema.Set))
 	}
+	if v, ok := d.GetOk("dns_sec_keys"); ok {
+		createGLB.Properties.Basic.DNSSecKeys = buildDNSSecKeys(v.(*schema.Set))
+	}
+
+	createGLB.Properties.Log.Enabled = d.Get("logging_enabled").(bool)
+	if v, ok := d.GetOk("log_file_name"); ok && v != "" {
+		createGLB.Properties.Log.Filename = v.(string)
+	}
+	if v, ok := d.GetOk("log_format"); ok && v != "" {
+		createGLB.Properties.Log.Format = v.(string)
+	}
+
+	log.Printf(fmt.Sprintf("[DEBUG] Create - logging is %t", createGLB.Properties.Log.Enabled))
 
 	createGLBAPI := glb.NewCreate(name, createGLB)
 	err := vtmClient.Do(createGLBAPI)
@@ -331,6 +345,13 @@ func resourceGLBRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("last_resort_response", getGLBObject.Properties.Basic.LastResortResponse)
 	d.Set("location_draining", getGLBObject.Properties.Basic.LocationDraining)
 	d.Set("location_settings", getGLBObject.Properties.Basic.LocationSettings)
+	d.Set("dns_sec_keys", getGLBObject.Properties.Basic.DNSSecKeys)
+	d.Set("logging_enabled", getGLBObject.Properties.Log.Enabled)
+	d.Set("log_file_name", getGLBObject.Properties.Log.Filename)
+	d.Set("log_format", getGLBObject.Properties.Log.Format)
+
+	log.Printf(fmt.Sprintf("[DEBUG] Get - logging is %t", getGLBObject.Properties.Log.Enabled))
+
 	return nil
 }
 
@@ -347,42 +368,46 @@ func resourceGLBUpdate(d *schema.ResourceData, m interface{}) error {
 		hasChanges = true
 	}
 	if d.HasChange("all_monitors_needed") {
-		updateGLB.Properties.Basic.AllMonitorsNeeded = d.Get("all_monitors_needed").(bool)
 		hasChanges = true
 	}
+	updateGLB.Properties.Basic.AllMonitorsNeeded = d.Get("all_monitors_needed").(bool)
+
 	if d.HasChange("auto_recovery") {
-		updateGLB.Properties.Basic.AutoRecovery = d.Get("auto_recovery").(bool)
 		hasChanges = true
 	}
+	updateGLB.Properties.Basic.AutoRecovery = d.Get("auto_recovery").(bool)
+
 	if d.HasChange("chained_auto_failback") {
-		updateGLB.Properties.Basic.ChainedAutoFailback = d.Get("chained_auto_failback").(bool)
 		hasChanges = true
 	}
+	updateGLB.Properties.Basic.ChainedAutoFailback = d.Get("chained_auto_failback").(bool)
+
 	if d.HasChange("disable_on_failure") {
-		updateGLB.Properties.Basic.DisableOnFailure = d.Get("disable_on_failure").(bool)
 		hasChanges = true
 	}
+	updateGLB.Properties.Basic.DisableOnFailure = d.Get("disable_on_failure").(bool)
+
 	if d.HasChange("enabled") {
-		updateGLB.Properties.Basic.Enabled = d.Get("enabled").(bool)
 		hasChanges = true
 	}
+	updateGLB.Properties.Basic.Enabled = d.Get("enabled").(bool)
+
 	if d.HasChange("return_ips_on_fail") {
-		updateGLB.Properties.Basic.ReturnIPSOnFail = d.Get("return_ips_on_fail").(bool)
 		hasChanges = true
 	}
+	updateGLB.Properties.Basic.ReturnIPSOnFail = d.Get("return_ips_on_fail").(bool)
+
 	if d.HasChange("geo_effect") {
-		if v, ok := d.GetOk("geo_effect"); ok {
-			geoEffect := v.(int)
-			updateGLB.Properties.Basic.GeoEffect = uint(geoEffect)
-		}
 		hasChanges = true
 	}
+	geoEffect := d.Get("geo_effect").(int)
+	updateGLB.Properties.Basic.GeoEffect = uint(geoEffect)
+
 	if d.HasChange("ttl") {
-		if v, ok := d.GetOk("ttl"); ok {
-			updateGLB.Properties.Basic.TTL = v.(int)
-		}
 		hasChanges = true
 	}
+	updateGLB.Properties.Basic.TTL = d.Get("ttl").(int)
+
 	if d.HasChange("chained_location_order") {
 		if v, ok := d.GetOk("chained_location_order"); ok {
 			updateGLB.Properties.Basic.ChainedLocationOrder = util.BuildStringArrayFromInterface(v)
@@ -416,6 +441,26 @@ func resourceGLBUpdate(d *schema.ResourceData, m interface{}) error {
 	if d.HasChange("location_settings") {
 		if v, ok := d.GetOk("location_settings"); ok {
 			updateGLB.Properties.Basic.LocationSettings = buildLocationSettings(v.(*schema.Set))
+		}
+	}
+	if d.HasChange("dns_sec_keys") {
+		if v, ok := d.GetOk("dns_sec_keys"); ok {
+			updateGLB.Properties.Basic.DNSSecKeys = buildDNSSecKeys(v.(*schema.Set))
+		}
+	}
+	if d.HasChange("logging_enabled") {
+		hasChanges = true
+	}
+	updateGLB.Properties.Log.Enabled = d.Get("logging_enabled").(bool)
+
+	if d.HasChange("log_file_name") {
+		if v, ok := d.GetOk("log_file_name"); ok && v != "" {
+			updateGLB.Properties.Log.Filename = v.(string)
+		}
+	}
+	if d.HasChange("log_format") {
+		if v, ok := d.GetOk("log_format"); ok && v != "" {
+			updateGLB.Properties.Log.Format = v.(string)
 		}
 	}
 
