@@ -265,7 +265,7 @@ resource "brocadevtm_glb" "acctest" {
   ]
   logging_enabled = true
   log_file_name = "/var/log/brocadevtm/test.log"
-  log_format = "%g, %n, %d, %a, %t, %s, %l, %q"
+  log_format = ""
 }
 `, glbName)
 }
@@ -314,7 +314,7 @@ resource "brocadevtm_glb" "acctest" {
   ]
   logging_enabled = false
   log_file_name = "/var/log/brocadevtm/updated-test.log"
-  log_format = "%a, %t, %s, %l, %q"
+  log_format = ""
 }
 `, glbName)
 }
