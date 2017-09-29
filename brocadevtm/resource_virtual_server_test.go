@@ -313,7 +313,7 @@ resource "brocadevtm_pool" "acctest" {
   http_keepalive_non_idempotent = false
   load_balancing_priority_enabled = false
   load_balancing_priority_nodes = 8
-  load_balancing_algorithm = "INVALID_ALGO"
+  load_balancing_algorithm = "round_robin"
   tcp_nagle = false
 }
 resource "brocadevtm_virtual_server" "acctest" {
