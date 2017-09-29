@@ -300,7 +300,7 @@ resource "brocadevtm_pool" "acctest" {
     state="active"
     weight=1
   }
-  max_connection_attempts = -10
+  max_connection_attempts = 10
   max_idle_connections_pernode = 20
   max_timed_out_connection_attempts = 20
   node_close_with_rst = false
