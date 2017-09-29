@@ -291,31 +291,6 @@ ocsp_issuers = [
 
 func testAccBrocadeVTMVirtualServerCreate(virtualServerName string) string {
 	return fmt.Sprintf(`
-resource "brocadevtm_pool" "acctest" {
-  name = "test-pool"
-  monitorlist = ["ping"]
-  node {
-    node="127.0.0.1:80"
-    priority=1
-    state="active"
-    weight=1
-  }
-  max_connection_attempts = 10
-  max_idle_connections_pernode = 20
-  max_timed_out_connection_attempts = 20
-  node_close_with_rst = false
-  max_connection_timeout = 60
-  max_connections_per_node = 10
-  max_queue_size = 20
-  max_reply_time = 60
-  queue_timeout = 60
-  http_keepalive = false
-  http_keepalive_non_idempotent = false
-  load_balancing_priority_enabled = false
-  load_balancing_priority_nodes = 8
-  load_balancing_algorithm = "round_robin"
-  tcp_nagle = false
-}
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
