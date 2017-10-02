@@ -70,7 +70,7 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                 stage 'testacc'
                 inContainer {
                     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'BROCADEVTM_CREDENTIALS', usernameVariable: 'BROCADEVTM_USERNAME', passwordVariable: 'BROCADEVTM_PASSWORD']]) {
-                        env.BROCADEVTM_SERVER='h1ist01-v00.paas.d50.ovp.bskyb.com:9070'
+                        env.BROCADEVTM_SERVER='10.93.59.24:9070'
                         env.BROCADEVTM_ALLOW_UNVERIFIED_SSL=true
                         goHelper.goTestAcc(project_src_path)
                     }
