@@ -5,7 +5,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api/dns_zone"
 	"github.com/sky-uk/go-rest-api"
-	"log"
 	"net/http"
 )
 
@@ -25,12 +24,12 @@ func resourceDNSZone() *schema.Resource {
 			},
 			"origin": {
 				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "The domain origin for the zone",
+				Required:    true,
+				Description: "The origin",
 			},
 			"zone_file": {
 				Type:        schema.TypeString,
-				Optional:    true,
+				Required:    true,
 				Description: "The name of the DNS zone file to use",
 			},
 		},
@@ -54,12 +53,9 @@ func resourceDNSZoneCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	createAPI := dnsZone.NewCreate(dnsZoneName, dnsZoneObject)
-
-	log.Printf(fmt.Sprintf("[DEBUG] Object is %+v", dnsZoneObject))
-
 	err := vtmClient.Do(createAPI)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM DNS zone error whilst creating %s: %v", dnsZoneName, err)
+		return fmt.Errorf("BrocadeVTM DNS zone error whilst creating %s: %v", dnsZoneName, createAPI.ErrorObject())
 	}
 
 	d.SetId(dnsZoneName)
@@ -79,7 +75,7 @@ func resourceDNSZoneRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM DNS zone error whilst reading %s: %v", dnsZoneName, err)
+		return fmt.Errorf("BrocadeVTM DNS zone error whilst reading %s: %v", dnsZoneName, getAPI.ErrorObject())
 	}
 	dnsZoneObject = *getAPI.ResponseObject().(*dnsZone.DNSZone)
 	d.SetId(dnsZoneName)
@@ -113,7 +109,7 @@ func resourceDNSZoneUpdate(d *schema.ResourceData, m interface{}) error {
 		updateAPI := dnsZone.NewUpdate(dnsZoneName, dnsZoneObject)
 		err := vtmClient.Do(updateAPI)
 		if err != nil {
-			return fmt.Errorf(fmt.Sprintf("BrocadeVTM DNS zone error whilst updating %s: %v", dnsZoneName, err))
+			return fmt.Errorf(fmt.Sprintf("BrocadeVTM DNS zone error whilst updating %s: %v", dnsZoneName, updateAPI.ErrorObject()))
 		}
 	}
 
@@ -132,10 +128,8 @@ func resourceDNSZoneDelete(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("BrocadeVTM DNS zone error whilst deleting %s: %v", dnsZoneName, err))
+		return fmt.Errorf(fmt.Sprintf("BrocadeVTM DNS zone error whilst deleting %s: %v", dnsZoneName, deleteAPI.ErrorObject()))
 	}
-
 	d.SetId("")
-
 	return nil
 }

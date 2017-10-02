@@ -52,11 +52,10 @@ func resourceDNSZoneFileCreate(d *schema.ResourceData, m interface{}) error {
 	createAPI := dnsZoneFile.NewCreate(dnsZoneFileObject.Name, []byte(fmt.Sprintf(dnsZoneFileObject.FileName)))
 	err := vtmClient.Do(createAPI)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM DNS Zone File error whilst creating %s: %v", dnsZoneFileObject.Name, err)
+		return fmt.Errorf("BrocadeVTM DNS Zone File error whilst creating %s: %v", dnsZoneFileObject.Name, createAPI.ErrorObject())
 	}
 
 	d.SetId(dnsZoneFileObject.Name)
-
 	return resourceDNSZoneFileRead(d, m)
 }
 
@@ -75,20 +74,18 @@ func resourceDNSZoneFileRead(d *schema.ResourceData, m interface{}) error {
 	dnsZoneFileObject.Name = d.Id()
 	readAPI := dnsZoneFile.NewGet(dnsZoneFileObject.Name)
 	err := vtmClient.Do(readAPI)
-	if err != nil {
-		if readAPI.StatusCode() == http.StatusNotFound {
-			d.SetId("")
-			return nil
-		}
-		return fmt.Errorf("BrocadeVTM DNS Zone File error whilst retrieving %s: %v", dnsZoneFileObject.Name, err)
+	if readAPI.StatusCode() == http.StatusNotFound {
+		d.SetId("")
+		return nil
 	}
-
+	if err != nil {
+		return fmt.Errorf("BrocadeVTM DNS Zone File error whilst retrieving %s: %v", dnsZoneFileObject.Name, readAPI.ErrorObject())
+	}
 	response := readAPI.ResponseObject().(*[]byte)
 	dnsZoneFileObject.FileName = string(*response)
 
 	d.SetId(dnsZoneFileObject.Name)
 	d.Set("dns_zone_file", dnsZoneFileObject.FileName)
-
 	return nil
 }
 
@@ -118,12 +115,11 @@ func resourceDNSZoneFileUpdate(d *schema.ResourceData, m interface{}) error {
 		err := vtmClient.Do(updateAPI)
 
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM DNS Zone File error whilst updating %s: %vv", dnsZoneFileObject.Name, err)
+			return fmt.Errorf("BrocadeVTM DNS Zone File error whilst updating %s: %v", dnsZoneFileObject.Name, updateAPI.ErrorObject())
 		}
 		d.SetId(dnsZoneFileObject.Name)
 		d.Set("dns_zone_file", dnsZoneFileObject.FileName)
 	}
-
 	return resourceDNSZoneFileRead(d, m)
 }
 
@@ -131,11 +127,15 @@ func resourceDNSZoneFileDelete(d *schema.ResourceData, m interface{}) error {
 
 	vtmClient := m.(*rest.Client)
 
-	dnsZoneFileObjectName := d.Id()
-	deleteAPI := dnsZoneFile.NewDelete(dnsZoneFileObjectName)
+	dnsZoneFileName := d.Id()
+	deleteAPI := dnsZoneFile.NewDelete(dnsZoneFileName)
 	err := vtmClient.Do(deleteAPI)
-	if err != nil && deleteAPI.StatusCode() != http.StatusNotFound {
-		return fmt.Errorf("BrocadeVTM DNS Zone File error whilst deleting %s: %v", dnsZoneFileObjectName, err)
+	if deleteAPI.StatusCode() != http.StatusNotFound {
+		d.SetId("")
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("BrocadeVTM DNS Zone File error whilst deleting %s: %v", dnsZoneFileName, deleteAPI.ErrorObject())
 	}
 
 	d.SetId("")
