@@ -36,19 +36,7 @@ func TestAccBrocadeVTMDNSZoneFileBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMDNSZoneFileExists(dnsZoneFileName, dnsZoneFileResourceName),
 					resource.TestCheckResourceAttr(dnsZoneFileResourceName, "name", dnsZoneFileName),
-					resource.TestCheckResourceAttr(dnsZoneFileResourceName, "dns_zone_file", "$TTL 3600\n"+
-						"@\t\t\t\t30\tIN\tSOA\tns1.example.com. hostmaster.isp.sky.com. (\n"+
-						"\t\t\t\t\t\t\t01\t; serial\n"+
-						"\t\t\t\t\t\t\t3600\t; refresh after 1 hour\n"+
-						"\t\t\t\t\t\t\t300\t; retry after 5 minutes\n"+
-						"\t\t\t\t\t\t\t1209600\t; expire after 2 weeks\n"+
-						"\t\t\t\t\t\t\t30)\t; minimum TTL of 30 seconds\n"+
-						"@\t\t\t\t30\tIN\tNS\tns1.example.com.\n"+
-						"ns1\t\t\t\t30\tIN\tA\t10.0.0.2\n"+
-						"example-service\t\t\t60\tIN\tA\t10.1.0.2\n"+
-						"\t\t\t\t60\tIN\tA\t10.1.1.2\n"+
-						"another-example-service\t\t60\tIN\tA\t10.2.0.2\n"+
-						"\t\t\t\t60\tIN\tA\t10.2.1.2\n"),
+					resource.TestMatchResourceAttr(dnsZoneFileResourceName,  "dns_zone_file", regexp.MustCompile(`example-service`)),
 				),
 			},
 			{
@@ -56,18 +44,8 @@ func TestAccBrocadeVTMDNSZoneFileBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMDNSZoneFileExists(dnsZoneFileName, dnsZoneFileResourceName),
 					resource.TestCheckResourceAttr(dnsZoneFileResourceName, "name", dnsZoneFileName),
-					resource.TestCheckResourceAttr(dnsZoneFileResourceName, "dns_zone_file", "$TTL 3600\n"+
-						"@ \t\t\t\t30\tIN \tSOA \tns2.example.com. hostmaster.isp.sky.com. (\n"+
-						"\t\t\t\t\t\t\t02\t; serial\n"+
-						"\t\t\t\t\t\t\t3600\t; refresh after 1 hour\n"+
-						"\t\t\t\t\t\t\t300\t; retry after 5 minutes\n"+
-						"\t\t\t\t\t\t\t1209600\t; expire after 2 weeks\n"+
-						"\t\t\t\t\t\t\t30)\t; minimum TTL of 30 seconds\n"+
-						"@\t\t\t\t30\tIN\tNS\tns2.example.com.\n"+
-						"ns1\t\t\t\t30\tIN\tA\t10.10.0.2\nexample-service\t\t\t60\tIN\tA\t10.11.0.2\n"+
-						"\t\t\t\t60\tIN\tA\t10.11.1.2\n"+
-						"another-example-service\t\t60\tIN\tA\t10.12.0.2\n"+
-						"\t\t\t\t60\tIN\tA\t10.12.1.2\n"),
+					resource.TestMatchResourceAttr(dnsZoneFileResourceName,  "dns_zone_file", regexp.MustCompile(``)),
+					resource.TestMatchResourceAttr(dnsZoneFileResourceName,  "dns_zone_file", regexp.MustCompile(`updated-example-service`)),
 				),
 			},
 		},
@@ -169,11 +147,11 @@ $TTL 3600
 							1209600	; expire after 2 weeks
 							30)	; minimum TTL of 30 seconds
 @				30	IN	NS	ns2.example.com.
-ns1				30	IN	A	10.10.0.2
-example-service			60	IN	A	10.11.0.2
-				60	IN	A	10.11.1.2
-another-example-service		60	IN	A	10.12.0.2
-				60	IN	A	10.12.1.2
+ns1				30	IN	A	10.100.0.2
+updated-example-service		30	IN	A	10.110.0.2
+				30	IN	A	10.110.1.2
+another-example-service		30	IN	A	10.120.0.2
+				30	IN	A	10.120.1.2
 DNS_ZONE_FILE
 }
 `, name)
