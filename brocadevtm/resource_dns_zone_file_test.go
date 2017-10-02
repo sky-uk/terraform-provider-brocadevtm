@@ -36,7 +36,7 @@ func TestAccBrocadeVTMDNSZoneFileBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMDNSZoneFileExists(dnsZoneFileName, dnsZoneFileResourceName),
 					resource.TestCheckResourceAttr(dnsZoneFileResourceName, "name", dnsZoneFileName),
-					resource.TestMatchResourceAttr(dnsZoneFileResourceName,  "dns_zone_file", regexp.MustCompile(`example-service`)),
+					resource.TestMatchResourceAttr(dnsZoneFileResourceName, "dns_zone_file", regexp.MustCompile(`example-service`)),
 				),
 			},
 			{
@@ -44,8 +44,8 @@ func TestAccBrocadeVTMDNSZoneFileBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMDNSZoneFileExists(dnsZoneFileName, dnsZoneFileResourceName),
 					resource.TestCheckResourceAttr(dnsZoneFileResourceName, "name", dnsZoneFileName),
-					resource.TestMatchResourceAttr(dnsZoneFileResourceName,  "dns_zone_file", regexp.MustCompile(``)),
-					resource.TestMatchResourceAttr(dnsZoneFileResourceName,  "dns_zone_file", regexp.MustCompile(`updated-example-service`)),
+					resource.TestMatchResourceAttr(dnsZoneFileResourceName, "dns_zone_file", regexp.MustCompile(``)),
+					resource.TestMatchResourceAttr(dnsZoneFileResourceName, "dns_zone_file", regexp.MustCompile(`updated-example-service`)),
 				),
 			},
 		},
