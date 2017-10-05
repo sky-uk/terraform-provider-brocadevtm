@@ -108,13 +108,6 @@ func resourceVirtualServer() *schema.Resource {
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"mss": {
-				Type:         schema.TypeInt,
-				Description:  "The maximum TCP segment size. Setting this to zero causes the default maximum TCP segment size to be advertised and used.",
-				Optional:     true,
-				Default:      0,
-				ValidateFunc: util.ValidateUnsignedInteger,
-			},
 			"note": {
 				Type:        schema.TypeString,
 				Description: " A description for the virtual server.",
@@ -437,7 +430,6 @@ func resourceVirtualServer() *schema.Resource {
 						},
 					},
 				},
-
 			},
 
 			"gzip": {
@@ -671,454 +663,7 @@ func resourceVirtualServer() *schema.Resource {
 				},
 			},
 
-			"gzip": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"compress_level": {
-							Type:         schema.TypeInt,
-							Description:  "The source port to be used for active-mode FTP data connections. If 0, a random high port will be used.",
-							Optional:     true,
-							Default:      1,
-							ValidateFunc: validateCompressLevel,
-						},
-						"enabled": {
-							Type:        schema.TypeBool,
-							Description: "Compress web pages sent back by the server",
-							Optional:    true,
-							Default:     false,
-						},
-						"etag_rewrite": {
-							Type:         schema.TypeString,
-							Description:  "How the ETag header should be manipulated when compressing content.",
-							Optional:     true,
-							Default:      "wrap",
-							ValidateFunc: validateETagRewrite,
-						},
-						"include_mime": {
-							Type:        schema.TypeList,
-							Description: "MIME types to compress. Complete MIME types can be used, or a type can end in a '*' to match multiple types.",
-							Optional:    true,
-							Elem:        &schema.Schema{Type: schema.TypeString},
-						},
-						"max_size": {
-							Type:         schema.TypeInt,
-							Description:  "Maximum document size to compress (0 means unlimited).",
-							Optional:     true,
-							Default:      10000000,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"min_size": {
-							Type:         schema.TypeInt,
-							Description:  "Minimum document size to compress.",
-							Optional:     true,
-							Default:      1000,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"no_size": {
-							Type:        schema.TypeBool,
-							Description: "Compress documents with no given size.",
-							Optional:    true,
-							Default:     false,
-						},
-					},
-				},
-			},
-
-			"http": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"chunk_overhead_forwarding": {
-							Type:         schema.TypeString,
-							Description:  "Handling of HTTP chunk overhead.",
-							Optional:     true,
-							Default:      "lazy",
-							ValidateFunc: validateChunkOverheadForwarding,
-						},
-						"location_regex": {
-							Type:        schema.TypeString,
-							Description: "If the 'Location' header matches this regular expression, rewrite the header using the 'location_replace' pattern.",
-							Optional:    true,
-						},
-						"location_replace": {
-							Type:        schema.TypeString,
-							Description: "If the 'Location' header matches the 'location_regex' regular expression, rewrite the header with this pattern",
-							Optional:    true,
-						},
-						"location_rewrite": {
-							Type:         schema.TypeString,
-							Description:  "If the 'Location' header matches the 'location_regex' regular expression, rewrite the header with this pattern",
-							Optional:     true,
-							Default:      "if_host_matches",
-							ValidateFunc: validateLocationRewrite,
-						},
-						"mime_default": {
-							Type:        schema.TypeString,
-							Description: "Auto-correct MIME types if the server sends the 'default' MIME type for files.",
-							Optional:    true,
-							Default:     "text/plain",
-						},
-						"mime_detect": {
-							Type:        schema.TypeBool,
-							Description: "Auto-detect MIME types if the server does not provide them.",
-							Optional:    true,
-							Default:     false,
-						},
-					},
-				},
-			},
-
-			"http2": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"connect_timeout": {
-							Type:         schema.TypeInt,
-							Description:  "The time, in seconds, to wait for a request on a new HTTP/2 connection.",
-							Optional:     true,
-							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"data_frame_size": {
-							Type:         schema.TypeInt,
-							Description:  "This setting controls the preferred frame size used when sending body data to the client.",
-							Optional:     true,
-							Default:      4096,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"enabled": {
-							Type:        schema.TypeBool,
-							Description: "This setting allows the HTTP/2 protocol to be used by a HTTP virtual server.",
-							Optional:    true,
-							Default:     false,
-						},
-						"header_table_size": {
-							Type:         schema.TypeInt,
-							Description:  "This setting controls the amount of memory allowed for header compression on each HTTP/2 connection.",
-							Optional:     true,
-							Default:      4096,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"headers_index_blacklist": {
-							Type:        schema.TypeList,
-							Description: "A list of header names that should never be compressed using indexing.",
-							Optional:    true,
-							Elem:        &schema.Schema{Type: schema.TypeString},
-						},
-						"headers_index_default": {
-							Type:        schema.TypeBool,
-							Description: "The HTTP/2 HPACK compression scheme allows for HTTP headers to be compressed using indexing. If this is true only hraders included in headers_index_blacklist are marked as 'never index', if false all headers are marked as never index unless in whitelist",
-							Optional:    true,
-							Default:     false,
-						},
-						"headers_index_whitelist": {
-							Type:        schema.TypeList,
-							Description: "A list of header names that can be compressed using indexing when the value of headers_index_default is set to False.",
-							Optional:    true,
-							Elem:        &schema.Schema{Type: schema.TypeString},
-						},
-						"idle_timeout_no_streams": {
-							Type:         schema.TypeInt,
-							Description:  "The time, in seconds, to wait for a new HTTP/2 request on a previously used HTTP/2 connection that has no open HTTP/2 streams. A value of 0 disables the timeout.",
-							Optional:     true,
-							Default:      120,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"idle_timeout_open_streams": {
-							Type:         schema.TypeInt,
-							Description:  "The time, in seconds, to wait for data on an idle HTTP/2 connection, which has open streams, when no data has been sent recently. A value of 0 disables the timeout.",
-							Optional:     true,
-							Default:      600,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"max_concurrent_streams": {
-							Type:         schema.TypeInt,
-							Description:  "This setting controls the number of streams a client is permitted to open concurrently on a single connection.",
-							Optional:     true,
-							Default:      200,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"max_frame_size": {
-							Type:         schema.TypeInt,
-							Description:  "This setting controls the maximum HTTP/2 frame size clients are permitted to send to the traffic manager.",
-							Optional:     true,
-							Default:      16384,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"max_header_padding": {
-							Type:         schema.TypeInt,
-							Description:  "The maximum size, in bytes, of the random-length padding to add to HTTP/2 header frames. The padding, a random number of zero bytes up to the maximum specified.",
-							Optional:     true,
-							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"merge_cookie_headers": {
-							Type:        schema.TypeBool,
-							Description: "Whether Cookie headers received from an HTTP/2 client should be merged into a single Cookie header using RFC6265 rules before forwarding to anHTTP/1.1 server.",
-							Optional:    true,
-							Default:     false,
-						},
-						"stream_window_size": {
-							Type:         schema.TypeInt,
-							Description:  "This setting controls the flow control window for each HTTP/2 stream.",
-							Optional:     true,
-							Default:      65535,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-					},
-				},
-			},
-
-			"kerberos_protocol_transition": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"enabled": {
-							Type:        schema.TypeBool,
-							Description: "Whether or not the virtual server should use Kerberos Protocol Transition.",
-							Optional:    true,
-							Default:     false,
-						},
-						"principal": {
-							Type:        schema.TypeString,
-							Description: "The Kerberos principal this virtual server should use to perform Kerberos Protocol Transition.",
-							Optional:    true,
-						},
-						"target": {
-							Type:        schema.TypeString,
-							Description: "The Kerberos principal name of the service this virtual server targets.",
-							Optional:    true,
-						},
-					},
-				},
-			},
-
 			"log": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"always_flush": {
-							Type:        schema.TypeBool,
-							Description: "Write log data to disk immediately, rather than buffering data.",
-							Optional:    true,
-							Default:     false,
-						},
-						"client_connection_failures": {
-							Type:        schema.TypeBool,
-							Description: "Should the virtual server log failures occurring on connections to clients.",
-							Optional:    true,
-							Default:     false,
-						},
-						"enabled": {
-							Type:        schema.TypeBool,
-							Description: "Whether or not to log connections to the virtual server to a disk on the file system.",
-							Optional:    true,
-							Default:     false,
-						},
-						"filename": {
-							Type:        schema.TypeString,
-							Description: "The name of the file in which to store the request logs. The filename can contain macros which will be expanded by the traffic manager to generate the full filename.",
-							Optional:    true,
-							Default:     "%zeushome%/zxtm/log/%v.log",
-						},
-						"format": {
-							Type:        schema.TypeString,
-							Description: "The log file format. This specifies the line of text that will be written to the log file when a connection to the traffic manager is completed. Many parameters from the connection can be recorded using macros.",
-							Optional:    true,
-							Default:     "%h %l %u %t \"%r\" %s %b \"%{Referer}i\"\"%{User-agent}i\"",
-						},
-						"save_all": {
-							Type:        schema.TypeBool,
-							Description: "Whether to log all connections by default, or log no connections by default.",
-							Optional:    true,
-							Default:     false,
-						},
-						"server_connection_failures": {
-							Type:        schema.TypeBool,
-							Description: "Should the virtual server log failures occurring on connections to nodes.",
-							Optional:    true,
-							Default:     false,
-						},
-						"session_persistence_verbose": {
-							Type:        schema.TypeBool,
-							Description: "Should the virtual server log session persistence events.",
-							Optional:    true,
-							Default:     false,
-						},
-						"ssl_failures": {
-							Type:        schema.TypeBool,
-							Description: "Should the virtual server log failures occurring on SSL secure negotiation.",
-							Optional:    true,
-							Default:     false,
-						},
-					},
-				},
-			},
-
-			"recent_connections": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"enabled": {
-							Type:        schema.TypeBool,
-							Description: "Whether or not connections handled by this virtual server should be shown on the Activity Connections page.",
-							Optional:    true,
-							Default:     false,
-						},
-						"save_all": {
-							Type:        schema.TypeBool,
-							Description: "Whether or not all connections handled by this virtual server should be shown on the Connections page.",
-							Optional:    true,
-							Default:     false,
-						},
-					},
-				},
-			},
-
-			"request_tracing": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"enabled": {
-							Type:        schema.TypeBool,
-							Description: "Record a trace of major connection processing events for each request and response.",
-							Optional:    true,
-							Default:     false,
-						},
-						"trace_io": {
-							Type:        schema.TypeBool,
-							Description: " Include details of individual I/O events in request and response traces. Requires request tracing to be enabled.",
-							Optional:    true,
-							Default:     false,
-						},
-					},
-				},
-			},
-
-			"rtsp": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"streaming_port_range_high": {
-							Type:         schema.TypeInt,
-							Description:  "If non-zero this controls the upper bound of the port range to use for streaming data connections.",
-							Optional:     true,
-							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"streaming_port_range_low": {
-							Type:         schema.TypeInt,
-							Description:  "If non-zero this controls the lower bound of the port range to use for streaming data connections.",
-							Optional:     true,
-							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"streaming_timeout": {
-							Type:         schema.TypeInt,
-							Description:  "If non-zero data-streams associated with RTSP connections will timeout if no data is transmitted for this many seconds",
-							Optional:     true,
-							Default:      30,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-					},
-				},
-			},
-
-			"sip": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"dangerous_requests": {
-							Type:         schema.TypeString,
-							Description:  " The action to take when a SIP request with body data arrives that should be routed to an external IP.",
-							Optional:     true,
-							Default:      "node",
-							ValidateFunc: validateSIPDangerousRequestsAction,
-						},
-						"follow_route": {
-							Type:        schema.TypeBool,
-							Description: "Should the virtual server follow routing information contained in SIP requests.",
-							Optional:    true,
-							Default:     false,
-						},
-						"max_connection_mem": {
-							Type:         schema.TypeInt,
-							Description:  "this setting limits the amount of memory each SIP client can use. When the limit is reached new requests will be sent a 413 response. If the value is set to 0 (zero) the memory limit is disabled.",
-							Optional:     true,
-							Default:      65536,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"mode": {
-							Type:         schema.TypeString,
-							Description:  " The action to take when a SIP request with body data arrives that should be routed to an external IP.",
-							Optional:     true,
-							Default:      "sip_gateway",
-							ValidateFunc: validateSIPMode,
-						},
-						"rewrite_uri": {
-							Type:        schema.TypeBool,
-							Description: " Replace the Request-URI of SIP requests with the address of the selected backend node.",
-							Optional:    true,
-							Default:     false,
-						},
-						"streaming_port_range_high": {
-							Type:         schema.TypeInt,
-							Description:  "If non-zero this controls the upper bound of the port range to use for streaming data connections.",
-							Optional:     true,
-							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"streaming_port_range_low": {
-							Type:         schema.TypeInt,
-							Description:  "If non-zero this controls the lower bound of the port range to use for streaming data connections.",
-							Optional:     true,
-							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"streaming_timeout": {
-							Type:         schema.TypeInt,
-							Description:  "If non-zero a UDP stream will timeout when no data has been seen within this time.",
-							Optional:     true,
-							Default:      60,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"timeout_messages": {
-							Type:        schema.TypeBool,
-							Description: "When timing out a SIP transaction, send a 'timed out' response to the client and, in the case of an INVITE transaction, a CANCEL request to the server.",
-							Optional:    true,
-							Default:     false,
-						},
-						"transaction_timeout": {
-							Type:         schema.TypeInt,
-							Description:  "The virtual server should discard a SIP transaction when no further messages have been seen within this time.",
-							Optional:     true,
-							Default:      30,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-					},
-				},
-			},
-
-			"ssl": {
 				Type:     schema.TypeList,
 				Optional: true,
 				MaxItems: 1,
@@ -1788,7 +1333,6 @@ func validateMaxBuffer(v interface{}, k string) (ws []string, errors []error) {
 	return
 }
 
-
 func validateHeaderTableSize(v interface{}, k string) (ws []string, errors []error) {
 	if v.(int) < 4096 || v.(int) > 1048576 {
 		errors = append(errors, fmt.Errorf("header_table_size must be a value within 4096-1048576"))
@@ -1873,55 +1417,16 @@ func validateVirtualServerUseSSLSupport(v interface{}, k string) (ws []string, e
 	return
 }
 
-func buildStringList(strings interface{}) []string {
-	stringList := make([]string, len(strings.([]interface{})))
-	for idx, stringValue := range strings.([]interface{}) {
-		stringList[idx] = stringValue.(string)
-	}
-	return stringList
-}
-
-func buildSSLCertMapping(sslCertMapping []interface{}) []virtualserver.CertItem {
-	certItemList := make([]virtualserver.CertItem, len(sslCertMapping))
-	var certItem virtualserver.CertItem
-
-	for idx, value := range sslCertMapping {
-		mappingItem := value.(map[string]interface{})
-		certItem.Host = mappingItem["ssl_server_cert_host"].(string)
-		certItem.Certificate = mappingItem["ssl_server_cert"].(string)
-		certItem.AltCertificates = buildStringList(mappingItem["ssl_server_alt_certs"])
-		certItemList[idx] = certItem
-	}
-	return certItemList
-}
-
-func buildSSLOCSPIssuers(ocspIssuers []interface{}) []virtualserver.OCSPIssuer {
-	ocspIssuerList := make([]virtualserver.OCSPIssuer, len(ocspIssuers))
-	var ocspIssuer virtualserver.OCSPIssuer
-
-	for idx, value := range ocspIssuers {
-		issuerItem := value.(map[string]interface{})
-		ocspIssuer.Issuer = issuerItem["issuer"].(string)
-		ocspIssuer.AIA = issuerItem["aia"].(*bool)
-		ocspIssuer.Nonce = issuerItem["nonce"].(string)
-		ocspIssuer.Required = issuerItem["required"].(string)
-		ocspIssuer.ResponderCert = issuerItem["responder_cert"].(string)
-		ocspIssuer.Signer = issuerItem["signer"].(string)
-		ocspIssuer.URL = issuerItem["url"].(string)
-		ocspIssuerList[idx] = ocspIssuer
-	}
-	return ocspIssuerList
-}
-
 func assignAptimizerValues(aptmizerMap map[string]interface{}) (aptimizerStruct virtualserver.Aptimizer) {
 	enabled := aptmizerMap["enabled"].(bool)
 	aptimizerStruct.Enabled = &enabled
+
 	profileList := []virtualserver.AptimizerProfile{}
 	var profile virtualserver.AptimizerProfile
 	for _, value := range aptmizerMap["profile"].([]interface{}) {
 		profileItem := value.(map[string]interface{})
 		profile.Name = profileItem["name"].(string)
-		profile.URLs = buildStringList(profileItem["urls"])
+		profile.URLs = util.BuildStringArrayFromInterface(profileItem["urls"])
 		profileList = append(profileList, profile)
 	}
 	aptimizerStruct.Profile = profileList
@@ -1931,15 +1436,21 @@ func assignAptimizerValues(aptmizerMap map[string]interface{}) (aptimizerStruct 
 func assignConnectionValues(connectionMap map[string]interface{}) (connectionStruct virtualserver.Connection) {
 	keepAlive := connectionMap["keepalive"].(bool)
 	connectionStruct.Keepalive = &keepAlive
+
 	keepAliveTimeout := uint(connectionMap["keepalive_timeout"].(int))
 	connectionStruct.KeepaliveTimeout = &keepAliveTimeout
+
 	maxClientBuffer := uint(connectionMap["max_client_buffer"].(int))
 	connectionStruct.MaxClientBuffer = &maxClientBuffer
+
 	maxServerBuffer := uint(connectionMap["max_server_buffer"].(int))
 	connectionStruct.MaxServerBuffer = &maxServerBuffer
+
 	maxTransactionDuration := uint(connectionMap["max_transaction_duration"].(int))
 	connectionStruct.MaxTransactionDuration = &maxTransactionDuration
+
 	connectionStruct.ServerFirstBanner = connectionMap["server_first_banner"].(string)
+
 	timeout := uint(connectionMap["timeout"].(int))
 	connectionStruct.Timeout = &timeout
 	return
@@ -1957,26 +1468,35 @@ func assignCookieValues(cookieMap map[string]interface{}) (cookieStruct virtuals
 func assignDNSValues(dnsMap map[string]interface{}) (dnsStruct virtualserver.DNS) {
 	ednsClientSubnet := dnsMap["edns_client_subnet"].(bool)
 	dnsStruct.EDNSClientSubnet = &ednsClientSubnet
+
 	ednsUDPsize := uint(dnsMap["edns_udpsize"].(int))
 	dnsStruct.EdnsUdpsize = &ednsUDPsize
+
 	maxUDPSize := uint(dnsMap["max_udpsize"].(int))
 	dnsStruct.MaxUdpsize = &maxUDPSize
+
 	dnsStruct.RrsetOrder = dnsMap["rrset_order"].(string)
+
 	verbose := dnsMap["verbose"].(bool)
 	dnsStruct.Verbose = &verbose
-	dnsStruct.Zones = buildStringList(dnsMap["zones"])
+
+	dnsStruct.Zones = util.BuildStringArrayFromInterface(dnsMap["zones"])
 	return
 }
 
 func assignFTPValues(ftpMap map[string]interface{}) (ftpStruct virtualserver.Ftp) {
 	dataSourcePort := uint(ftpMap["data_source_port"].(int))
 	ftpStruct.DataSourcePort = &dataSourcePort
+
 	forceClientSecure := ftpMap["force_client_secure"].(bool)
 	ftpStruct.ForceClientSecure = &forceClientSecure
+
 	portRangeHigh := uint(ftpMap["port_range_high"].(int))
 	ftpStruct.PortRangeHigh = &portRangeHigh
+
 	portRangeLow := uint(ftpMap["port_range_low"].(int))
 	ftpStruct.PortRangeLow = &portRangeLow
+
 	sslData := ftpMap["ssl_data"].(bool)
 	ftpStruct.SslData = &sslData
 	return
@@ -1985,14 +1505,19 @@ func assignFTPValues(ftpMap map[string]interface{}) (ftpStruct virtualserver.Ftp
 func assignGZIPValues(gzipMap map[string]interface{}) (gzipStruct virtualserver.Gzip) {
 	compressLevel := uint(gzipMap["compress_level"].(int))
 	gzipStruct.CompressLevel = &compressLevel
+
 	enabled := gzipMap["enabled"].(bool)
 	gzipStruct.Enabled = &enabled
+
 	gzipStruct.EtagRewrite = gzipMap["etag_rewrite"].(string)
-	gzipStruct.IncludeMime = buildStringList(gzipMap["include_mime"])
+	gzipStruct.IncludeMime = util.BuildStringArrayFromInterface(gzipMap["include_mime"])
+
 	maxSize := uint(gzipMap["max_size"].(int))
 	gzipStruct.MaxSize = &maxSize
+
 	minSize := uint(gzipMap["min_size"].(int))
 	gzipStruct.MinSize = &minSize
+
 	noSize := gzipMap["no_size"].(bool)
 	gzipStruct.NoSize = &noSize
 	return
@@ -2004,6 +1529,7 @@ func assignHTTPValues(httpMap map[string]interface{}) (httpStruct virtualserver.
 	httpStruct.LocationReplace = httpMap["location_replace"].(string)
 	httpStruct.LocationRewrite = httpMap["location_rewrite"].(string)
 	httpStruct.MIMEDefault = httpMap["mime_default"].(string)
+
 	mimeDetect := httpMap["mime_detect"].(bool)
 	httpStruct.MIMEDetect = &mimeDetect
 	return
@@ -2012,28 +1538,40 @@ func assignHTTPValues(httpMap map[string]interface{}) (httpStruct virtualserver.
 func assignHTTP2Values(http2Map map[string]interface{}) (http2Struct virtualserver.HTTP2) {
 	connectTimeout := uint(http2Map["connect_timeout"].(int))
 	http2Struct.ConnectTimeout = &connectTimeout
+
 	dataFrameSize := uint(http2Map["data_frame_size"].(int))
 	http2Struct.DataFrameSize = &dataFrameSize
+
 	enabled := http2Map["enabled"].(bool)
 	http2Struct.Enabled = &enabled
+
 	headerTableSize := uint(http2Map["header_table_size"].(int))
 	http2Struct.HeaderTableSize = &headerTableSize
-	http2Struct.HeadersIndexBlacklist = buildStringList(http2Map["headers_index_blacklist"])
+
+	http2Struct.HeadersIndexBlacklist = util.BuildStringArrayFromInterface(http2Map["headers_index_blacklist"])
+
 	headersIndexDefault := http2Map["headers_index_default"].(bool)
 	http2Struct.HeadersIndexDefault = &headersIndexDefault
-	http2Struct.HeadersIndexWhitelist = buildStringList(http2Map["headers_index_whitelist"])
+	http2Struct.HeadersIndexWhitelist = util.BuildStringArrayFromInterface(http2Map["headers_index_whitelist"])
+
 	idleTimeoutNoStreams := uint(http2Map["idle_timeout_no_streams"].(int))
 	http2Struct.IdleTimeoutNoStreams = &idleTimeoutNoStreams
+
 	idleTimeoutOpenStreams := uint(http2Map["idle_timeout_open_streams"].(int))
 	http2Struct.IdleTimeoutOpenStreams = &idleTimeoutOpenStreams
+
 	maxConcurrentStreams := uint(http2Map["max_concurrent_streams"].(int))
 	http2Struct.MaxConcurrentStreams = &maxConcurrentStreams
+
 	maxFrameSize := uint(http2Map["max_frame_size"].(int))
 	http2Struct.MaxFrameSize = &maxFrameSize
+
 	maxHeaderPadding := uint(http2Map["max_header_padding"].(int))
 	http2Struct.MaxHeaderPadding = &maxHeaderPadding
+
 	mergeCookieHeaders := http2Map["merge_cookie_headers"].(bool)
 	http2Struct.MergeCookieHeaders = &mergeCookieHeaders
+
 	streamWindowSize := uint(http2Map["stream_window_size"].(int))
 	http2Struct.StreamWindowSize = &streamWindowSize
 	return
@@ -2042,6 +1580,7 @@ func assignHTTP2Values(http2Map map[string]interface{}) (http2Struct virtualserv
 func assignKerberosProtocolTransitionValues(kptMap map[string]interface{}) (kptStruct virtualserver.KerberosProtocolTransition) {
 	enabled := kptMap["enabled"].(bool)
 	kptStruct.Enabled = &enabled
+
 	kptStruct.Principal = kptMap["principal"].(string)
 	kptStruct.Target = kptMap["target"].(string)
 	return
@@ -2050,18 +1589,25 @@ func assignKerberosProtocolTransitionValues(kptMap map[string]interface{}) (kptS
 func assignLogValues(logMap map[string]interface{}) (logStruct virtualserver.Log) {
 	alwaysFlush := logMap["always_flush"].(bool)
 	logStruct.AlwaysFlush = &alwaysFlush
+
 	clientConnectionFailures := logMap["client_connection_failures"].(bool)
 	logStruct.ClientConnectionFailures = &clientConnectionFailures
+
 	enabled := logMap["enabled"].(bool)
 	logStruct.Enabled = &enabled
+
 	logStruct.Filename = logMap["filename"].(string)
 	logStruct.Format = logMap["format"].(string)
+
 	saveAll := logMap["save_all"].(bool)
 	logStruct.SaveAll = &saveAll
+
 	serverConnectionFailures := logMap["server_connection_failures"].(bool)
 	logStruct.ServerConnectionFailures = &serverConnectionFailures
+
 	sessionPersistenceVerbose := logMap["session_persistence_verbose"].(bool)
 	logStruct.SessionPersistenceVerbose = &sessionPersistenceVerbose
+
 	sslFailures := logMap["ssl_failures"].(bool)
 	logStruct.SSLFailures = &sslFailures
 	return
@@ -2070,6 +1616,7 @@ func assignLogValues(logMap map[string]interface{}) (logStruct virtualserver.Log
 func assignRecentConnectionsValues(recentConnectionsMap map[string]interface{}) (recentConnectionsStruct virtualserver.RecentConnections) {
 	enabled := recentConnectionsMap["enabled"].(bool)
 	recentConnectionsStruct.Enabled = &enabled
+
 	saveAll := recentConnectionsMap["save_all"].(bool)
 	recentConnectionsStruct.SaveAll = &saveAll
 	return
@@ -2078,7 +1625,8 @@ func assignRecentConnectionsValues(recentConnectionsMap map[string]interface{}) 
 func assignRequestTracingValues(requestTracingMap map[string]interface{}) (requestTracingStruct virtualserver.RequestTracing) {
 	enabled := requestTracingMap["enabled"].(bool)
 	requestTracingStruct.Enabled = &enabled
-	traceIO := requestTracingStruct["trace_io"].(bool)
+
+	traceIO := requestTracingMap["trace_io"].(bool)
 	requestTracingStruct.TraceIO = &traceIO
 	return
 }
@@ -2086,8 +1634,10 @@ func assignRequestTracingValues(requestTracingMap map[string]interface{}) (reque
 func assignRTSPValues(rtspMap map[string]interface{}) (rtspStruct virtualserver.RTSP) {
 	streamingPortRangeHigh := uint(rtspMap["streaming_port_range_high"].(int))
 	rtspStruct.StreamingPortRangeHigh = &streamingPortRangeHigh
+
 	streamingPortRangeLow := uint(rtspMap["streaming_port_range_low"].(int))
 	rtspStruct.StreamingPortRangeLow = &streamingPortRangeLow
+
 	streamingTimeout := uint(rtspMap["streaming_timeout"].(int))
 	rtspStruct.StreamingTimeout = &streamingTimeout
 	return
@@ -2095,13 +1645,156 @@ func assignRTSPValues(rtspMap map[string]interface{}) (rtspStruct virtualserver.
 
 func assignSIPValues(sipMap map[string]interface{}) (sipStruct virtualserver.SIP) {
 	sipStruct.DangerousRequests = sipMap["dangerous_requests"].(string)
+
 	followRoute := sipMap["follow_route"].(bool)
 	sipStruct.FollowRoute = &followRoute
+
 	maxConnectionMem := uint(sipMap["max_connection_mem"].(int))
 	sipStruct.MaxConnectionMem = &maxConnectionMem
 
+	sipStruct.Mode = sipMap["mode"].(string)
+
+	rewriteURI := sipMap["rewrite_uri"].(bool)
+	sipStruct.RewriteURI = &rewriteURI
+
+	streamingPortRangeHigh := uint(sipMap["streaming_port_range_high"].(int))
+	sipStruct.StreamingPortRangeHigh = &streamingPortRangeHigh
+
+	streamingPortRangeLow := uint(sipMap["streaming_port_range_low"].(int))
+	sipStruct.StreamingPortRangeLow = &streamingPortRangeLow
+
+	streamingTimeout := uint(sipMap["streaming_timeout"].(int))
+	sipStruct.StreamingTimeout = &streamingTimeout
+
+	timeoutMessages := sipMap["timeout_messages"].(bool)
+	sipStruct.TimeoutMessages = &timeoutMessages
+
+	transactionTimeout := uint(sipMap["transaction_timeout"].(int))
+	sipStruct.TransactionTimeout = &transactionTimeout
 	return
 }
+
+func assignSSLValues(sslMap map[string]interface{}) (sslStruct virtualserver.Ssl) {
+	addHTTPHeaders := sslMap["add_http_headers"].(bool)
+	sslStruct.AddHTTPHeaders = &addHTTPHeaders
+
+	sslStruct.ClientCertCAS = util.BuildStringArrayFromInterface(sslMap["client_cert_cas"])
+	sslStruct.EllipticCurves = util.BuildStringArrayFromInterface(sslMap["elliptic_curves"])
+	sslStruct.IssuedCertsNeverExpire = util.BuildStringArrayFromInterface(sslMap["issued_certs_never_expire"])
+
+	enable := sslMap["ocsp_enable"].(bool)
+	sslStruct.OCSPEnable = &enable
+
+	ocspIssuerList := []virtualserver.OCSPIssuer{}
+	var ocspIssuer virtualserver.OCSPIssuer
+
+	for _, value := range sslMap["ocsp_issuers"].([]interface{}) {
+		issuerElement := value.(map[string]interface{})
+		ocspIssuer.Issuer = issuerElement["issuer"].(string)
+		aia := issuerElement["aia"].(bool)
+		ocspIssuer.AIA = &aia
+		ocspIssuer.Nonce = issuerElement["nonce"].(string)
+		ocspIssuer.Required = issuerElement["required"].(string)
+		ocspIssuer.ResponderCert = issuerElement["responder_cert"].(string)
+		ocspIssuer.Signer = issuerElement["signer"].(string)
+		ocspIssuer.URL = issuerElement["url"].(string)
+		ocspIssuerList = append(ocspIssuerList, ocspIssuer)
+	}
+	sslStruct.OCSPIssuers = ocspIssuerList
+
+	ocspMaxResponseAge := uint(sslMap["ocsp_max_response_age"].(int))
+	sslStruct.OCSPMaxResponseAge = &ocspMaxResponseAge
+
+	ocspStapling := sslMap["ocsp_stapling"].(bool)
+	sslStruct.OCSPStapling = &ocspStapling
+
+	ocspTimeTolerance := uint(sslMap["ocsp_time_tolerance"].(int))
+	sslStruct.OCSPTimeTolerance = &ocspTimeTolerance
+
+	ocspTimeout := uint(sslMap["ocsp_timeout"].(int))
+	sslStruct.OCSPTimeout = &ocspTimeout
+
+	preferSSLv3 := sslMap["prefer_sslv3"].(bool)
+	sslStruct.PreferSSLv3 = &preferSSLv3
+
+	sslStruct.RequestClientCert = sslMap["request_client_cert"].(string)
+
+	sendCloseAlerts := sslMap["send_close_alerts"].(bool)
+	sslStruct.SendCloseAlerts = &sendCloseAlerts
+
+	sslStruct.ServerCertAltCertificates = util.BuildStringArrayFromInterface(sslMap["server_cert_alt_certificates"])
+	sslStruct.ServerCertDefault = sslMap["server_cert_default"].(string)
+
+	certHostMappingList := []virtualserver.CertItem{}
+	var certHostMapping virtualserver.CertItem
+
+	for _, value := range sslMap["ssl_server_cert_host_mapping"].([]interface{}) {
+		indivdualHostMapping := value.(map[string]interface{})
+		certHostMapping.Host = indivdualHostMapping["host"].(string)
+		certHostMapping.Certificate = indivdualHostMapping["certificate"].(string)
+		certHostMapping.AltCertificates = util.BuildStringArrayFromInterface(indivdualHostMapping["alt_certificates"])
+		certHostMappingList = append(certHostMappingList, certHostMapping)
+	}
+	sslStruct.ServerCertHostMap = certHostMappingList
+
+	sslStruct.SignatureAlgorithms = sslMap["signature_algorithms"].(string)
+	sslStruct.SSLCiphers = sslMap["ssl_ciphers"].(string)
+	sslStruct.SslSupportSsl2 = sslMap["ssl_support_ssl2"].(string)
+	sslStruct.SslSupportSsl3 = sslMap["ssl_support_ssl3"].(string)
+	sslStruct.SslSupportTLS1 = sslMap["ssl_support_tls1"].(string)
+	sslStruct.SslSupportTLS1_1 = sslMap["ssl_support_tls1_1"].(string)
+	sslStruct.SslSupportTLS1_2 = sslMap["ssl_support_tls1_2"].(string)
+
+	trustMagic := sslMap["trust_magic"].(bool)
+	sslStruct.TrustMagic = &trustMagic
+
+	return
+}
+
+func assignSysLogValues(sysLogMap map[string]interface{}) (sysLogStruct virtualserver.SysLog) {
+	enabled := sysLogMap["enabled"].(bool)
+	sysLogStruct.Enabled = &enabled
+
+	sysLogStruct.Format = sysLogMap["format"].(string)
+	sysLogStruct.IPEndpoint = sysLogMap["ip_end_point"].(string)
+
+	msgLenLimit := uint(sysLogMap["msg_len_limit"].(int))
+	sysLogStruct.MsgLenLimit = &msgLenLimit
+	return
+}
+
+func assignUDPValues(udpMap map[string]interface{}) (udpStruct virtualserver.UDP) {
+	endPointPersistence := udpMap["end_point_persistence"].(bool)
+	udpStruct.EndPointPersistence = &endPointPersistence
+
+	portSMP := udpMap["port_smp"].(bool)
+	udpStruct.PortSMP = &portSMP
+
+	responseDatagramsExpected := udpMap["response_datagrams_expected"].(int)
+	udpStruct.ResponseDatagramsExpected = &responseDatagramsExpected
+
+	timeout := uint(udpMap["timeout"].(int))
+	udpStruct.Timeout = &timeout
+	return
+}
+
+func assignWebCacheValues(webCacheMap map[string]interface{}) (webCacheStruct virtualserver.WebCache) {
+	webCacheStruct.ControlOut = webCacheMap["control_out"].(string)
+
+	enabled := webCacheMap["enabled"].(bool)
+	webCacheStruct.Enabled = &enabled
+
+	errorPageTime := uint(webCacheMap["error_page_time"].(int))
+	webCacheStruct.ErrorPageTime = &errorPageTime
+
+	maxTime := uint(webCacheMap["max_time"].(int))
+	webCacheStruct.MaxTime = &maxTime
+
+	refreshTime := uint(webCacheMap["refresh_time"].(int))
+	webCacheStruct.RefreshTime = &refreshTime
+	return
+}
+
 func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 
 	vtmClient := m.(*rest.Client)
@@ -2114,22 +1807,21 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 	virtualServer.Properties.Basic.AutoDetectUpgradeHeaders = d.Get("autodetect_upgrade_headers").(bool)
 	virtualServer.Properties.Basic.BandwidthClass = d.Get("bandwidth_class").(string)
 	virtualServer.Properties.Basic.CloseWithRst = d.Get("close_with_rst").(bool)
-	virtualServer.Properties.Basic.CompletionRules = buildStringList(d.Get("completionrules"))
+	virtualServer.Properties.Basic.CompletionRules = util.BuildStringArrayFromInterface(d.Get("completionrules"))
 	virtualServer.Properties.Basic.ConnectTimeout = uint(d.Get("connect_timeout").(int))
 	virtualServer.Properties.Basic.Enabled = d.Get("enabled").(bool)
 	virtualServer.Properties.Basic.FtpForceServerSecure = d.Get("ftp_force_server_secure").(bool)
-	virtualServer.Properties.Basic.GlbServices = buildStringList(d.Get("glb_services"))
+	virtualServer.Properties.Basic.GlbServices = util.BuildStringArrayFromInterface(d.Get("glb_services"))
 	virtualServer.Properties.Basic.ListenOnAny = d.Get("listen_on_any").(bool)
-	virtualServer.Properties.Basic.ListenOnHosts = buildStringList(d.Get("listen_on_hosts"))
-	virtualServer.Properties.Basic.ListenOnTrafficIps = buildStringList(d.Get("listen_on_traffic_ips"))
-	virtualServer.Properties.Basic.MSS = uint(d.Get("mss").(int))
+	virtualServer.Properties.Basic.ListenOnHosts = util.BuildStringArrayFromInterface(d.Get("listen_on_hosts"))
+	virtualServer.Properties.Basic.ListenOnTrafficIps = util.BuildStringArrayFromInterface(d.Get("listen_on_traffic_ips"))
 	virtualServer.Properties.Basic.Note = d.Get("note").(string)
 	virtualServer.Properties.Basic.Pool = d.Get("pool").(string)
 	virtualServer.Properties.Basic.Port = uint(d.Get("port").(int))
 	virtualServer.Properties.Basic.ProtectionClass = d.Get("protection_class").(string)
 	virtualServer.Properties.Basic.Protocol = d.Get("protocol").(string)
-	virtualServer.Properties.Basic.RequestRules = buildStringList(d.Get("request_rules"))
-	virtualServer.Properties.Basic.ResponseRules = buildStringList(d.Get("response_rules"))
+	virtualServer.Properties.Basic.RequestRules = util.BuildStringArrayFromInterface(d.Get("request_rules"))
+	virtualServer.Properties.Basic.ResponseRules = util.BuildStringArrayFromInterface(d.Get("response_rules"))
 	virtualServer.Properties.Basic.SlmClass = d.Get("slm_class").(string)
 	virtualServer.Properties.Basic.SoNagle = d.Get("so_nagle").(bool)
 	virtualServer.Properties.Basic.SslClientCertHeaders = d.Get("ssl_client_cert_headers").(string)
@@ -2207,6 +1899,30 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 		virtualServer.Properties.RTSP = assignRTSPValues(rtspList[0].(map[string]interface{}))
 	}
 
+	if v, ok := d.GetOk("sip"); ok {
+		sipList := v.([]interface{})
+		virtualServer.Properties.SIP = assignSIPValues(sipList[0].(map[string]interface{}))
+	}
+
+	if v, ok := d.GetOk("ssl"); ok {
+		sslList := v.([]interface{})
+		virtualServer.Properties.Ssl = assignSSLValues(sslList[0].(map[string]interface{}))
+	}
+
+	if v, ok := d.GetOk("syslog"); ok {
+		sysLogList := v.([]interface{})
+		virtualServer.Properties.SysLog = assignSysLogValues(sysLogList[0].(map[string]interface{}))
+	}
+
+	if v, ok := d.GetOk("udp"); ok {
+		udpList := v.([]interface{})
+		virtualServer.Properties.UDP = assignUDPValues(udpList[0].(map[string]interface{}))
+	}
+	if v, ok := d.GetOk("web_cache"); ok {
+		webCacheList := v.([]interface{})
+		virtualServer.Properties.WebCache = assignWebCacheValues(webCacheList[0].(map[string]interface{}))
+	}
+
 	createAPI := virtualserver.NewCreate(virtualServerName, virtualServer)
 	err := vtmClient.Do(createAPI)
 	if err != nil {
@@ -2247,7 +1963,6 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("listen_on_any", returnedVirtualServer.Properties.Basic.ListenOnAny)
 	d.Set("listen_on_hosts", returnedVirtualServer.Properties.Basic.ListenOnHosts)
 	d.Set("listen_on_traffic_ips", returnedVirtualServer.Properties.Basic.ListenOnTrafficIps)
-	d.Set("mss", returnedVirtualServer.Properties.Basic.MSS)
 	d.Set("note", returnedVirtualServer.Properties.Basic.Note)
 	d.Set("pool", returnedVirtualServer.Properties.Basic.Pool)
 	d.Set("port", returnedVirtualServer.Properties.Basic.Port)
@@ -2278,176 +1993,316 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("recent_connections", []virtualserver.RecentConnections{returnedVirtualServer.Properties.RecentConnections})
 	d.Set("request_tracing", []virtualserver.RequestTracing{returnedVirtualServer.Properties.RequestTracing})
 	d.Set("rtsp", []virtualserver.RTSP{returnedVirtualServer.Properties.RTSP})
+	d.Set("sip", []virtualserver.SIP{returnedVirtualServer.Properties.SIP})
+	d.Set("ssl", []virtualserver.Ssl{returnedVirtualServer.Properties.Ssl})
+	d.Set("syslog", []virtualserver.SysLog{returnedVirtualServer.Properties.SysLog})
+	d.Set("udp", []virtualserver.UDP{returnedVirtualServer.Properties.UDP})
+	d.Set("web_cache", []virtualserver.WebCache{returnedVirtualServer.Properties.WebCache})
+
 	return nil
 }
 
 func resourceVirtualServerUpdate(d *schema.ResourceData, m interface{}) error {
-	/*
-		vtmClient := m.(*rest.Client)
-		var virtualServerName string
-		var virtualServer virtualserver.VirtualServer
-		hasChanges := false
+	var virtualServer virtualserver.VirtualServer
+	var hasChanges bool
 
-		if v, ok := d.GetOk("name"); ok && v != "" {
-			virtualServerName = v.(string)
-		}
-		if d.HasChange("enabled") {
-			virtualServerEnabled := d.Get("enabled").(bool)
-			virtualServer.Properties.Basic.Enabled = &virtualServerEnabled
-			hasChanges = true
-		}
+	virtualServer.Properties.Basic.Pool = d.Get("pool").(string)
+	virtualServer.Properties.Basic.Port = uint(d.Get("port").(int))
 
-		if d.HasChange("listen_on_any") {
-			virtualServerListenAny := d.Get("listen_on_any").(bool)
-			virtualServer.Properties.Basic.ListenOnAny = &virtualServerListenAny
-			hasChanges = true
-		}
+	oldAddClusterIP, newAddClusterIP := d.GetChange("add_cluster_ip")
+	if oldAddClusterIP.(bool) != newAddClusterIP.(bool) {
+		virtualServer.Properties.Basic.AddClusterIP = newAddClusterIP.(bool)
+		hasChanges = true
+	} else {
+		virtualServer.Properties.Basic.AddClusterIP = oldAddClusterIP.(bool)
+	}
 
-		if d.HasChange("pool") {
-			if v, ok := d.GetOk("pool"); ok && v != "" {
-				virtualServer.Properties.Basic.Pool = v.(string)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("port") {
-			if v, ok := d.GetOk("port"); ok && v != "" {
-				virtualServerPort := v.(int)
-				virtualServer.Properties.Basic.Port = uint(virtualServerPort)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("listen_traffic_ips") {
-			if v, ok := d.GetOk("listen_traffic_ips"); ok && v != "" {
-				virtualServer.Properties.Basic.ListenOnTrafficIps = buildStringList(v)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("protocol") {
-			if v, ok := d.GetOk("protocol"); ok && v != "" {
-				virtualServer.Properties.Basic.Protocol = v.(string)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("request_rules") {
-			if v, ok := d.GetOk("request_rules"); ok && v != "" {
-				virtualServer.Properties.Basic.RequestRules = buildStringList(v)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("ssl_decrypt") {
-			virtualServerSSLDeCrypt := d.Get("ssl_decrypt").(bool)
-			virtualServer.Properties.Basic.SslDecrypt = &virtualServerSSLDeCrypt
-			hasChanges = true
-		}
-		if d.HasChange("connection_keepalive") {
-			virtalServerConnectionKeepalive := d.Get("connection_keepalive").(bool)
-			virtualServer.Properties.Connection.Keepalive = &virtalServerConnectionKeepalive
-			hasChanges = true
-		}
-		if d.HasChange("connection_keepalive_timeout") {
-			if v, ok := d.GetOk("connection_keepalive_timeout"); ok {
-				virtualServerConnectionKeepaliveTimeout := v.(int)
-				virtualServer.Properties.Connection.KeepaliveTimeout = uint(virtualServerConnectionKeepaliveTimeout)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("connection_max_client_buffer") {
-			if v, ok := d.GetOk("connection_max_client_buffer"); ok {
-				virtualServerConnectionMaxClientBuffer := v.(int)
-				virtualServer.Properties.Connection.MaxClientBuffer = uint(virtualServerConnectionMaxClientBuffer)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("connection_max_server_buffer") {
-			if v, ok := d.GetOk("connection_max_server_buffer"); ok {
-				virtualServerConnectionMaxServerBuffer := v.(int)
-				virtualServer.Properties.Connection.MaxServerBuffer = uint(virtualServerConnectionMaxServerBuffer)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("connection_max_transaction_duration") {
-			if v, ok := d.GetOk("connection_max_transaction_duration"); ok {
-				virtualServerConnectionMaxTransActionDuration := v.(int)
-				virtualServer.Properties.Connection.MaxTransactionDuration = uint(virtualServerConnectionMaxTransActionDuration)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("connection_server_first_banner") {
-			if v, ok := d.GetOk("connection_server_first_banner"); ok && v != "" {
-				virtualServer.Properties.Connection.ServerFirstBanner = v.(string)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("connection_timeout") {
-			if v, ok := d.GetOk("connection_timeout"); ok {
-				virtualServerConnectionTimeout := v.(int)
-				virtualServer.Properties.Connection.Timeout = uint(virtualServerConnectionTimeout)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("ssl_server_cert_default") {
-			if v, ok := d.GetOk("ssl_server_cert_default"); ok && v != "" {
-				virtualServer.Properties.Ssl.ServerCertDefault = v.(string)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("ssl_support_ssl2") {
-			if v, ok := d.GetOk("ssl_support_ssl2"); ok && v != "" {
-				virtualServer.Properties.Ssl.SslSupportSsl2 = v.(string)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("ssl_support_ssl3") {
-			if v, ok := d.GetOk("ssl_support_ssl3"); ok && v != "" {
-				virtualServer.Properties.Ssl.SslSupportSsl3 = v.(string)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("ssl_support_tls1") {
-			if v, ok := d.GetOk("ssl_support_tls1"); ok && v != "" {
-				virtualServer.Properties.Ssl.SslSupportTLS1 = v.(string)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("ssl_support_tls1_1") {
-			if v, ok := d.GetOk("ssl_support_tls1_1"); ok && v != "" {
-				virtualServer.Properties.Ssl.SslSupportTLS1_1 = v.(string)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("ssl_support_tls1_2") {
-			if v, ok := d.GetOk("ssl_support_tls1_2"); ok && v != "" {
-				virtualServer.Properties.Ssl.SslSupportTLS1_2 = v.(string)
-			}
-			hasChanges = true
-		}
-		if d.HasChange("ssl_server_cert_host_mapping") {
-			if v, ok := d.GetOk("ssl_server_cert_host_mapping"); ok && v != "" {
-				virtualServer.Properties.Ssl.ServerCertHostMap = buildSSLCertMapping(v.([]interface{}))
-			}
-			hasChanges = true
-		}
-		if d.HasChange("ocsp_enable") {
-			virtualServerOCSPEnable := d.Get("ocsp_enable").(bool)
-			virtualServer.Properties.Ssl.OCSPEnable = &virtualServerOCSPEnable
-			hasChanges = true
-		}
-		if d.HasChange("ocsp_issuers") {
-			if v, ok := d.GetOk("ocsp_issuers"); ok {
-				virtualServer.Properties.Ssl.OCSPIssuers = buildSSLOCSPIssuers(v.([]interface{}))
-			}
-			hasChanges = true
-		}
+	oldAddXForwardedFor, newAddForwardedFor := d.GetChange("add_x_forwarded_for")
+	if oldAddXForwardedFor.(bool) != newAddForwardedFor.(bool) {
+		virtualServer.Properties.Basic.AddXForwarded = newAddForwardedFor.(bool)
+		hasChanges = true
+	} else {
+		virtualServer.Properties.Basic.AddXForwarded = oldAddXForwardedFor.(bool)
+	}
 
-		if hasChanges {
-			updateAPI := virtualserver.NewUpdate(virtualServerName, virtualServer)
-			err := vtmClient.Do(updateAPI)
-			if err != nil {
-				return fmt.Errorf(fmt.Sprintf("BrocadeVTM Virtual Server error whilst updating %s: %v", virtualServerName, err))
-			}
+	oldAddXForwardedProto, newAddXForwardedProto := d.GetChange("add_x_forwarded_proto")
+	if oldAddXForwardedProto.(bool) != newAddXForwardedProto.(bool) {
+		virtualServer.Properties.Basic.AddXForwardedProto = newAddXForwardedProto.(bool)
+		hasChanges = true
+	} else {
+		virtualServer.Properties.Basic.AddXForwardedProto = oldAddXForwardedProto.(bool)
+	}
+
+	oldAutodetectUpgradeHeaders, newAutodetectUpgradeHeaders := d.GetChange("autodetect_upgrade_headers")
+	if oldAutodetectUpgradeHeaders.(bool) != newAutodetectUpgradeHeaders.(bool) {
+		virtualServer.Properties.Basic.AutoDetectUpgradeHeaders = newAutodetectUpgradeHeaders.(bool)
+		hasChanges = true
+	} else {
+		virtualServer.Properties.Basic.AutoDetectUpgradeHeaders = oldAutodetectUpgradeHeaders.(bool)
+	}
+
+	if d.HasChange("bandwidth_class") {
+		virtualServer.Properties.Basic.BandwidthClass = d.Get("bandwidth_class").(string)
+		hasChanges = true
+	}
+
+	oldCloseWithRST, newCloseWithRST := d.GetChange("close_with_rst")
+	if oldCloseWithRST.(bool) != newCloseWithRST.(bool) {
+		virtualServer.Properties.Basic.CloseWithRst = newCloseWithRST.(bool)
+		hasChanges = true
+	} else {
+		virtualServer.Properties.Basic.CloseWithRst = oldCloseWithRST.(bool)
+	}
+
+	if d.HasChange("completionrules") {
+		virtualServer.Properties.Basic.CompletionRules = util.BuildStringArrayFromInterface(d.Get("completionrules"))
+		hasChanges = true
+	}
+
+	oldConnectTimeout, newConnectTimeout := d.GetChange("connect_timeout")
+	if uint(oldConnectTimeout.(int)) != uint(newConnectTimeout.(int)) {
+		virtualServer.Properties.Basic.ConnectTimeout = uint(newConnectTimeout.(int))
+		hasChanges = true
+	} else {
+		virtualServer.Properties.Basic.ConnectTimeout = uint(oldConnectTimeout.(int))
+	}
+
+	oldEnable, newEnable := d.GetChange("enable")
+	if oldEnable.(bool) != newEnable.(bool) {
+		virtualServer.Properties.Basic.Enabled = newEnable.(bool)
+		hasChanges = true
+	} else {
+		virtualServer.Properties.Basic.Enabled = oldEnable.(bool)
+	}
+
+	oldForceServerSecure, newForceServerSecure := d.GetChange("ftp_force_server_secure")
+	if oldForceServerSecure.(bool) != newForceServerSecure.(bool) {
+		virtualServer.Properties.Basic.FtpForceServerSecure = newForceServerSecure.(bool)
+		hasChanges = true
+	} else {
+		virtualServer.Properties.Basic.FtpForceServerSecure = oldForceServerSecure.(bool)
+	}
+
+	if d.HasChange("glb_services") {
+		virtualServer.Properties.Basic.GlbServices = util.BuildStringArrayFromInterface(d.Get("glb_services"))
+		hasChanges = true
+	}
+
+	oldListenOnAny, newListenOnAny := d.GetChange("listen_on_any")
+	if oldListenOnAny.(bool) != newListenOnAny.(bool) {
+		virtualServer.Properties.Basic.ListenOnAny = newListenOnAny.(bool)
+		hasChanges = true
+	} else {
+		virtualServer.Properties.Basic.ListenOnAny = oldListenOnAny.(bool)
+	}
+
+	if d.HasChange("listen_on_hosts") {
+		virtualServer.Properties.Basic.ListenOnHosts = util.BuildStringArrayFromInterface(d.Get("listen_on_hosts"))
+		hasChanges = true
+	}
+
+	if d.HasChange("listen_on_traffic_ips") {
+		virtualServer.Properties.Basic.ListenOnTrafficIps = util.BuildStringArrayFromInterface(d.Get("listen_on_traffic_ips"))
+		hasChanges = true
+	}
+
+	if d.HasChange("note") {
+		virtualServer.Properties.Basic.Note = d.Get("note").(string)
+		hasChanges = true
+	}
+
+	if d.HasChange("protection_class") {
+		virtualServer.Properties.Basic.ProtectionClass = d.Get("protection_class").(string)
+		hasChanges = true
+	}
+
+	if d.HasChange("protection_class") {
+		virtualServer.Properties.Basic.Protocol = d.Get("protocol").(string)
+		hasChanges = true
+	}
+
+	if d.HasChange("request_rules") {
+		virtualServer.Properties.Basic.RequestRules = util.BuildStringArrayFromInterface(d.Get("request_rules"))
+		hasChanges = true
+	}
+
+	if d.HasChange("response_rules") {
+		virtualServer.Properties.Basic.ResponseRules = util.BuildStringArrayFromInterface(d.Get("response_rules"))
+		hasChanges = true
+	}
+
+	if d.HasChange("slm_class") {
+		virtualServer.Properties.Basic.SlmClass = d.Get("slm_class").(string)
+		hasChanges = true
+	}
+
+	oldSoNagle, newSoNagle := d.GetChange("so_nagle")
+	if oldSoNagle.(bool) != newSoNagle.(bool) {
+		virtualServer.Properties.Basic.SoNagle = newSoNagle.(bool)
+		hasChanges = true
+	} else {
+		virtualServer.Properties.Basic.SoNagle = oldSoNagle.(bool)
+	}
+
+	if d.HasChange("ssl_client_cert_headers") {
+		virtualServer.Properties.Basic.SslClientCertHeaders = d.Get("ssl_client_cert_headers").(string)
+		hasChanges = true
+	}
+
+	oldSSLDecrypt, newSSLDecrypt := d.GetChange("ssl_decrypt")
+	if oldSSLDecrypt.(bool) != newSSLDecrypt.(bool) {
+		virtualServer.Properties.Basic.SslDecrypt = newSSLDecrypt.(bool)
+		hasChanges = true
+	} else {
+		virtualServer.Properties.Basic.SslDecrypt = oldSSLDecrypt.(bool)
+	}
+
+	if d.HasChange("ssl_honor_fallback_scsv") {
+		virtualServer.Properties.Basic.SslHonorFallbackScsv = d.Get("ssl_honor_fallback_scsv").(string)
+		hasChanges = true
+	}
+
+	oldTransparent, newTransparent := d.GetChange("transparent")
+	if oldTransparent.(bool) != newTransparent.(bool) {
+		virtualServer.Properties.Basic.Transparent = newTransparent.(bool)
+		hasChanges = true
+	} else {
+		virtualServer.Properties.Basic.Transparent = oldTransparent.(bool)
+	}
+
+	if d.HasChange("error_file") {
+		virtualServer.Properties.ConnectionErrors.ErrorFile = d.Get("error_file").(string)
+		hasChanges = true
+	}
+
+	oldExpectSTARTTLS, newExpectSTARTTLS := d.GetChange("expect_starttls")
+	if oldExpectSTARTTLS.(bool) != newExpectSTARTTLS.(bool) {
+		starTTL := newExpectSTARTTLS.(bool)
+		virtualServer.Properties.SMTP.ExpectSTARTTLS = &starTTL
+		hasChanges = true
+	} else {
+		starTTL := oldExpectSTARTTLS.(bool)
+		virtualServer.Properties.SMTP.ExpectSTARTTLS = &starTTL
+	}
+
+	oldProxyClose, newProxyClose := d.GetChange("proxy_close")
+	if oldProxyClose.(bool) != newProxyClose.(bool) {
+		proxyClose := newProxyClose.(bool)
+		virtualServer.Properties.TCP.ProxyClose = &proxyClose
+		hasChanges = true
+	} else {
+		proxyClose := oldProxyClose.(bool)
+		virtualServer.Properties.TCP.ProxyClose = &proxyClose
+	}
+
+	if d.HasChange("aptimizer") {
+		aptimizerList := d.Get("aptimizer").([]interface{})
+		virtualServer.Properties.Aptimizer = assignAptimizerValues(aptimizerList[0].(map[string]interface{}))
+		hasChanges = true
+	}
+
+	if d.HasChange("vs_connection") {
+		connectionList := d.Get("vs_connection").([]interface{})
+		virtualServer.Properties.Connection = assignConnectionValues(connectionList[0].(map[string]interface{}))
+		hasChanges = true
+	}
+
+	if d.HasChange("cookie") {
+		cookieList := d.Get("cookie").([]interface{})
+		virtualServer.Properties.Cookie = assignCookieValues(cookieList[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("dns") {
+		dnsList := d.Get("dns").([]interface{})
+		virtualServer.Properties.DNS = assignDNSValues(dnsList[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("ftp") {
+		ftpList := d.Get("ftp").([]interface{})
+		virtualServer.Properties.Ftp = assignFTPValues(ftpList[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("gzip") {
+		gzipList := d.Get("gzip").([]interface{})
+		virtualServer.Properties.Gzip = assignGZIPValues(gzipList[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("http") {
+		httpList := d.Get("http").([]interface{})
+		virtualServer.Properties.HTTP = assignHTTPValues(httpList[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("http2") {
+		http2List := d.Get("http2").([]interface{})
+		virtualServer.Properties.HTTP2 = assignHTTP2Values(http2List[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("kerberos_protocol_transition") {
+		kptList := d.Get("kerberos_protocol_transition").([]interface{})
+		virtualServer.Properties.KerberosProtocolTransition = assignKerberosProtocolTransitionValues(kptList[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("log") {
+		logList := d.Get("log").([]interface{})
+		virtualServer.Properties.Log = assignLogValues(logList[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("recent_connections") {
+		recentConnectionsList := d.Get("recent_connections").([]interface{})
+		virtualServer.Properties.RecentConnections = assignRecentConnectionsValues(recentConnectionsList[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("request_tracing") {
+		requestTracingList := d.Get("request_tracing").([]interface{})
+		virtualServer.Properties.RequestTracing = assignRequestTracingValues(requestTracingList[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("rtsp") {
+		rtspList := d.Get("rtsp").([]interface{})
+		virtualServer.Properties.RTSP = assignRTSPValues(rtspList[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("sip") {
+		sipList := d.Get("sip").([]interface{})
+		virtualServer.Properties.SIP = assignSIPValues(sipList[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("ssl") {
+		sslList := d.Get("ssl").([]interface{})
+		virtualServer.Properties.Ssl = assignSSLValues(sslList[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("syslog") {
+		sysLogList := d.Get("syslog").([]interface{})
+		virtualServer.Properties.SysLog = assignSysLogValues(sysLogList[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("udp") {
+		udpList := d.Get("udp").([]interface{})
+		virtualServer.Properties.UDP = assignUDPValues(udpList[0].(map[string]interface{}))
+	}
+
+	if d.HasChange("web_cache") {
+		webCacheList := d.Get("web_cache").([]interface{})
+		virtualServer.Properties.WebCache = assignWebCacheValues(webCacheList[0].(map[string]interface{}))
+	}
+
+	if hasChanges {
+		headers := make(map[string]string)
+		client := m.(*rest.Client)
+		vtmClient := *client
+		headers["Content-Type"] = "application/json"
+		vtmClient.Headers = headers
+
+		updateAPI := virtualserver.NewUpdate(d.Id(), virtualServer)
+		err := vtmClient.Do(updateAPI)
+
+		if err != nil {
+			return fmt.Errorf("BrocadeVTM error whilst updating virtual server %s: %vv", d.Id(), err)
 		}
 		return resourceVirtualServerRead(d, m)
-	*/
+	}
+
 	return nil
 }
 
