@@ -21,19 +21,19 @@ type Properties struct {
 type Basic struct {
 	BandwidthClass               string       `json:"bandwidth_class,omitempty"`
 	FailurePool                  string       `json:"failure_pool,omitempty"`
-	MaxConnectionAttempts        uint         `json:"max_connection_attempts,omitempty"`
+	MaxConnectionAttempts        *uint        `json:"max_connection_attempts,omitempty"`
 	MaxIdleConnectionsPerNode    uint         `json:"max_idle_connections_pernode,omitempty"`
 	MaxTimeoutConnectionAttempts uint         `json:"max_timed_out_connection_attempts,omitempty"`
 	Monitors                     []string     `json:"monitors,omitempty"`
-	NodeCloseWithReset           *bool        `json:"node_close_with_rst,omitempty"`
+	NodeCloseWithReset           bool         `json:"node_close_with_rst"`
 	NodeConnectionAttempts       uint         `json:"node_connection_attempts,omitempty"`
 	NodeDeleteBehavior           string       `json:"node_delete_behavior,omitempty"`
-	NodeDrainDeleteTimeout       uint         `json:"node_drain_to_delete_timeout"`
+	NodeDrainDeleteTimeout       *uint        `json:"node_drain_to_delete_timeout,omitempty"`
 	NodesTable                   []MemberNode `json:"nodes_table,omitempty"`
 	Note                         string       `json:"note,omitempty"`
-	PassiveMonitoring            *bool        `json:"passive_monitoring,omitempty"`
+	PassiveMonitoring            bool         `json:"passive_monitoring"`
 	PersistenceClass             string       `json:"persistence_class,omitempty"`
-	Transparent                  *bool        `json:"transparent,omitempty"`
+	Transparent                  bool         `json:"transparent"`
 }
 
 // Connection - Connection setting
@@ -84,10 +84,11 @@ type TCP struct {
 
 // MemberNode - Pool membership details / node /state / weight
 type MemberNode struct {
-	Node     string `json:"node"`
-	Priority int    `json:"priority"`
-	State    string `json:"state"`
-	Weight   int    `json:"weight"`
+	Node     string `json:"node,omitempty"`
+	Priority *uint  `json:"priority,omitempty"`
+	State    string `json:"state,omitempty"`
+	Weight   *int   `json:"weight,omitempty"`
+	SourceIP string `json:"source_ip,omitempty"`
 }
 
 // LBPoolList - Used to return all pools
