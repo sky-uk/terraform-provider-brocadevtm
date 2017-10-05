@@ -1,5 +1,6 @@
 package pool
 
+/*
 // NewMemberNode - Returns the Membernodes object
 func NewMemberNode(host string, priority int, state string, weight int) MemberNode {
 	memberNode := MemberNode{
@@ -11,3 +12,4 @@ func NewMemberNode(host string, priority int, state string, weight int) MemberNo
 	return memberNode
 
 }
+*/
