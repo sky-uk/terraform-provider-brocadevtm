@@ -437,6 +437,7 @@ func resourceVirtualServer() *schema.Resource {
 						},
 					},
 				},
+
 			},
 
 			"gzip": {
@@ -670,7 +671,454 @@ func resourceVirtualServer() *schema.Resource {
 				},
 			},
 
+			"gzip": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"compress_level": {
+							Type:         schema.TypeInt,
+							Description:  "The source port to be used for active-mode FTP data connections. If 0, a random high port will be used.",
+							Optional:     true,
+							Default:      1,
+							ValidateFunc: validateCompressLevel,
+						},
+						"enabled": {
+							Type:        schema.TypeBool,
+							Description: "Compress web pages sent back by the server",
+							Optional:    true,
+							Default:     false,
+						},
+						"etag_rewrite": {
+							Type:         schema.TypeString,
+							Description:  "How the ETag header should be manipulated when compressing content.",
+							Optional:     true,
+							Default:      "wrap",
+							ValidateFunc: validateETagRewrite,
+						},
+						"include_mime": {
+							Type:        schema.TypeList,
+							Description: "MIME types to compress. Complete MIME types can be used, or a type can end in a '*' to match multiple types.",
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"max_size": {
+							Type:         schema.TypeInt,
+							Description:  "Maximum document size to compress (0 means unlimited).",
+							Optional:     true,
+							Default:      10000000,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"min_size": {
+							Type:         schema.TypeInt,
+							Description:  "Minimum document size to compress.",
+							Optional:     true,
+							Default:      1000,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"no_size": {
+							Type:        schema.TypeBool,
+							Description: "Compress documents with no given size.",
+							Optional:    true,
+							Default:     false,
+						},
+					},
+				},
+			},
+
+			"http": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"chunk_overhead_forwarding": {
+							Type:         schema.TypeString,
+							Description:  "Handling of HTTP chunk overhead.",
+							Optional:     true,
+							Default:      "lazy",
+							ValidateFunc: validateChunkOverheadForwarding,
+						},
+						"location_regex": {
+							Type:        schema.TypeString,
+							Description: "If the 'Location' header matches this regular expression, rewrite the header using the 'location_replace' pattern.",
+							Optional:    true,
+						},
+						"location_replace": {
+							Type:        schema.TypeString,
+							Description: "If the 'Location' header matches the 'location_regex' regular expression, rewrite the header with this pattern",
+							Optional:    true,
+						},
+						"location_rewrite": {
+							Type:         schema.TypeString,
+							Description:  "If the 'Location' header matches the 'location_regex' regular expression, rewrite the header with this pattern",
+							Optional:     true,
+							Default:      "if_host_matches",
+							ValidateFunc: validateLocationRewrite,
+						},
+						"mime_default": {
+							Type:        schema.TypeString,
+							Description: "Auto-correct MIME types if the server sends the 'default' MIME type for files.",
+							Optional:    true,
+							Default:     "text/plain",
+						},
+						"mime_detect": {
+							Type:        schema.TypeBool,
+							Description: "Auto-detect MIME types if the server does not provide them.",
+							Optional:    true,
+							Default:     false,
+						},
+					},
+				},
+			},
+
+			"http2": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"connect_timeout": {
+							Type:         schema.TypeInt,
+							Description:  "The time, in seconds, to wait for a request on a new HTTP/2 connection.",
+							Optional:     true,
+							Default:      0,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"data_frame_size": {
+							Type:         schema.TypeInt,
+							Description:  "This setting controls the preferred frame size used when sending body data to the client.",
+							Optional:     true,
+							Default:      4096,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"enabled": {
+							Type:        schema.TypeBool,
+							Description: "This setting allows the HTTP/2 protocol to be used by a HTTP virtual server.",
+							Optional:    true,
+							Default:     false,
+						},
+						"header_table_size": {
+							Type:         schema.TypeInt,
+							Description:  "This setting controls the amount of memory allowed for header compression on each HTTP/2 connection.",
+							Optional:     true,
+							Default:      4096,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"headers_index_blacklist": {
+							Type:        schema.TypeList,
+							Description: "A list of header names that should never be compressed using indexing.",
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"headers_index_default": {
+							Type:        schema.TypeBool,
+							Description: "The HTTP/2 HPACK compression scheme allows for HTTP headers to be compressed using indexing. If this is true only hraders included in headers_index_blacklist are marked as 'never index', if false all headers are marked as never index unless in whitelist",
+							Optional:    true,
+							Default:     false,
+						},
+						"headers_index_whitelist": {
+							Type:        schema.TypeList,
+							Description: "A list of header names that can be compressed using indexing when the value of headers_index_default is set to False.",
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"idle_timeout_no_streams": {
+							Type:         schema.TypeInt,
+							Description:  "The time, in seconds, to wait for a new HTTP/2 request on a previously used HTTP/2 connection that has no open HTTP/2 streams. A value of 0 disables the timeout.",
+							Optional:     true,
+							Default:      120,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"idle_timeout_open_streams": {
+							Type:         schema.TypeInt,
+							Description:  "The time, in seconds, to wait for data on an idle HTTP/2 connection, which has open streams, when no data has been sent recently. A value of 0 disables the timeout.",
+							Optional:     true,
+							Default:      600,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"max_concurrent_streams": {
+							Type:         schema.TypeInt,
+							Description:  "This setting controls the number of streams a client is permitted to open concurrently on a single connection.",
+							Optional:     true,
+							Default:      200,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"max_frame_size": {
+							Type:         schema.TypeInt,
+							Description:  "This setting controls the maximum HTTP/2 frame size clients are permitted to send to the traffic manager.",
+							Optional:     true,
+							Default:      16384,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"max_header_padding": {
+							Type:         schema.TypeInt,
+							Description:  "The maximum size, in bytes, of the random-length padding to add to HTTP/2 header frames. The padding, a random number of zero bytes up to the maximum specified.",
+							Optional:     true,
+							Default:      0,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"merge_cookie_headers": {
+							Type:        schema.TypeBool,
+							Description: "Whether Cookie headers received from an HTTP/2 client should be merged into a single Cookie header using RFC6265 rules before forwarding to anHTTP/1.1 server.",
+							Optional:    true,
+							Default:     false,
+						},
+						"stream_window_size": {
+							Type:         schema.TypeInt,
+							Description:  "This setting controls the flow control window for each HTTP/2 stream.",
+							Optional:     true,
+							Default:      65535,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+					},
+				},
+			},
+
+			"kerberos_protocol_transition": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not the virtual server should use Kerberos Protocol Transition.",
+							Optional:    true,
+							Default:     false,
+						},
+						"principal": {
+							Type:        schema.TypeString,
+							Description: "The Kerberos principal this virtual server should use to perform Kerberos Protocol Transition.",
+							Optional:    true,
+						},
+						"target": {
+							Type:        schema.TypeString,
+							Description: "The Kerberos principal name of the service this virtual server targets.",
+							Optional:    true,
+						},
+					},
+				},
+			},
+
 			"log": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"always_flush": {
+							Type:        schema.TypeBool,
+							Description: "Write log data to disk immediately, rather than buffering data.",
+							Optional:    true,
+							Default:     false,
+						},
+						"client_connection_failures": {
+							Type:        schema.TypeBool,
+							Description: "Should the virtual server log failures occurring on connections to clients.",
+							Optional:    true,
+							Default:     false,
+						},
+						"enabled": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not to log connections to the virtual server to a disk on the file system.",
+							Optional:    true,
+							Default:     false,
+						},
+						"filename": {
+							Type:        schema.TypeString,
+							Description: "The name of the file in which to store the request logs. The filename can contain macros which will be expanded by the traffic manager to generate the full filename.",
+							Optional:    true,
+							Default:     "%zeushome%/zxtm/log/%v.log",
+						},
+						"format": {
+							Type:        schema.TypeString,
+							Description: "The log file format. This specifies the line of text that will be written to the log file when a connection to the traffic manager is completed. Many parameters from the connection can be recorded using macros.",
+							Optional:    true,
+							Default:     "%h %l %u %t \"%r\" %s %b \"%{Referer}i\"\"%{User-agent}i\"",
+						},
+						"save_all": {
+							Type:        schema.TypeBool,
+							Description: "Whether to log all connections by default, or log no connections by default.",
+							Optional:    true,
+							Default:     false,
+						},
+						"server_connection_failures": {
+							Type:        schema.TypeBool,
+							Description: "Should the virtual server log failures occurring on connections to nodes.",
+							Optional:    true,
+							Default:     false,
+						},
+						"session_persistence_verbose": {
+							Type:        schema.TypeBool,
+							Description: "Should the virtual server log session persistence events.",
+							Optional:    true,
+							Default:     false,
+						},
+						"ssl_failures": {
+							Type:        schema.TypeBool,
+							Description: "Should the virtual server log failures occurring on SSL secure negotiation.",
+							Optional:    true,
+							Default:     false,
+						},
+					},
+				},
+			},
+
+			"recent_connections": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not connections handled by this virtual server should be shown on the Activity Connections page.",
+							Optional:    true,
+							Default:     false,
+						},
+						"save_all": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not all connections handled by this virtual server should be shown on the Connections page.",
+							Optional:    true,
+							Default:     false,
+						},
+					},
+				},
+			},
+
+			"request_tracing": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Description: "Record a trace of major connection processing events for each request and response.",
+							Optional:    true,
+							Default:     false,
+						},
+						"trace_io": {
+							Type:        schema.TypeBool,
+							Description: " Include details of individual I/O events in request and response traces. Requires request tracing to be enabled.",
+							Optional:    true,
+							Default:     false,
+						},
+					},
+				},
+			},
+
+			"rtsp": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"streaming_port_range_high": {
+							Type:         schema.TypeInt,
+							Description:  "If non-zero this controls the upper bound of the port range to use for streaming data connections.",
+							Optional:     true,
+							Default:      0,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"streaming_port_range_low": {
+							Type:         schema.TypeInt,
+							Description:  "If non-zero this controls the lower bound of the port range to use for streaming data connections.",
+							Optional:     true,
+							Default:      0,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"streaming_timeout": {
+							Type:         schema.TypeInt,
+							Description:  "If non-zero data-streams associated with RTSP connections will timeout if no data is transmitted for this many seconds",
+							Optional:     true,
+							Default:      30,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+					},
+				},
+			},
+
+			"sip": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"dangerous_requests": {
+							Type:         schema.TypeString,
+							Description:  " The action to take when a SIP request with body data arrives that should be routed to an external IP.",
+							Optional:     true,
+							Default:      "node",
+							ValidateFunc: validateSIPDangerousRequestsAction,
+						},
+						"follow_route": {
+							Type:        schema.TypeBool,
+							Description: "Should the virtual server follow routing information contained in SIP requests.",
+							Optional:    true,
+							Default:     false,
+						},
+						"max_connection_mem": {
+							Type:         schema.TypeInt,
+							Description:  "this setting limits the amount of memory each SIP client can use. When the limit is reached new requests will be sent a 413 response. If the value is set to 0 (zero) the memory limit is disabled.",
+							Optional:     true,
+							Default:      65536,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"mode": {
+							Type:         schema.TypeString,
+							Description:  " The action to take when a SIP request with body data arrives that should be routed to an external IP.",
+							Optional:     true,
+							Default:      "sip_gateway",
+							ValidateFunc: validateSIPMode,
+						},
+						"rewrite_uri": {
+							Type:        schema.TypeBool,
+							Description: " Replace the Request-URI of SIP requests with the address of the selected backend node.",
+							Optional:    true,
+							Default:     false,
+						},
+						"streaming_port_range_high": {
+							Type:         schema.TypeInt,
+							Description:  "If non-zero this controls the upper bound of the port range to use for streaming data connections.",
+							Optional:     true,
+							Default:      0,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"streaming_port_range_low": {
+							Type:         schema.TypeInt,
+							Description:  "If non-zero this controls the lower bound of the port range to use for streaming data connections.",
+							Optional:     true,
+							Default:      0,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"streaming_timeout": {
+							Type:         schema.TypeInt,
+							Description:  "If non-zero a UDP stream will timeout when no data has been seen within this time.",
+							Optional:     true,
+							Default:      60,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"timeout_messages": {
+							Type:        schema.TypeBool,
+							Description: "When timing out a SIP transaction, send a 'timed out' response to the client and, in the case of an INVITE transaction, a CANCEL request to the server.",
+							Optional:    true,
+							Default:     false,
+						},
+						"transaction_timeout": {
+							Type:         schema.TypeInt,
+							Description:  "The virtual server should discard a SIP transaction when no further messages have been seen within this time.",
+							Optional:     true,
+							Default:      30,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+					},
+				},
+			},
+
+			"ssl": {
 				Type:     schema.TypeList,
 				Optional: true,
 				MaxItems: 1,
@@ -1158,6 +1606,7 @@ func resourceVirtualServer() *schema.Resource {
 							Optional:    true,
 							Default:     false,
 						},
+
 						"response_datagrams_expected": {
 							Type:        schema.TypeInt,
 							Description: "The virtual server should discard any UDP connection and reclaim resourceswhen the node has responded with this number of datagrams. If set to -1, the connection will not be discarded until the timeout is reached.",
@@ -1319,13 +1768,6 @@ func validateMaxFrameSize(v interface{}, k string) (ws []string, errors []error)
 	return
 }
 
-func validateHeaderTableSize(v interface{}, k string) (ws []string, errors []error) {
-	if v.(int) < 4096 || v.(int) > 1048576 {
-		errors = append(errors, fmt.Errorf("header_table_size must be a value within 4096-1048576"))
-	}
-	return
-}
-
 func validateETagRewrite(v interface{}, k string) (ws []string, errors []error) {
 	switch v.(string) {
 	case
@@ -1339,6 +1781,21 @@ func validateETagRewrite(v interface{}, k string) (ws []string, errors []error) 
 	return
 }
 
+func validateMaxBuffer(v interface{}, k string) (ws []string, errors []error) {
+	if v.(int) < 1024 || v.(int) > 16777216 {
+		errors = append(errors, fmt.Errorf("%q must be within 1024-16777216", k))
+	}
+	return
+}
+
+
+func validateHeaderTableSize(v interface{}, k string) (ws []string, errors []error) {
+	if v.(int) < 4096 || v.(int) > 1048576 {
+		errors = append(errors, fmt.Errorf("header_table_size must be a value within 4096-1048576"))
+	}
+	return
+}
+
 func validateChunkOverheadForwarding(v interface{}, k string) (ws []string, errors []error) {
 	switch v.(string) {
 	case
@@ -1347,13 +1804,6 @@ func validateChunkOverheadForwarding(v interface{}, k string) (ws []string, erro
 		return
 	}
 	errors = append(errors, fmt.Errorf("Chunk Overhead Forwarding must be one of lazy or eager"))
-	return
-}
-
-func validateMaxBuffer(v interface{}, k string) (ws []string, errors []error) {
-	if v.(int) < 1024 || v.(int) > 16777216 {
-		errors = append(errors, fmt.Errorf("%q must be within 1024-16777216", k))
-	}
 	return
 }
 
@@ -1468,7 +1918,6 @@ func assignAptimizerValues(aptmizerMap map[string]interface{}) (aptimizerStruct 
 	aptimizerStruct.Enabled = &enabled
 	profileList := []virtualserver.AptimizerProfile{}
 	var profile virtualserver.AptimizerProfile
-
 	for _, value := range aptmizerMap["profile"].([]interface{}) {
 		profileItem := value.(map[string]interface{})
 		profile.Name = profileItem["name"].(string)
@@ -1650,9 +2099,9 @@ func assignSIPValues(sipMap map[string]interface{}) (sipStruct virtualserver.SIP
 	sipStruct.FollowRoute = &followRoute
 	maxConnectionMem := uint(sipMap["max_connection_mem"].(int))
 	sipStruct.MaxConnectionMem = &maxConnectionMem
+
 	return
 }
-
 func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 
 	vtmClient := m.(*rest.Client)
@@ -1815,6 +2264,7 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("error_file", returnedVirtualServer.Properties.ConnectionErrors.ErrorFile)
 	d.Set("expect_starttls", returnedVirtualServer.Properties.SMTP.ExpectSTARTTLS)
 	d.Set("proxy_close", returnedVirtualServer.Properties.TCP.ProxyClose)
+
 	d.Set("aptimizer", []virtualserver.Aptimizer{returnedVirtualServer.Properties.Aptimizer})
 	d.Set("vs_connection", []virtualserver.Connection{returnedVirtualServer.Properties.Connection})
 	d.Set("cookie", []virtualserver.Cookie{returnedVirtualServer.Properties.Cookie})
