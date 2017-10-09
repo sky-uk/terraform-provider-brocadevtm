@@ -2,6 +2,12 @@ package brocadevtm
 
 import (
 	"fmt"
+	"regexp"
+)
+
+/*
+import (
+	"fmt"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
@@ -481,3 +487,4 @@ REQUEST
 }
 `, name)
 }
+*/

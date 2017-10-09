@@ -1,5 +1,6 @@
 package brocadevtm
 
+/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/acctest"
@@ -469,3 +470,4 @@ func testAccBrocadeUserAuthenticatorTooManyRadius() string {
        }
 `)
 }
+*/

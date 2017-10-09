@@ -1,5 +1,6 @@
 package brocadevtm
 
+/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -542,3 +543,4 @@ func assignTACACSPlusValues(tacacsPlusList []map[string]interface{}) (tacacsPlus
 
 	return
 }
+*/

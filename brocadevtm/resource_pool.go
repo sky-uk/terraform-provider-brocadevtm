@@ -1,5 +1,6 @@
 package brocadevtm
 
+/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -511,3 +512,4 @@ func resourcePoolDelete(d *schema.ResourceData, m interface{}) error {
 	d.SetId("")
 	return nil
 }
+*/

@@ -2,6 +2,12 @@ package brocadevtm
 
 import (
 	"fmt"
+	"regexp"
+)
+
+/*
+import (
+	"fmt"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
@@ -225,3 +231,4 @@ multicastip = "232.123.23.48"
 }
 `, trafficIPGroupName)
 }
+*/

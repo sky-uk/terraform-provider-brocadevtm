@@ -1,5 +1,13 @@
 package brocadevtm
 
+/*
+import (
+	"time"
+	"log"
+)
+
+
+
 import (
 	"github.com/sky-uk/go-rest-api"
 	"log"
@@ -23,3 +31,4 @@ func (c *Config) Client() (*rest.Client, error) {
 	vtmClient := rest.Client{"https://" + c.VTMServer, c.VTMUser, c.VTMPassword, c.Insecure, c.Debug, c.Headers, c.Timeout}
 	return &vtmClient, nil
 }
+*/

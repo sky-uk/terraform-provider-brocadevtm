@@ -1,5 +1,6 @@
 package brocadevtm
 
+/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/acctest"
@@ -392,3 +393,4 @@ ocsp_issuers = [
 }
 `, virtualServerName)
 }
+*/

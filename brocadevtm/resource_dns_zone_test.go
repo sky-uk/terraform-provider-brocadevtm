@@ -1,5 +1,6 @@
 package brocadevtm
 
+/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/acctest"
@@ -132,3 +133,4 @@ resource "brocadevtm_dns_zone" "acctest" {
 }
 `, name)
 }
+*/
