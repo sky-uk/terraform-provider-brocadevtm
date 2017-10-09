@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api/virtualserver"
 	"github.com/sky-uk/go-rest-api"
+	"net/http"
 	"regexp"
 	"testing"
 )
@@ -16,7 +17,7 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 	randomInt := acctest.RandInt()
 
 	virtualServerName := fmt.Sprintf("acctest_brocadevtm_virtual_server-%d", randomInt)
-	virtualServerResourceName := "brocadevtm_virtual_server.acctest"
+	resourceName := "brocadevtm_virtual_server.acctest"
 
 	fmt.Printf("\n\nVirtual Server is %s.\n\n", virtualServerName)
 
@@ -35,167 +36,73 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 			},
 			{
 				Config:      testAccBrocadeVTMVirtualServerNegativeInt(virtualServerName),
-				ExpectError: regexp.MustCompile(`can't be negative`),
+				ExpectError: regexp.MustCompile(`Port has to be between 1 and 65535`),
 			},
 			{
 				Config:      testAccBrocadeVTMVirtualServerInvalidProtocol(virtualServerName),
 				ExpectError: regexp.MustCompile(`must be one of client_first, dns, dns_tcp, ftp, http, https, imaps, imapv2, imapv3, imapv4, ldap, ldaps, pop3, pop3s, rtsp, server_first, siptcp, sipudp, smtp, ssl, stream, telnet, udp or udpstreaming`),
 			},
 			{
-				Config:      testAccBrocadeVTMVirtualServerInvalidSSLSupportOption(virtualServerName),
-				ExpectError: regexp.MustCompile(`must be one of use_default, disabled or enabled`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerInvalidNonce(virtualServerName),
-				ExpectError: regexp.MustCompile(`must be one of off, on or strict`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerInvalidOCSPRequired(virtualServerName),
-				ExpectError: regexp.MustCompile(`must be one of none, optional, strict`),
-			},
-			{
 				Config: testAccBrocadeVTMVirtualServerCreate(virtualServerName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccBrocadeVTMVirtualServerExists(virtualServerName, virtualServerResourceName),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "name", virtualServerName),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "pool", "test-pool"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "port", "80"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "enabled", "false"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "listen_on_any", "false"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "listen_traffic_ips.0", "test-traffic-ip-group"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "protocol", "http"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "request_rules.0", "ruleOne"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_decrypt", "false"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_keepalive", "false"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_keepalive_timeout", "60"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_max_client_buffer", "1024"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_max_server_buffer", "8192"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_max_transaction_duration", "300"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_server_first_banner", "ACCESS DENIED"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_timeout", "30"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_default", "testsslkey2"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_ssl2", "disabled"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_ssl3", "disabled"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_tls1", "use_default"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_tls1_1", "enabled"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_tls1_2", "disabled"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.#", "2"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.0.ssl_server_alt_certs.#", "0"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.0.ssl_server_cert_host", "s1sta07-v00.devops.prd.ovp.bskyb.com"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.0.ssl_server_cert", "testsslkey1"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_alt_certs.#", "2"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_cert_host", "h1pipeline.devops.int.ovp.bskyb.com"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_cert", "testssl001"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_alt_certs.0", "testssl002"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_alt_certs.1", "testssl003"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_enable", "true"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.#", "1"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.issuer", "_DEFAULT_"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.aia", "true"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.nonce", "off"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.required", "optional"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.responder_cert", "SOME_RESPONDER_CERT"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.signer", "ANOTHER_SIGNER"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.url", "http://www.sky.uk/"),
+					testAccBrocadeVTMVirtualServerExists(virtualServerName, resourceName),
+					resource.TestCheckResourceAttr(resourceName, "name", virtualServerName),
 				),
 			},
-			{
-				Config: testAccBrocadeVTMVirtualServerUpdate(virtualServerName),
-				Check: resource.ComposeTestCheckFunc(
-					testAccBrocadeVTMVirtualServerExists(virtualServerName, virtualServerResourceName),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "name", virtualServerName),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "pool", "test-pool2"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "port", "443"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "enabled", "true"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "listen_on_any", "true"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "listen_traffic_ips.0", "another-test-traffic-ip-group"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "protocol", "https"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "request_rules.0", "ruleTwo"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_decrypt", "true"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_keepalive", "true"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_keepalive_timeout", "120"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_max_client_buffer", "2048"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_max_server_buffer", "4096"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_max_transaction_duration", "600"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_server_first_banner", "ACCESS ALLOWED"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "connection_timeout", "45"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_default", "testsslkey1"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_ssl2", "enabled"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_ssl3", "enabled"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_tls1", "enabled"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_tls1_1", "use_default"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_support_tls1_2", "enabled"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.#", "2"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.0.ssl_server_alt_certs.#", "1"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.0.ssl_server_cert_host", "h1pipeline.devops.int.ovp.bskyb.com"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.0.ssl_server_cert", "testssl002"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.0.ssl_server_alt_certs.0", "testssl001"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_alt_certs.#", "0"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_cert_host", "s1sta07-v00.devops.prd.ovp.bskyb.com"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ssl_server_cert_host_mapping.1.ssl_server_cert", "testsslkey1"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_enable", "false"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.#", "1"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.issuer", "_DEFAULT_"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.aia", "false"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.nonce", "on"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.required", "none"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.responder_cert", "ANOTHER_RESPONDER_CERT"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.signer", "SOME_SIGNER"),
-					resource.TestCheckResourceAttr(virtualServerResourceName, "ocsp_issuers.0.url", "http://www.sky.com/"),
-				),
-			},
+			/*
+				{
+					Config: testAccBrocadeVTMVirtualServerUpdate(virtualServerName),
+					Check: resource.ComposeTestCheckFunc(
+						testAccBrocadeVTMVirtualServerExists(virtualServerName, resourceName),
+						resource.TestCheckResourceAttr(resourceName, "name", virtualServerName),
+
+					),
+				},
+			*/
 		},
 	})
 }
 
 func testAccBrocadeVTMVirtualServerCheckDestroy(state *terraform.State, name string) error {
-
 	vtmClient := testAccProvider.Meta().(*rest.Client)
-
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "brocadevtm_virtual_server" {
+		if rs.Type != "infoblox_virtual_server" {
 			continue
 		}
-		if id, ok := rs.Primary.Attributes["id"]; ok && id != "" {
+		if id, ok := rs.Primary.Attributes["id"]; ok && id == "" {
 			return nil
 		}
-		api := virtualserver.NewGetAll()
+		api := virtualserver.NewGet(name)
 		err := vtmClient.Do(api)
 		if err != nil {
-			return fmt.Errorf("Brocade vTM Virtual Server - error occurred while retrieving a list of all virtual servers")
+			return fmt.Errorf("Error: Brocade vTM error occurred while retrieving Virtual Server: %v", err)
 		}
-		for _, virtualServer := range api.ResponseObject().(*virtualserver.VirtualServersList).Children {
-			if virtualServer.Name == name {
-				return fmt.Errorf("Brocade vTM Virtual Server %s still exists", name)
-			}
+		if api.StatusCode() == http.StatusOK {
+			return fmt.Errorf("Error: Brocade vTM Virtual Server %s still exists", name)
 		}
 	}
 	return nil
 }
 
-func testAccBrocadeVTMVirtualServerExists(virtualServerName, virtualServerResourceName string) resource.TestCheckFunc {
+func testAccBrocadeVTMVirtualServerExists(name, resourceName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-
-		rs, ok := state.RootModule().Resources[virtualServerResourceName]
+		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM Virtual Server %s wasn't found in resources", virtualServerName)
+			return fmt.Errorf("\nBrocade vTM Virtual Server %s wasn't found in resources", name)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM Virtual Server ID not set for %s in resources", virtualServerName)
+			return fmt.Errorf("\nBrocade vTM Virtual Server ID not set for %s in resources", name)
 		}
-
 		vtmClient := testAccProvider.Meta().(*rest.Client)
-		api := virtualserver.NewGetAll()
+		api := virtualserver.NewGet(name)
 		err := vtmClient.Do(api)
 		if err != nil {
-			return fmt.Errorf("Error: %+v", err)
+			return fmt.Errorf("Brocade vTM Virtual Server - error while retrieving User Group: %v", err)
 		}
-		for _, virtualServer := range api.ResponseObject().(*virtualserver.VirtualServersList).Children {
-			if virtualServer.Name == virtualServerName {
-				return nil
-			}
+		if api.StatusCode() == http.StatusOK {
+			return nil
 		}
-		return fmt.Errorf("Brocade vTM Virtual Server %s not found on remote vTM", virtualServerName)
+		return fmt.Errorf("Brocade vTM Virtual Server %s not found on remote vTM", name)
 	}
 }
 
@@ -229,166 +136,143 @@ protocol = "SOME_INVALID_PROTOCOL"
 `, virtualServerName)
 }
 
-func testAccBrocadeVTMVirtualServerInvalidSSLSupportOption(virtualServerName string) string {
-	return fmt.Sprintf(`
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-ssl_support_ssl2 = "SOME_INVALID_SSL_OPTION"
-ssl_support_ssl3 = "SOME_INVALID_SSL_OPTION"
-ssl_support_tls1 = "SOME_INVALID_SSL_OPTION"
-ssl_support_tls1_1 = "SOME_INVALID_SSL_OPTION"
-ssl_support_tls1_2 = "SOME_INVALID_SSL_OPTION"
-}
-`, virtualServerName)
-}
-
-func testAccBrocadeVTMVirtualServerInvalidNonce(virtualServerName string) string {
-	return fmt.Sprintf(`
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-ocsp_enable = true
-ocsp_enable = true
-ocsp_issuers = [
-  {
-     issuer = "_DEFAULT_"
-     aia = true
-     nonce = "SOME_INVALID_OPTION"
-     required = "optional"
-     responder_cert = ""
-     signer = ""
-     url = ""
-  },
-]
-}
-`, virtualServerName)
-}
-
-func testAccBrocadeVTMVirtualServerInvalidOCSPRequired(virtualServerName string) string {
-	return fmt.Sprintf(`
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-ocsp_enable = true
-ocsp_issuers = [
-  {
-     issuer = "_DEFAULT_"
-     aia = true
-     nonce = "off"
-     required = "SOME_INVALID_OPTION"
-     responder_cert = ""
-     signer = ""
-     url = ""
-  },
-]
-}
-`, virtualServerName)
-}
-
 func testAccBrocadeVTMVirtualServerCreate(virtualServerName string) string {
 	return fmt.Sprintf(`
+
+
+
 resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-enabled = false
-listen_on_any = false
-listen_traffic_ips = ["test-traffic-ip-group"]
-protocol = "http"
-request_rules = ["ruleOne"]
-ssl_decrypt = false
-connection_keepalive = false
-connection_keepalive_timeout = 60
-connection_max_client_buffer = 1024
-connection_max_server_buffer = 8192
-connection_max_transaction_duration = 300
-connection_server_first_banner = "ACCESS DENIED"
-connection_timeout = 30
-ssl_server_cert_default = "testsslkey2"
-ssl_support_ssl2 = "disabled"
-ssl_support_ssl3 = "disabled"
-ssl_support_tls1 = "use_default"
-ssl_support_tls1_1 = "enabled"
-ssl_support_tls1_2 = "disabled"
-ssl_server_cert_host_mapping = [
- {
-  ssl_server_cert_host = "s1sta07-v00.devops.prd.ovp.bskyb.com"
-  ssl_server_cert = "testsslkey1"
-},
-{
-  ssl_server_cert_host = "h1pipeline.devops.int.ovp.bskyb.com"
-  ssl_server_alt_certs = ["testssl002","testssl003"]
-  ssl_server_cert = "testssl001"
-}
-]
-ocsp_enable = true
-ocsp_issuers = [
-  {
-     issuer = "_DEFAULT_"
-     aia = true
-     nonce = "off"
-     required = "optional"
-     responder_cert = "SOME_RESPONDER_CERT"
-     signer = "ANOTHER_SIGNER"
-     url = "http://www.sky.uk/"
-  },
-]
+
+	name = "%s"
+	add_cluster_ip = true
+	add_x_forwarded_for = true
+	add_x_forwarded_proto = true
+	autodetect_upgrade_headers = true
+	bandwidth_class = "test"
+	close_with_rst = true
+	completionrules = ["completionRule1","completionRule2"]
+	connect_timeout = 50
+	enabled = true
+	ftp_force_server_secure = true
+	glb_services = ["testservice","testservice2"]
+	listen_on_any = true
+	listen_on_hosts = ["host1","host2"]
+	listen_on_traffic_ips = ["ip1","ip2"]
+	note = "create acceptance test"
+	pool = "test-pool"
+	port = 50
+	protection_class = "testProtectionClass"
+	protocol = "dns"
+	request_rules = ["ruleOne","ruleTwo"]
+	response_rules = ["ruleOne","ruleTwo"]
+	slm_class = "testClass"
+	so_nagle = true
+	ssl_client_cert_headers = "all"
+	ssl_decrypt = true
+	ssl_honor_fallback_scsv = "enabled"
+	transparent = true
+	error_file = "testErrorFile"
+	expect_starttls = true
+	proxy_close = true
+
+	aptimizer = {
+		enabled = true
+		profile = {
+			name = "profile1"
+			urls = ["url1","url2"]
+		}
+		profile = {
+			name = "profile2"
+			urls = ["url3","url4","url5"]
+		}
+		profile = {
+			name = "profile3"
+			urls = ["url6","url7","url8","url9"]
+		}
+	}
+
+	vs_connection = {
+		keepalive = true
+		keepalive_timeout = 500
+		max_client_buffer = 5000
+		max_server_buffer = 7000
+		max_transaction_duration = 5
+		server_first_banner = "testbanner"
+		timeout = 4000
+	}
+
+	cookie = {
+		domain = "no_rewrite"
+		new_domain = "testdomain"
+		path_regex = "testregex"
+		path_replace = "testreplace"
+		secure = "no_modify"
+	}
+
+	dns = {
+		edns_client_subnet = true
+		edns_udpsize = 3000
+		max_udpsize  = 4000
+		rrset_order = "cyclic"
+		verbose = true
+		zones = ["testzone1","testzone2"]
+	}
+
+	ftp = {
+		data_source_port = 10
+		force_client_secure = true
+		port_range_high = 50
+		port_range_low = 5
+		ssl_data = true
+	}
+
+	gzip = {
+		compress_level = 5
+		enabled = true
+		etag_rewrite = "weaken"
+		include_mime = ["mimetyp1","mimetype2","mimetype3"]
+		max_size = 4000
+		min_size = 5
+		no_size = true
+	}
+
+	http = {
+		chunk_overhead_forwarding = "eager"
+		location_regex = "testregex"
+		location_replace = "testlocationreplace"
+		location_rewrite = "never"
+		mime_default = "text/html text/plain"
+		mime_detect = true
+	}
+
+	http2 = {
+		connect_timeout = 50
+		data_frame_size = 200
+		enabled = true
+		header_table_size = 4096
+		headers_index_blacklist = ["header1","header2"]
+		headers_index_default = true
+		headers_index_whitelist = ["header3","header4"]
+		idle_timeout_no_streams = 60
+		idle_timeout_open_streams = 120
+		max_concurrent_streams = 10
+		max_frame_size = 20000
+		max_header_padding = 10
+		merge_cookie_headers = true
+		stream_window_size = 200
+	}
+
 }
 `, virtualServerName)
 }
 
 func testAccBrocadeVTMVirtualServerUpdate(virtualServerName string) string {
 	return fmt.Sprintf(`
+
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
-pool = "test-pool2"
+pool = "pool-demo"
 port = 443
-enabled = true
-listen_on_any = true
-listen_traffic_ips = ["another-test-traffic-ip-group"]
-protocol = "https"
-request_rules = ["ruleTwo"]
-ssl_decrypt = true
-connection_keepalive = true
-connection_keepalive_timeout = 120
-connection_max_client_buffer = 2048
-connection_max_server_buffer = 4096
-connection_max_transaction_duration = 600
-connection_server_first_banner = "ACCESS ALLOWED"
-connection_timeout = 45
-ssl_server_cert_default = "testsslkey1"
-ssl_support_ssl2 = "enabled"
-ssl_support_ssl3 = "enabled"
-ssl_support_tls1 = "enabled"
-ssl_support_tls1_1 = "use_default"
-ssl_support_tls1_2 = "enabled"
-ssl_server_cert_host_mapping = [
-  {
-    ssl_server_cert_host = "h1pipeline.devops.int.ovp.bskyb.com"
-    ssl_server_alt_certs = ["testssl001"]
-    ssl_server_cert = "testssl002"
-  },
-  {
-    ssl_server_cert_host = "s1sta07-v00.devops.prd.ovp.bskyb.com"
-    ssl_server_cert = "testsslkey1"
-  },
-]
-ocsp_enable = false
-ocsp_issuers = [
-  {
-     issuer = "_DEFAULT_"
-     aia = false
-     nonce = "on"
-     required = "none"
-     responder_cert = "ANOTHER_RESPONDER_CERT"
-     signer = "SOME_SIGNER"
-     url = "http://www.sky.com/"
-  },
-]
 }
 `, virtualServerName)
 }
