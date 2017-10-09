@@ -24,6 +24,11 @@ func TestAccPool_Basic(t *testing.T) {
 	statePattern := regexp.MustCompile(`nodes_table\.[0-9]+\.state`)
 	weightPattern := regexp.MustCompile(`nodes_table\.[0-9]+\.weight`)
 
+	securityIDPattern := regexp.MustCompile(`auto_scaling\.[0-9]+\.securitygroupids\.[0-9]+`)
+	subnetIDPattern := regexp.MustCompile(`auto_scaling\.[0-9]+\.subnetids\.[0-9]+`)
+
+	dnsAutoScaleHostnamePattern := regexp.MustCompile(`dns_autoscale\.[0-9]+\.hostnames\.[0-9]+`)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -48,20 +53,32 @@ func TestAccPool_Basic(t *testing.T) {
 			},
 			{
 				Config:      testAccPoolInvalidNode(poolName),
-				ExpectError: regexp.MustCompile(`Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
+				ExpectError: regexp.MustCompile(`must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 
 			{
 				Config:      testAccPoolInvalidNodeNoIP(poolName),
-				ExpectError: regexp.MustCompile(`Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
+				ExpectError: regexp.MustCompile(`must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 			{
 				Config:      testAccPoolInvalidNodeNoPort(poolName),
-				ExpectError: regexp.MustCompile(`Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
+				ExpectError: regexp.MustCompile(`must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 			{
 				Config:      testAccPoolInvalidNodeDeleteBehaviour(poolName),
 				ExpectError: regexp.MustCompile(`must be one of immediate or drain`),
+			},
+			{
+				Config:      testAccPoolOneItemList(poolName),
+				ExpectError: regexp.MustCompile(`attribute supports 1 item maximum, config has 2 declared`),
+			},
+			{
+				Config:      testAccPoolValidAWSSGPrefix(poolName),
+				ExpectError: regexp.MustCompile(`one or more items in the list of strings doesn't match the prefix sg-`),
+			},
+			{
+				Config:      testAccPoolValidAWSSubnetPrefix(poolName),
+				ExpectError: regexp.MustCompile(`one or more items in the list of strings doesn't match the prefix subnet-`),
 			},
 			{
 				Config: testAccPoolCreateTemplate(poolName),
@@ -89,6 +106,47 @@ func TestAccPool_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResourceName, "passive_monitoring", "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "persistence_class", "example"),
 					resource.TestCheckResourceAttr(poolResourceName, "transparent", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.#", "1"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.addnode_delaytime", "10"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.cloud_credentials", "example"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.cluster", "10.0.0.1"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.data_center", "vCentre server"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.enabled", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.external", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.hysteresis", "100"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.imageid", "image id"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.ips_to_use", "private_ips"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.last_node_idle_time", "10"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.max_nodes", "100"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.min_nodes", "20"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.name", "example"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.port", "8980"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.refactory", "10"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.response_time", "100"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_down_level", "90"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_up_level", "20"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.securitygroupids.#", "3"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, securityIDPattern, "sg-12345"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, securityIDPattern, "sg-23456"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, securityIDPattern, "sg-34567"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.size_id", "sizeID"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.subnetids.#", "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, subnetIDPattern, "subnet-xxxx"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, subnetIDPattern, "subnet-xxxx"),
+					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.#", "1"),
+					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_connect_time", "4"),
+					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_connections_per_node", "100"),
+					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_queue_size", "10"),
+					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_reply_time", "12"),
+					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.queue_timeout", "14"),
+					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.#", "1"),
+					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.enabled", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.hostnames.#", "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, dnsAutoScaleHostnamePattern, "example01.example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, dnsAutoScaleHostnamePattern, "example02.example.com"),
+					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.port", "8080"),
+					resource.TestCheckResourceAttr(poolResourceName, "ftp.#", "1"),
+					resource.TestCheckResourceAttr(poolResourceName, "ftp.0.support_rfc_2428", "true"),
 				),
 			},
 			{
@@ -122,6 +180,47 @@ func TestAccPool_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResourceName, "passive_monitoring", "false"),
 					resource.TestCheckResourceAttr(poolResourceName, "persistence_class", "another-example"),
 					resource.TestCheckResourceAttr(poolResourceName, "transparent", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.#", "1"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.addnode_delaytime", "20"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.cloud_credentials", "another-example"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.cluster", "10.0.2.100"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.data_center", "another vCentre server"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.enabled", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.external", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.hysteresis", "200"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.imageid", "another image id"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.ips_to_use", "publicips"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.last_node_idle_time", "78"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.max_nodes", "200"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.min_nodes", "50"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.name", "anotherExample"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.port", "9980"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.refactory", "56"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.response_time", "89"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_down_level", "75"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_up_level", "15"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.securitygroupids.#", "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, securityIDPattern, "sg-23456"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, securityIDPattern, "sg-34567"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.size_id", "sizeID"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.subnetids.#", "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, subnetIDPattern, "subnet-aaaa"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, subnetIDPattern, "subnet-cccc"),
+					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.#", "1"),
+					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_connect_time", "5"),
+					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_connections_per_node", "110"),
+					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_queue_size", "8"),
+					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_reply_time", "7"),
+					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.queue_timeout", "20"),
+					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.#", "1"),
+					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.enabled", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.hostnames.#", "3"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, dnsAutoScaleHostnamePattern, "example01.example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, dnsAutoScaleHostnamePattern, "example02.example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, dnsAutoScaleHostnamePattern, "example03.example.com"),
+					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.port", "8090"),
+					resource.TestCheckResourceAttr(poolResourceName, "ftp.#", "1"),
+					resource.TestCheckResourceAttr(poolResourceName, "ftp.0.support_rfc_2428", "false"),
 				),
 			},
 		},
@@ -298,6 +397,72 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
+func testAccPoolOneItemList(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+      source_ip = "192.168.120.6"
+    },
+  ]
+  auto_scaling = [
+    {
+      addnode_delaytime = 10
+    },
+    {
+      addnode_delaytime = 10
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolValidAWSSGPrefix(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest"{
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+      source_ip = "192.168.120.6"
+    },
+  ]
+  auto_scaling = [
+    {
+      securitygroupids = [ "INVALID_PREFIX-1234567" ]
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolValidAWSSubnetPrefix(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest"{
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+      source_ip = "192.168.120.6"
+    },
+  ]
+  auto_scaling = [
+    {
+      subnetids = [ "INVALID_SUBNET-12345" ]
+    },
+  ]
+}`, poolName)
+}
+
 func testAccPoolCreateTemplate(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
@@ -325,6 +490,54 @@ resource "brocadevtm_pool" "acctest" {
   passive_monitoring = true
   persistence_class = "example"
   transparent = true
+
+  auto_scaling = [
+    {
+      addnode_delaytime = 10
+      cloud_credentials = "example"
+      cluster = "10.0.0.1"
+      data_center = "vCentre server"
+      enabled = true
+      external = true
+      //extraargs = "some extra args"
+      hysteresis = 100
+      imageid = "image id"
+      ips_to_use = "private_ips"
+      last_node_idle_time = 10
+      max_nodes = 100
+      min_nodes = 20
+      name = "example"
+      port = 8980
+      refactory = 10
+      response_time = 100
+      scale_down_level = 90
+      scale_up_level = 20
+      securitygroupids = [ "sg-12345", "sg-23456", "sg-34567" ]
+      size_id = "sizeID"
+      subnetids = [ "subnet-xxxx", "subnet-yyyyy" ]
+    },
+  ]
+  pool_connection = [
+    {
+      max_connect_time = 4
+      max_connections_per_node = 100
+      max_queue_size = 10
+      max_reply_time = 12
+      queue_timeout = 14
+    },
+  ]
+  dns_autoscale = [
+    {
+      enabled = true
+      hostnames = [ "example01.example.com", "example02.example.com" ]
+      port = 8080
+    },
+  ]
+  ftp = [
+    {
+      support_rfc_2428 = true
+    },
+  ]
 }`, poolName)
 }
 
@@ -362,5 +575,53 @@ resource "brocadevtm_pool" "acctest" {
   passive_monitoring = false
   persistence_class = "another-example"
   transparent = false
+
+  auto_scaling = [
+    {
+      addnode_delaytime = 20
+      cloud_credentials = "another-example"
+      cluster = "10.0.2.100"
+      data_center = "another vCentre server"
+      enabled = false
+      external = false
+      //extraargs = "some more extra args"
+      hysteresis = 200
+      imageid = "another image id"
+      ips_to_use = "publicips"
+      last_node_idle_time = 78
+      max_nodes = 200
+      min_nodes = 50
+      name = "anotherExample"
+      port = 9980
+      refactory = 56
+      response_time = 89
+      scale_down_level = 75
+      scale_up_level = 15
+      securitygroupids = [ "sg-23456", "sg-34567" ]
+      size_id = "sizeID"
+      subnetids = [ "subnet-aaaa", "subnet-cccc" ]
+    },
+  ]
+  pool_connection = [
+    {
+      max_connect_time = 5
+      max_connections_per_node = 110
+      max_queue_size = 8
+      max_reply_time = 7
+      queue_timeout = 20
+    },
+  ]
+  dns_autoscale = [
+    {
+      enabled = false
+      hostnames = [ "example01.example.com", "example02.example.com", "example03.example.com" ]
+      port = 8090
+    },
+  ]
+  ftp = [
+    {
+      support_rfc_2428 = false
+    },
+  ]
 }`, poolName)
 }

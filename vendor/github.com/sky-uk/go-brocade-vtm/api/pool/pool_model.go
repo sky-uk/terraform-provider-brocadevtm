@@ -9,7 +9,10 @@ type Pool struct {
 // Properties - General Properties for the pool
 type Properties struct {
 	Basic         Basic         `json:"basic,omitempty"`
+	AutoScaling   AutoScaling   `json:"auto_scaling,omitempty"`
 	Connection    Connection    `json:"connection,omitempty"`
+	DNSAutoScale  DNSAutoScale  `json:"dns_autoscale,omitempty"`
+	FTP           FTP           `json:"ftp,omitempty"`
 	HTTP          HTTP          `json:"http,omitempty"`
 	LoadBalancing LoadBalancing `json:"load_balancing,omitempty"`
 	Node          Node          `json:"node,omitempty"`
@@ -36,13 +39,52 @@ type Basic struct {
 	Transparent                  bool         `json:"transparent"`
 }
 
+// AutoScaling - AutoScaling settings
+type AutoScaling struct {
+	AddNodeDelayTime *uint    `json:"addnode_delaytime,omitempty"`
+	CloudCredentials string   `json:"cloud_credentials,omitempty"`
+	Cluster          string   `json:"cluster,omitempty"`
+	DataCenter       string   `json:"data_center,omitempty"`
+	DataStore        string   `json:"data_store,omitempty"`
+	Enabled          *bool    `json:"enabled,omitempty"`
+	External         *bool    `json:"external,omitempty"`
+	ExtraArgs        string   `json:"extraargs,omitempty"`
+	Hysteresis       *uint    `json:"hysteresis,omitempty"`
+	ImageID          string   `json:"imageid,omitempty"`
+	IPsToUse         string   `json:"ips_to_use,omitempty"`
+	LastNodeIdleTime *uint    `json:"last_node_idle_time,omitempty"`
+	MaxNodes         *uint    `json:"max_nodes,omitempty"`
+	MinNodes         *uint    `json:"min_nodes,omitempty"`
+	Name             string   `json:"name,omitempty,omitempty"`
+	Port             *uint    `json:"port,omitempty,omitempty"`
+	Refractory       *uint    `json:"refractory,omitempty"`
+	ResponseTime     *uint    `json:"response_time,omitempty"`
+	ScaleDownLevel   *uint    `json:"scale_down_level,omitempty"`
+	ScaleUpLevel     *uint    `json:"scale_up_level,omitempty"`
+	SecurityGroupIDs []string `json:"securitygroupids,omitempty"`
+	SizeID           string   `json:"size_id,omitempty"`
+	SubnetIDs        []string `json:"subnetids,omitempty"`
+}
+
 // Connection - Connection setting
 type Connection struct {
-	MaxConnectTime        uint `json:"max_connect_time,omitempty"`
-	MaxConnectionsPerNode uint `json:"max_connections_per_node,omitempty"`
-	MaxQueueSize          uint `json:"max_queue_size,omitempty"`
-	MaxReplyTime          uint `json:"max_reply_time,omitempty"`
-	QueueTimeout          uint `json:"queue_timeout,omitempty"`
+	MaxConnectTime        *uint `json:"max_connect_time,omitempty"`
+	MaxConnectionsPerNode *uint `json:"max_connections_per_node,omitempty"`
+	MaxQueueSize          *uint `json:"max_queue_size,omitempty"`
+	MaxReplyTime          *uint `json:"max_reply_time,omitempty"`
+	QueueTimeout          *uint `json:"queue_timeout,omitempty"`
+}
+
+// DNSAutoScale - DNSAutoScale settings
+type DNSAutoScale struct {
+	Enabled   *bool    `json:"enabled,omitempty"`
+	Hostnames []string `json:"hostnames,omitempty"`
+	Port      *uint    `json:"port,omitempty"`
+}
+
+// FTP - FTP settings
+type FTP struct {
+	SupportRFC2428 *bool `json:"support_rfc_2428,omitempty"`
 }
 
 // HTTP - http settings

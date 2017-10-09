@@ -38,20 +38,20 @@ func resourcePool() *schema.Resource {
 			"max_connection_attempts": {
 				Type:         schema.TypeInt,
 				Optional:     true,
-				ValidateFunc: validatePoolUnsignedInteger,
+				ValidateFunc: util.ValidateUnsignedInteger,
 				Description:  "Maximum numberof nodes an attempt to send a request to befoirce returning an error to the client",
 			},
 			"max_idle_connections_pernode": {
 				Type:         schema.TypeInt,
 				Optional:     true,
-				ValidateFunc: validatePoolUnsignedInteger,
+				ValidateFunc: util.ValidateUnsignedInteger,
 				Default:      50,
 				Description:  "Maximum number of unused HTTP keepalive connections",
 			},
 			"max_timed_out_connection_attempts": {
 				Type:         schema.TypeInt,
 				Optional:     true,
-				ValidateFunc: validatePoolUnsignedInteger,
+				ValidateFunc: util.ValidateUnsignedInteger,
 				Default:      2,
 				Description:  "Maxiumum failed connection attempts within the max_reply_time.",
 			},
@@ -68,10 +68,11 @@ func resourcePool() *schema.Resource {
 				Default:     false,
 			},
 			"node_connection_attempts": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Default:     3,
-				Description: "Number of times an attempt to connect to the same node before marking it as failed. Only used when passive_monitoring is enabled",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Default:      3,
+				Description:  "Number of times an attempt to connect to the same node before marking it as failed. Only used when passive_monitoring is enabled",
+				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"node_delete_behaviour": {
 				Type:         schema.TypeString,
@@ -81,9 +82,10 @@ func resourcePool() *schema.Resource {
 				ValidateFunc: validateNodeDeleteBehaviour,
 			},
 			"node_drain_to_delete_timeout": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Description: "The maximum time a node will remain in draining after it has been deleted",
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Description:  "The maximum time a node will remain in draining after it has been deleted",
+				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"nodes_table": {
 				Type:     schema.TypeSet,
@@ -99,7 +101,7 @@ func resourcePool() *schema.Resource {
 						"priority": {
 							Type:         schema.TypeInt,
 							Optional:     true,
-							ValidateFunc: validatePoolUnsignedInteger,
+							ValidateFunc: util.ValidateUnsignedInteger,
 							Description:  "Priority assigned to a node. Defaults to 1",
 						},
 						"state": {
@@ -144,6 +146,293 @@ func resourcePool() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 				Description: "Whether or not connections to the back ends appears to originate from the source client IP",
+			},
+
+			"auto_scaling": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"addnode_delaytime": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							ValidateFunc: util.ValidateUnsignedInteger,
+							Description:  "Time the Traffic Manager should wait before adding node to autoscaled pool",
+						},
+						"cloud_credentials": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Cloud API Credentials to use for authentication",
+						},
+						"cluster": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "ESX host or cluster to place new VMs",
+						},
+						"data_center": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Name of logical vCenter server",
+						},
+						"enabled": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Set if all nodes in this pool are under auto-scaling control",
+						},
+						"external": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether or not auto-scaling is handled by an external system",
+						},
+						/* extraargs is in doco, but causes errors as it doesn't appear to be in API
+						"extraargs": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Extra comma separated arguments to send the auto-scaling API",
+						},
+						*/
+						"hysteresis": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     20,
+							Description: "Time period in seconds for which a change condition must persist prior to instigating the change",
+						},
+						"imageid": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Identifier for the image of the instances to create",
+						},
+						"ips_to_use": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Default:      "publicips",
+							Description:  "Type of IP addresses on the node to use",
+							ValidateFunc: validateAutoScalingIPsToUse,
+						},
+						"last_node_idle_time": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     3600,
+							Description: "Time node must be inactive before being destroyed",
+						},
+						"max_nodes": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     4,
+							Description: "Maximum nodes in auto-scaled pool",
+						},
+						"min_nodes": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Description: "Minimum nodes in auto-scaled pool",
+						},
+						"name": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Default:     1,
+							Description: "The name prefix of the nodes in the auto-scaling group",
+						},
+						"port": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							Default:      80,
+							Description:  "Port number to use for each node in auto-scaled pool",
+							ValidateFunc: util.ValidateTCPPort,
+						},
+						"refactory": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     180,
+							Description: "Time after instigation of a change before any further changes made to the auto-scaled pool",
+						},
+						"response_time": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     1000,
+							Description: "Expected response time of nodes in ms",
+						},
+						"scale_down_level": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     95,
+							Description: "Percentage of conforming requests above which the pool size is decresed",
+						},
+						"scale_up_level": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     40,
+							Description: "Percentage of conforming requests below which the pool size is increased",
+						},
+						"securitygroupids": {
+							Type:        schema.TypeSet,
+							Optional:    true,
+							Description: "List of security group IDs to assciate with a new ec2 instance",
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"size_id": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Identifier for the size of the instances to create",
+						},
+						"subnetids": {
+							Type:        schema.TypeSet,
+							Optional:    true,
+							Description: "List of VPC subnet IDs where the new ec2 instances will be launched",
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+					},
+				},
+			},
+			"pool_connection": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"max_connect_time": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							Default:      4,
+							Description:  "How long to wait before giving up when attempting a connection to a node",
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"max_connections_per_node": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							Description:  "Max number of connections allowed to each back end node",
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"max_queue_size": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							Description:  "Max number connections that can be queued",
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"max_reply_time": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							Default:      30,
+							Description:  "How long to wait for a response from a node",
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"queue_timeout": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     10,
+							Description: "Max time to keep a connection queued",
+						},
+					},
+				},
+			},
+			"dns_autoscale": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether the Traffic Manager will periodically resolve the hostnames using a DNS query",
+						},
+						"hostnames": {
+							Type:        schema.TypeSet,
+							Optional:    true,
+							Description: "List of hostnames which will be used for DNS derived autoscaling",
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"port": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							Default:      80,
+							Description:  "Port number to use for each node when using DNS dereived autoscaling",
+							ValidateFunc: util.ValidateTCPPort,
+						},
+					},
+				},
+			},
+			"ftp": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"support_rfc_2428": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether the backed nodes understand EPRT and EPSV commands",
+						},
+					},
+				},
+			},
+			"http": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{},
+				},
+			},
+			"kerberos_protocol_transition": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{},
+				},
+			},
+			"load_balancing": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{},
+				},
+			},
+			"node": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{},
+				},
+			},
+			"smtp": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{},
+				},
+			},
+			"ssl": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{},
+				},
+			},
+			"tcp": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{},
+				},
+			},
+			"udp": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{},
+				},
 			},
 
 			/*
@@ -209,6 +498,15 @@ func resourcePool() *schema.Resource {
 
 }
 
+func validateAutoScalingIPsToUse(v interface{}, k string) (ws []string, errors []error) {
+	ipType := v.(string)
+	ipTypeOptions := regexp.MustCompile(`^(publicips|private_ips)`)
+	if !ipTypeOptions.MatchString(ipType) {
+		errors = append(errors, fmt.Errorf("%q must be one of publicips or private_ips", k))
+	}
+	return
+}
+
 func validateNodeDeleteBehaviour(v interface{}, k string) (ws []string, errors []error) {
 	behaviour := v.(string)
 	behvaiourOptions := regexp.MustCompile(`^(immediate|drain)$`)
@@ -227,19 +525,11 @@ func validatePoolLBAlgo(v interface{}, k string) (ws []string, errors []error) {
 	return
 }
 
-func validatePoolUnsignedInteger(v interface{}, k string) (ws []string, errors []error) {
-	checkNumber := v.(int)
-	if checkNumber < 0 {
-		errors = append(errors, fmt.Errorf("%q can't be negative", k))
-	}
-	return
-}
-
 func validateNode(v interface{}, k string) (ws []string, errors []error) {
 	node := v.(string)
 	validateNode := regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$`)
 	if !validateNode.MatchString(node) {
-		errors = append(errors, fmt.Errorf("Must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80"))
+		errors = append(errors, fmt.Errorf("%q must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80", k))
 	}
 	return
 }
@@ -268,25 +558,193 @@ func buildNodesTable(nodesTable *schema.Set) []pool.MemberNode {
 	for _, item := range nodesTable.List() {
 		nodeItem := item.(map[string]interface{})
 		memberNode := pool.MemberNode{}
-		if node, ok := nodeItem["node"].(string); ok && node != "" {
+		if node, ok := nodeItem["node"].(string); ok {
 			memberNode.Node = node
 		}
 		if priority, ok := nodeItem["priority"].(int); ok {
 			nodePriority := uint(priority)
 			memberNode.Priority = &nodePriority
 		}
-		if state, ok := nodeItem["state"].(string); ok && state != "" {
+		if state, ok := nodeItem["state"].(string); ok {
 			memberNode.State = state
 		}
 		if weight, ok := nodeItem["weight"].(int); ok {
 			memberNode.Weight = &weight
 		}
-		if sourceIP, ok := nodeItem["source_ip"].(string); ok && sourceIP != "" {
+		if sourceIP, ok := nodeItem["source_ip"].(string); ok {
 			memberNode.SourceIP = sourceIP
 		}
 		memberNodes = append(memberNodes, memberNode)
 	}
 	return memberNodes
+}
+
+func checkStringPrefix(prefix string, list []string) error {
+	for _, item := range list {
+		checkFormat := regexp.MustCompile(`^` + prefix)
+		if !checkFormat.MatchString(item) {
+			return fmt.Errorf("one or more items in the list of strings doesn't match the prefix %s", prefix)
+		}
+	}
+	return nil
+}
+
+func buildAutoScaling(autoScalingBlock interface{}) (pool.AutoScaling, error) {
+
+	autoScalingObject := pool.AutoScaling{}
+	autoScalingList := autoScalingBlock.([]interface{})
+	autoScalingItem := autoScalingList[0].(map[string]interface{})
+
+	if addNodeDelayTime, ok := autoScalingItem["addnode_delaytime"].(int); ok {
+		autoScaleAddNodeDelayTime := uint(addNodeDelayTime)
+		autoScalingObject.AddNodeDelayTime = &autoScaleAddNodeDelayTime
+	}
+	if cloudCredentials, ok := autoScalingItem["cloud_credentials"].(string); ok {
+		autoScalingObject.CloudCredentials = cloudCredentials
+	}
+	if cluster, ok := autoScalingItem["cluster"].(string); ok {
+		autoScalingObject.Cluster = cluster
+	}
+	if dataCentre, ok := autoScalingItem["data_center"].(string); ok {
+		autoScalingObject.DataCenter = dataCentre
+	}
+	if enabled, ok := autoScalingItem["enabled"].(bool); ok {
+		autoScalingObject.Enabled = &enabled
+	}
+	if external, ok := autoScalingItem["external"].(bool); ok {
+		autoScalingObject.External = &external
+	}
+	if extraArgs, ok := autoScalingItem["extraargs"].(string); ok {
+		autoScalingObject.ExtraArgs = extraArgs
+	}
+	if hysteresis, ok := autoScalingItem["hysteresis"].(int); ok {
+		uintHysteresis := uint(hysteresis)
+		autoScalingObject.Hysteresis = &uintHysteresis
+	}
+	if imageID, ok := autoScalingItem["imageid"].(string); ok {
+		autoScalingObject.ImageID = imageID
+	}
+	if ipsToUse, ok := autoScalingItem["ips_to_use"].(string); ok {
+		autoScalingObject.IPsToUse = ipsToUse
+	}
+	if lastNodeIdleTime, ok := autoScalingItem["last_node_idle_time"].(int); ok {
+		uintLastNodeIdleTime := uint(lastNodeIdleTime)
+		autoScalingObject.LastNodeIdleTime = &uintLastNodeIdleTime
+	}
+	if maxNodes, ok := autoScalingItem["max_nodes"].(int); ok {
+		uintMaxNodes := uint(maxNodes)
+		autoScalingObject.MaxNodes = &uintMaxNodes
+	}
+	if minNodes, ok := autoScalingItem["min_nodes"].(int); ok {
+		uintMinNodes := uint(minNodes)
+		autoScalingObject.MinNodes = &uintMinNodes
+	}
+	if name, ok := autoScalingItem["name"].(string); ok {
+		autoScalingObject.Name = name
+	}
+	if port, ok := autoScalingItem["port"].(int); ok {
+		uintPort := uint(port)
+		autoScalingObject.Port = &uintPort
+	}
+	if refactory, ok := autoScalingItem["refactory"].(int); ok {
+		uintRefactory := uint(refactory)
+		autoScalingObject.Refractory = &uintRefactory
+	}
+	if responseTime, ok := autoScalingItem["response_time"].(int); ok {
+		uintResponseTime := uint(responseTime)
+		autoScalingObject.ResponseTime = &uintResponseTime
+	}
+	if scaleDownLevel, ok := autoScalingItem["scale_down_level"].(int); ok {
+		uintScaleDownLevel := uint(scaleDownLevel)
+		autoScalingObject.ScaleDownLevel = &uintScaleDownLevel
+	}
+	if scaleUpLevel, ok := autoScalingItem["scale_up_level"].(int); ok {
+		uintScaleUpLevel := uint(scaleUpLevel)
+		autoScalingObject.ScaleUpLevel = &uintScaleUpLevel
+	}
+	if securityGroupIDs, ok := autoScalingItem["securitygroupids"].(*schema.Set); ok {
+		securityGroupIDList := util.BuildStringListFromSet(securityGroupIDs)
+		err := checkStringPrefix("sg-", securityGroupIDList)
+		if err != nil {
+			return autoScalingObject, err
+		}
+		autoScalingObject.SecurityGroupIDs = securityGroupIDList
+	}
+	if sizeID, ok := autoScalingItem["size_id"].(string); ok {
+		autoScalingObject.SizeID = sizeID
+	}
+	if subnetIDs, ok := autoScalingItem["subnetids"].(*schema.Set); ok {
+		subnetIDList := util.BuildStringListFromSet(subnetIDs)
+		err := checkStringPrefix("subnet-", subnetIDList)
+		if err != nil {
+			return autoScalingObject, err
+		}
+		autoScalingObject.SubnetIDs = subnetIDList
+	}
+
+	return autoScalingObject, nil
+}
+
+func buildConnection(connectionBlock interface{}) pool.Connection {
+
+	connectionObject := pool.Connection{}
+	connectionList := connectionBlock.([]interface{})
+	connectionItem := connectionList[0].(map[string]interface{})
+
+	if maxConnectTime, ok := connectionItem["max_connect_time"].(int); ok {
+		maxConnectTimeUint := uint(maxConnectTime)
+		connectionObject.MaxConnectTime = &maxConnectTimeUint
+	}
+	if maxConnectionsPerNode, ok := connectionItem["max_connections_per_node"].(int); ok {
+		maxConnectionsPerNodeUint := uint(maxConnectionsPerNode)
+		connectionObject.MaxConnectionsPerNode = &maxConnectionsPerNodeUint
+	}
+
+	if maxQueueSize, ok := connectionItem["max_queue_size"].(int); ok {
+		maxQueueSizeUint := uint(maxQueueSize)
+		connectionObject.MaxQueueSize = &maxQueueSizeUint
+	}
+	if maxReplyTime, ok := connectionItem["max_reply_time"].(int); ok {
+		maxReplyTimeUint := uint(maxReplyTime)
+		connectionObject.MaxReplyTime = &maxReplyTimeUint
+	}
+	if queueTimeout, ok := connectionItem["queue_timeout"].(int); ok {
+		queueTimeoutUint := uint(queueTimeout)
+		connectionObject.QueueTimeout = &queueTimeoutUint
+	}
+	return connectionObject
+}
+
+func buildDNSAutoScale(dnsAutoScaleBlock interface{}) pool.DNSAutoScale {
+
+	dnsAutoScaleObject := pool.DNSAutoScale{}
+	dnsAutoScaleList := dnsAutoScaleBlock.([]interface{})
+	dnsAutoScaleItem := dnsAutoScaleList[0].(map[string]interface{})
+
+	if enabled, ok := dnsAutoScaleItem["enabled"].(bool); ok {
+		dnsAutoScaleObject.Enabled = &enabled
+	}
+	if hostnames, ok := dnsAutoScaleItem["hostnames"]; ok {
+		dnsAutoScaleObject.Hostnames = util.BuildStringListFromSet(hostnames.(*schema.Set))
+	}
+	if port, ok := dnsAutoScaleItem["port"].(int); ok {
+		portUint := uint(port)
+		dnsAutoScaleObject.Port = &portUint
+	}
+
+	return dnsAutoScaleObject
+}
+
+func buildFTP(ftpBlock interface{}) pool.FTP {
+
+	ftpObject := pool.FTP{}
+	ftpList := ftpBlock.([]interface{})
+	ftpItem := ftpList[0].(map[string]interface{})
+
+	if supportRFC2428, ok := ftpItem["support_rfc_2428"].(bool); ok {
+		ftpObject.SupportRFC2428 = &supportRFC2428
+	}
+	return ftpObject
 }
 
 // resourcePoolCreate - Creates a  pool resource object
@@ -299,10 +757,10 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("name"); ok && v != "" {
 		poolName = v.(string)
 	}
-	if v, ok := d.GetOk("bandwidth_class"); ok && v != "" {
+	if v, ok := d.GetOk("bandwidth_class"); ok {
 		createPool.Properties.Basic.BandwidthClass = v.(string)
 	}
-	if v, ok := d.GetOk("failure_pool"); ok && v != "" {
+	if v, ok := d.GetOk("failure_pool"); ok {
 		createPool.Properties.Basic.FailurePool = v.(string)
 	}
 	if v, ok := d.GetOk("max_connection_attempts"); ok {
@@ -322,7 +780,7 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("node_connection_attempts"); ok {
 		createPool.Properties.Basic.NodeConnectionAttempts = uint(v.(int))
 	}
-	if v, ok := d.GetOk("node_delete_behaviour"); ok && v != "" {
+	if v, ok := d.GetOk("node_delete_behaviour"); ok {
 		createPool.Properties.Basic.NodeDeleteBehavior = v.(string)
 	}
 	if v, ok := d.GetOk("node_drain_to_delete_timeout"); ok {
@@ -333,14 +791,30 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("nodes_table"); ok {
 		createPool.Properties.Basic.NodesTable = buildNodesTable(v.(*schema.Set))
 	}
-	if v, ok := d.GetOk("note"); ok && v != "" {
+	if v, ok := d.GetOk("note"); ok {
 		createPool.Properties.Basic.Note = v.(string)
 	}
 	createPool.Properties.Basic.PassiveMonitoring = d.Get("passive_monitoring").(bool)
-	if v, ok := d.GetOk("persistence_class"); ok && v != "" {
+	if v, ok := d.GetOk("persistence_class"); ok {
 		createPool.Properties.Basic.PersistenceClass = v.(string)
 	}
 	createPool.Properties.Basic.Transparent = d.Get("transparent").(bool)
+	if v, ok := d.GetOk("auto_scaling"); ok {
+		autoScaling, err := buildAutoScaling(v)
+		if err != nil {
+			return fmt.Errorf("BrocadeVTM Pool - auto_scaling error whilst creating %s: %v", poolName, err)
+		}
+		createPool.Properties.AutoScaling = autoScaling
+	}
+	if v, ok := d.GetOk("pool_connection"); ok {
+		createPool.Properties.Connection = buildConnection(v)
+	}
+	if v, ok := d.GetOk("dns_autoscale"); ok {
+		createPool.Properties.DNSAutoScale = buildDNSAutoScale(v)
+	}
+	if v, ok := d.GetOk("ftp"); ok {
+		createPool.Properties.FTP = buildFTP(v)
+	}
 
 	/*
 
@@ -430,6 +904,11 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("persistence_class", response.Properties.Basic.PersistenceClass)
 	d.Set("transparent", response.Properties.Basic.Transparent)
 
+	d.Set("auto_scaling", []pool.AutoScaling{response.Properties.AutoScaling})
+	d.Set("pool_connection", []pool.Connection{response.Properties.Connection})
+	d.Set("dns_autoscale", []pool.DNSAutoScale{response.Properties.DNSAutoScale})
+	d.Set("ftp", []pool.FTP{response.Properties.FTP})
+
 	/*
 		d.Set("node", response.Properties.Basic.NodesTable)
 		d.Set("monitorlist", response.Properties.Basic.Monitors)
@@ -462,13 +941,13 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	poolName := d.Id()
 
 	if d.HasChange("bandwidth_class") {
-		if v, ok := d.GetOk("bandwidth_class"); ok && v != "" {
+		if v, ok := d.GetOk("bandwidth_class"); ok {
 			updatePool.Properties.Basic.BandwidthClass = v.(string)
 		}
 		hasChanges = true
 	}
 	if d.HasChange("failure_pool") {
-		if v, ok := d.GetOk("failure_pool"); ok && v != "" {
+		if v, ok := d.GetOk("failure_pool"); ok {
 			updatePool.Properties.Basic.FailurePool = v.(string)
 		}
 		hasChanges = true
@@ -499,7 +978,7 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 		hasChanges = true
 	}
 	if d.HasChange("node_delete_behaviour") {
-		if v, ok := d.GetOk("node_delete_behaviour"); ok && v != "" {
+		if v, ok := d.GetOk("node_delete_behaviour"); ok {
 			updatePool.Properties.Basic.NodeDeleteBehavior = v.(string)
 		}
 		hasChanges = true
@@ -514,7 +993,7 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 		hasChanges = true
 	}
 	if d.HasChange("note") {
-		if v, ok := d.GetOk("note"); ok && v != "" {
+		if v, ok := d.GetOk("note"); ok {
 			updatePool.Properties.Basic.Note = v.(string)
 		}
 		hasChanges = true
@@ -524,13 +1003,41 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 		hasChanges = true
 	}
 	if d.HasChange("persistence_class") {
-		if v, ok := d.GetOk("persistence_class"); ok && v != "" {
+		if v, ok := d.GetOk("persistence_class"); ok {
 			updatePool.Properties.Basic.PersistenceClass = v.(string)
 		}
 		hasChanges = true
 	}
 	updatePool.Properties.Basic.Transparent = d.Get("transparent").(bool)
 	if d.HasChange("transparent") {
+		hasChanges = true
+	}
+	if d.HasChange("auto_scaling") {
+		if v, ok := d.GetOk("auto_scaling"); ok {
+			autoScaling, err := buildAutoScaling(v)
+			if err != nil {
+				return fmt.Errorf("BrocadeVTM Pool - auto_scaling error whilst updating %s: %v", poolName, err)
+			}
+			updatePool.Properties.AutoScaling = autoScaling
+		}
+		hasChanges = true
+	}
+	if d.HasChange("pool_connection") {
+		if v, ok := d.GetOk("pool_connection"); ok {
+			updatePool.Properties.Connection = buildConnection(v)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("dns_autoscale") {
+		if v, ok := d.GetOk("dns_autoscale"); ok {
+			updatePool.Properties.DNSAutoScale = buildDNSAutoScale(v)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("ftp") {
+		if v, ok := d.GetOk("ftp"); ok {
+			updatePool.Properties.FTP = buildFTP(v)
+		}
 		hasChanges = true
 	}
 
