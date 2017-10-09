@@ -8,16 +8,18 @@ type Pool struct {
 
 // Properties - General Properties for the pool
 type Properties struct {
-	Basic         Basic         `json:"basic,omitempty"`
-	AutoScaling   AutoScaling   `json:"auto_scaling,omitempty"`
-	Connection    Connection    `json:"connection,omitempty"`
-	DNSAutoScale  DNSAutoScale  `json:"dns_autoscale,omitempty"`
-	FTP           FTP           `json:"ftp,omitempty"`
-	HTTP          HTTP          `json:"http,omitempty"`
-	LoadBalancing LoadBalancing `json:"load_balancing,omitempty"`
-	Node          Node          `json:"node,omitempty"`
-	Ssl           Ssl           `json:"ssl,omitempty"`
-	TCP           TCP           `json:"tcp,omitempty"`
+	Basic                      Basic                      `json:"basic,omitempty"`
+	AutoScaling                AutoScaling                `json:"auto_scaling,omitempty"`
+	Connection                 Connection                 `json:"connection,omitempty"`
+	DNSAutoScale               DNSAutoScale               `json:"dns_autoscale,omitempty"`
+	FTP                        FTP                        `json:"ftp,omitempty"`
+	HTTP                       HTTP                       `json:"http,omitempty"`
+	KerberosProtocolTransition KerberosProtocolTransition `json:"kerberos_protocol_transition,omitempty"`
+	LoadBalancing              LoadBalancing              `json:"load_balancing,omitempty"`
+	Node                       Node                       `json:"node,omitempty"`
+	SMTP                       SMTP                       `json:"smtp,omitempty"`
+	Ssl                        Ssl                        `json:"ssl,omitempty"`
+	TCP                        TCP                        `json:"tcp,omitempty"`
 }
 
 // Basic - main pool definitions
@@ -93,17 +95,28 @@ type HTTP struct {
 	HTTPKeepAliveNonIdempotent *bool `json:"keepalive_non_idempotent,omitempty"`
 }
 
+// KerberosProtocolTransition - KerberosProtocolTransition settings
+type KerberosProtocolTransition struct {
+	Principal string `json:"principal,omitempty"`
+	Target    string `json:"target,omitempty"`
+}
+
 // LoadBalancing - Pool Load balancing settings
 type LoadBalancing struct {
 	Algorithm       string `json:"algorithm,omitempty"`
 	PriorityEnabled *bool  `json:"priority_enabled,omitempty"`
-	PriorityNodes   uint   `json:"priority_nodes,omitempty"`
+	PriorityNodes   *uint  `json:"priority_nodes,omitempty"`
 }
 
 // Node - Node Specific settings
 type Node struct {
 	CloseOnDeath  *bool `json:"close_on_death,omitempty"`
-	RetryFailTime int   `json:"retry_fail_time,omitempty"`
+	RetryFailTime *uint `json:"retry_fail_time,omitempty"`
+}
+
+// SMTP - SMTP settings
+type SMTP struct {
+	SendSTARTTLS *bool `json:"send_starttls,omitempty"`
 }
 
 // Ssl - SSL related settings
@@ -117,6 +130,12 @@ type Ssl struct {
 	ServerName          *bool    `json:"server_name,omitempty"`
 	SignatureAlgorithms string   `json:"signature_algorithms,omitempty"`
 	SslCiphers          string   `json:"ssl_ciphers,omitempty"`
+	SSLSupportSSL2      string   `json:"ssl_support_ssl2,omitempty"`
+	SSLSupportSSL3      string   `json:"ssl_support_ssl3,omitempty"`
+	SSLSupportTLS1      string   `json:"ssl_support_tls1,omitempty"`
+	SSLSupportTLS1_1    string   `json:"ssl_support_tls1_1,omitempty"`
+	SSLSupportTLS1_2    string   `json:"ssl_support_tls1_2,omitempty"`
+	StrictVerify        *bool    `json:"strict_verify,omitempty"`
 }
 
 // TCP - tcp setting

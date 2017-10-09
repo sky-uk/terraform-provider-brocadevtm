@@ -375,7 +375,20 @@ func resourcePool() *schema.Resource {
 				Optional: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{},
+					Schema: map[string]*schema.Schema{
+						"keepalive": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether or not the pool should maintain HTTP keepalive connections to the nodes",
+						},
+						"keepalive_non_idempotent": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether or not the pool should maintain HTTP keepalive connections to the nodes for non-idempotent requests",
+						},
+					},
 				},
 			},
 			"kerberos_protocol_transition": {
@@ -383,7 +396,18 @@ func resourcePool() *schema.Resource {
 				Optional: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{},
+					Schema: map[string]*schema.Schema{
+						"principal": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Kerberos principle to use when performing Kerberos protocol transition",
+						},
+						"target": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Kerberos principle name",
+						},
+					},
 				},
 			},
 			"load_balancing": {
@@ -391,7 +415,25 @@ func resourcePool() *schema.Resource {
 				Optional: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{},
+					Schema: map[string]*schema.Schema{
+						"algorithm": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Description:  "Load balancing algorithm to use",
+							ValidateFunc: validatePoolLBAlgo,
+						},
+						"priority_enabled": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Whether or not to enable priority lists",
+						},
+						"priority_nodes": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     1,
+							Description: "Minimum number of active highest priority nodes",
+						},
+					},
 				},
 			},
 			"node": {
@@ -399,7 +441,20 @@ func resourcePool() *schema.Resource {
 				Optional: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{},
+					Schema: map[string]*schema.Schema{
+						"close_on_death": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Close all connections to a failed node",
+						},
+						"retry_fail_time": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Default:     60,
+							Description: "Time a traffic manager will wait before retrying a failed node",
+						},
+					},
 				},
 			},
 			"smtp": {
@@ -407,7 +462,14 @@ func resourcePool() *schema.Resource {
 				Optional: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{},
+					Schema: map[string]*schema.Schema{
+						"send_starttls": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Use when encrypting SMTP traffic",
+						},
+					},
 				},
 			},
 			"ssl": {
@@ -415,7 +477,102 @@ func resourcePool() *schema.Resource {
 				Optional: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{},
+					Schema: map[string]*schema.Schema{
+						"client_auth": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether or not a suitable certificate and private key from the SSL client certificates catalog can be used if the node requests authentication",
+						},
+						"common_name_match": {
+							Type:        schema.TypeSet,
+							Optional:    true,
+							Description: "List of names the common name can be matched against",
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"elliptic_curves": {
+							Type:        schema.TypeSet,
+							Optional:    true,
+							Description: "SSL elliptic curver perference list",
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"enable": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether or not the pool should encrypt data before sending it to the node",
+						},
+						"enhance": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Allows for the traffic manager to prefix each new SSL connection with client information",
+						},
+						"send_close_alerts": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether or not to send SSL/TLS closer alert",
+						},
+						"server_name": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether or not to use the TLS 1.0 server_name extension",
+						},
+						"signature_algorithms": {
+							Type:        schema.TypeSet,
+							Optional:    true,
+							Description: "SSL signature algorithm preference list",
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"ssl_ciphers": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "SSL/TLS ciphers to allow for connections to a node",
+						},
+						"ssl_support_ssl2": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Default:      "use_default",
+							Description:  "Whether or not SSLv2 is enabled",
+							ValidateFunc: validateSSLSupportOptions,
+						},
+						"ssl_support_ssl3": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Default:      "use_default",
+							Description:  "Whether or not SSLv3 is enabled",
+							ValidateFunc: validateSSLSupportOptions,
+						},
+						"ssl_support_tls1": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Default:      "use_default",
+							Description:  "Whether or not TLSv1.0 is enabled",
+							ValidateFunc: validateSSLSupportOptions,
+						},
+						"ssl_support_tls1_1": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Default:      "use_default",
+							Description:  "Whether or not TLSv1.1 is enabled",
+							ValidateFunc: validateSSLSupportOptions,
+						},
+						"ssl_support_tls1_2": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Default:      false,
+							Description:  "Whether or not TLSv1.2 is enabled",
+							ValidateFunc: validateSSLSupportOptions,
+						},
+						"strict_verify": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether or not strict certificate verification should be performed",
+						},
+					},
 				},
 			},
 			"tcp": {
@@ -423,7 +580,14 @@ func resourcePool() *schema.Resource {
 				Optional: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{},
+					Schema: map[string]*schema.Schema{
+						"nagle": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether or not Nagle's algorithm should be used for connections to nodes",
+						},
+					},
 				},
 			},
 			"udp": {
@@ -431,71 +595,58 @@ func resourcePool() *schema.Resource {
 				Optional: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{},
+					Schema: map[string]*schema.Schema{
+						"accept_from": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Default:      "dest_only",
+							Description:  "IP addresses and ports from which responses to UDP requests should be accepted",
+							ValidateFunc: validateUDPAcceptFrom,
+						},
+						"accept_from_mask": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Description:  "The CIDR mask which matches IPs we wat to receive responses from",
+							ValidateFunc: validateAcceptFromMask,
+						},
+						"response_timeout": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Description: "Max time a node is permitted to take after receiving a UDP request",
+						},
+					},
 				},
 			},
-
-			/*
-				"max_connection_timeout": {
-					Type:         schema.TypeInt,
-					Optional:     true,
-					ValidateFunc: validatePoolUnsignedInteger,
-					Default:      4,
-				},
-				"max_connections_per_node": {
-					Type:         schema.TypeInt,
-					Optional:     true,
-					ValidateFunc: validatePoolUnsignedInteger,
-				},
-				"max_queue_size": {
-					Type:         schema.TypeInt,
-					Optional:     true,
-					ValidateFunc: validatePoolUnsignedInteger,
-					Default:      0,
-				},
-				"max_reply_time": {
-					Type:         schema.TypeInt,
-					Optional:     true,
-					ValidateFunc: validatePoolUnsignedInteger,
-					Default:      30,
-				},
-				"queue_timeout": {
-					Type:         schema.TypeInt,
-					Optional:     true,
-					ValidateFunc: validatePoolUnsignedInteger,
-					Default:      10,
-				},
-				"http_keepalive": {
-					Type:     schema.TypeBool,
-					Optional: true,
-				},
-				"http_keepalive_non_idempotent": {
-					Type:     schema.TypeBool,
-					Optional: true,
-				},
-				"load_balancing_priority_enabled": {
-					Type:     schema.TypeBool,
-					Optional: true,
-				},
-				"load_balancing_priority_nodes": {
-					Type:         schema.TypeInt,
-					Optional:     true,
-					ValidateFunc: validatePoolUnsignedInteger,
-					Default:      1,
-				},
-				"load_balancing_algorithm": {
-					Type:         schema.TypeString,
-					Optional:     true,
-					ValidateFunc: validatePoolLBAlgo,
-				},
-				"tcp_nagle": {
-					Type:     schema.TypeBool,
-					Optional: true,
-				},
-			*/
 		},
 	}
 
+}
+
+func validateSSLSupportOptions(v interface{}, k string) (ws []string, errors []error) {
+	ssl2Support := v.(string)
+	ssl2SupportOptions := regexp.MustCompile(`^(disabled|enabled|use_default)$`)
+	if !ssl2SupportOptions.MatchString(ssl2Support) {
+		errors = append(errors, fmt.Errorf("%q must be one of disabled, enabled or use_default", k))
+	}
+	return
+}
+
+func validateAcceptFromMask(v interface{}, k string) (ws []string, errors []error) {
+	acceptFromMask := v.(string)
+	acceptFromPattern := regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$`)
+	if !acceptFromPattern.MatchString(acceptFromMask) {
+		errors = append(errors, fmt.Errorf("%q must be in the format xxx.xxx.xxx.xxx/xx e.g. 10.0.0.0/8", k))
+	}
+	return
+}
+
+func validateUDPAcceptFrom(v interface{}, k string) (ws []string, errors []error) {
+	acceptFrom := v.(string)
+	acceptFromOptions := regexp.MustCompile(`^(all|dest_ip_only|dest_only|ip_mask)`)
+	if !acceptFromOptions.MatchString(acceptFrom) {
+		errors = append(errors, fmt.Errorf("%q must be one of all, dest_ip_only, dest_only or ip_mask", k))
+	}
+	return
 }
 
 func validateAutoScalingIPsToUse(v interface{}, k string) (ws []string, errors []error) {
@@ -816,46 +967,6 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 		createPool.Properties.FTP = buildFTP(v)
 	}
 
-	/*
-
-		if v, ok := d.GetOk("max_connection_timeout"); ok {
-			createPool.Properties.Connection.MaxConnectTime = uint(v.(int))
-		}
-		if v, ok := d.GetOk("max_connections_per_node"); ok {
-			createPool.Properties.Connection.MaxConnectionsPerNode = uint(v.(int))
-		}
-		if v, ok := d.GetOk("max_queue_size"); ok {
-			createPool.Properties.Connection.MaxQueueSize = uint(v.(int))
-		}
-		if v, ok := d.GetOk("max_reply_time"); ok {
-			createPool.Properties.Connection.MaxReplyTime = uint(v.(int))
-		}
-		if v, ok := d.GetOk("queue_timeout"); ok {
-			createPool.Properties.Connection.QueueTimeout = uint(v.(int))
-		}
-		if v, _ := d.GetOk("http_keepalive"); v != nil {
-			httpKeepAlive := v.(bool)
-			createPool.Properties.HTTP.HTTPKeepAlive = &httpKeepAlive
-		}
-		if v, _ := d.GetOk("http_keepalive_non_idempotent"); v != nil {
-			httpKeepAliveNonIdempotent := v.(bool)
-			createPool.Properties.HTTP.HTTPKeepAliveNonIdempotent = &httpKeepAliveNonIdempotent
-		}
-		if v, _ := d.GetOk("load_balancing_priority_enabled"); v != nil {
-			loadBalancingPriorityEnabled := v.(bool)
-			createPool.Properties.LoadBalancing.PriorityEnabled = &loadBalancingPriorityEnabled
-		}
-		if v, ok := d.GetOk("load_balancing_priority_nodes"); ok {
-			createPool.Properties.LoadBalancing.PriorityNodes = uint(v.(int))
-		}
-		if v, ok := d.GetOk("load_balancing_algorithm"); ok && v != "" {
-			createPool.Properties.LoadBalancing.Algorithm = v.(string)
-		}
-		if v, _ := d.GetOk("tcp_nagle"); v != nil {
-			tcpNagle := v.(bool)
-			createPool.Properties.TCP.Nagle = &tcpNagle
-		}
-	*/
 	createAPI := pool.NewCreate(poolName, createPool)
 	err := vtmClient.Do(createAPI)
 	if err != nil {
@@ -908,26 +1019,6 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("pool_connection", []pool.Connection{response.Properties.Connection})
 	d.Set("dns_autoscale", []pool.DNSAutoScale{response.Properties.DNSAutoScale})
 	d.Set("ftp", []pool.FTP{response.Properties.FTP})
-
-	/*
-		d.Set("node", response.Properties.Basic.NodesTable)
-		d.Set("monitorlist", response.Properties.Basic.Monitors)
-		d.Set("max_connection_attempts", *response.Properties.Basic.MaxConnectionAttempts)
-		d.Set("max_idle_connections_pernode", response.Properties.Basic.MaxIdleConnectionsPerNode)
-		d.Set("max_timed_out_connection_attempts", response.Properties.Basic.MaxTimeoutConnectionAttempts)
-		d.Set("node_close_with_rst", *response.Properties.Basic.NodeCloseWithReset)
-		d.Set("max_connection_timeout", response.Properties.Connection.MaxConnectTime)
-		d.Set("max_connections_per_node", response.Properties.Connection.MaxConnectionsPerNode)
-		d.Set("max_queue_size", response.Properties.Connection.MaxQueueSize)
-		d.Set("max_reply_time", response.Properties.Connection.MaxReplyTime)
-		d.Set("queue_timeout", response.Properties.Connection.QueueTimeout)
-		d.Set("http_keepalive", *response.Properties.HTTP.HTTPKeepAlive)
-		d.Set("http_keepalive_non_idempotent", *response.Properties.HTTP.HTTPKeepAliveNonIdempotent)
-		d.Set("load_balancing_priority_enabled", *response.Properties.LoadBalancing.PriorityEnabled)
-		d.Set("load_balancing_priority_nodes", response.Properties.LoadBalancing.PriorityNodes)
-		d.Set("load_balancing_algorithm", response.Properties.LoadBalancing.Algorithm)
-		d.Set("tcp_nagle", *response.Properties.TCP.Nagle)
-	*/
 
 	return nil
 }
@@ -1040,83 +1131,6 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 		hasChanges = true
 	}
-
-	/*
-
-
-		if d.HasChange("max_connection_timeout") {
-			if v, ok := d.GetOk("max_connection_timeout"); ok {
-				updatePool.Properties.Connection.MaxConnectTime = uint(v.(int))
-			}
-			hasChanges = true
-		}
-
-		if d.HasChange("max_connections_per_node") {
-			if v, ok := d.GetOk("max_connections_per_node"); ok {
-				updatePool.Properties.Connection.MaxConnectionsPerNode = uint(v.(int))
-			}
-			hasChanges = true
-		}
-
-		if d.HasChange("max_queue_size") {
-			if v, ok := d.GetOk("max_queue_size"); ok {
-				updatePool.Properties.Connection.MaxQueueSize = uint(v.(int))
-			}
-			hasChanges = true
-		}
-
-		if d.HasChange("max_reply_time") {
-			if v, ok := d.GetOk("max_reply_time"); ok {
-				updatePool.Properties.Connection.MaxReplyTime = uint(v.(int))
-			}
-			hasChanges = true
-		}
-
-		if d.HasChange("queue_timeout") {
-			if v, ok := d.GetOk("queue_timeout"); ok {
-				updatePool.Properties.Connection.QueueTimeout = uint(v.(int))
-			}
-			hasChanges = true
-		}
-
-		if d.HasChange("http_keepalive") {
-			httpKeepAlive := d.Get("http_keepalive").(bool)
-			updatePool.Properties.HTTP.HTTPKeepAlive = &httpKeepAlive
-			hasChanges = true
-		}
-
-		if d.HasChange("http_keepalive_non_idempotent") {
-			httpKeepAliveNonIdempotent := d.Get("http_keepalive_non_idempotent").(bool)
-			updatePool.Properties.HTTP.HTTPKeepAliveNonIdempotent = &httpKeepAliveNonIdempotent
-			hasChanges = true
-		}
-
-		if d.HasChange("load_balancing_priority_enabled") {
-			loadBalancingPriorityEnabled := d.Get("load_balancing_priority_enabled").(bool)
-			updatePool.Properties.LoadBalancing.PriorityEnabled = &loadBalancingPriorityEnabled
-			hasChanges = true
-		}
-
-		if d.HasChange("load_balancing_priority_nodes") {
-			if v, ok := d.GetOk("load_balancing_priority_nodes"); ok {
-				updatePool.Properties.LoadBalancing.PriorityNodes = uint(v.(int))
-			}
-			hasChanges = true
-		}
-
-		if d.HasChange("load_balancing_algorithm") {
-			if v, ok := d.GetOk("load_balancing_algorithm"); ok && v != "" {
-				updatePool.Properties.LoadBalancing.Algorithm = v.(string)
-			}
-			hasChanges = true
-		}
-
-		if d.HasChange("tcp_nagle") {
-			tcpNagle := d.Get("tcp_nagle").(bool)
-			updatePool.Properties.TCP.Nagle = &tcpNagle
-			hasChanges = true
-		}
-	*/
 
 	if hasChanges {
 		updatePoolAPI := pool.NewUpdate(poolName, updatePool)
