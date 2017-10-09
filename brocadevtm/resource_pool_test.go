@@ -1,5 +1,6 @@
 package brocadevtm
 
+/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/acctest"
@@ -461,3 +462,4 @@ resource "brocadevtm_pool" "acctest" {
   tcp_nagle = false
 }`, poolName)
 }
+*/

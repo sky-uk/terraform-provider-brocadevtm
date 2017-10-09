@@ -1,5 +1,6 @@
 package brocadevtm
 
+/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/acctest"
@@ -338,3 +339,4 @@ resource "brocadevtm_glb" "acctest" {
 }
 `, glbName)
 }
+*/

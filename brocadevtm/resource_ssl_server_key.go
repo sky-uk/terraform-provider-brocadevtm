@@ -1,5 +1,6 @@
 package brocadevtm
 
+/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -173,3 +174,4 @@ func resourceSSLServerKeyDelete(d *schema.ResourceData, meta interface{}) error 
 	d.SetId("")
 	return nil
 }
+*/
