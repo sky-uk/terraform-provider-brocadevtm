@@ -84,9 +84,6 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	config := make(map[string]interface{})
 
-	//headers := make(map[string]string)
-	//headers["Content-Type"] = "application/json"
-
 	jsonConfig := api.Params{
 		APIVersion: apiVersion,
 		Debug:      clientDebug,
