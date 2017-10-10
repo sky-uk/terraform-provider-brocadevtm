@@ -533,12 +533,6 @@
 			"versionExact": "0.4.5"
 		},
 		{
-			"path": "github.com/sky-uk/go-brocade-vtm/api/monitor",
-			"revision": "0.4.4",
-			"version": "0.4.5",
-			"versionExact": "0.4.5"
-		},
-		{
 			"checksumSHA1": "PRw8hdDiL4iDNer+vWPuXV+PJhs=",
 			"path": "github.com/sky-uk/go-rest-api",
 			"revision": "929a65fe5a3715ef4cfb36298af22a3b871175e8",
