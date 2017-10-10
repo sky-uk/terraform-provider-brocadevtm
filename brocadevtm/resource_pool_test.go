@@ -579,6 +579,48 @@ resource "brocadevtm_pool" "acctest" {
       priority_nodes = 3
     },
   ]
+  node = [
+    {
+      close_on_death = true
+      retry_fail_time = 30
+    },
+  ]
+  smtp = [
+    {
+      send_starttls = true
+    },
+  ]
+  ssl = [
+    {
+       client_auth = true
+       common_name_match = [ "example.com", "another-example.com" ]
+       elliptic_curves = [ "P384", "P256", "P521" ]
+       enable = true
+       enhance = true
+       send_close_alerts = true
+       server_name = true
+       signature_algorithms = "ECDSA_SHA224 DSA_SHA256"
+       ssl_ciphers = "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+       ssl_support_ssl2 = "enabled"
+       ssl_support_ssl3 = "enabled"
+       ssl_support_tls1 = "enabled"
+       ssl_support_tls1_1 = "enabled"
+       ssl_support_tls1_2 = "enabled"
+       strict_verify = true
+    },
+  ]
+  tcp = [
+    {
+      nagle = true
+    },
+  ]
+  udp = [
+    {
+      accept_from = "all"
+      accept_from_mask = "10.0.0.0/8"
+      response_timeout = 0
+    },
+  ]
 }`, poolName)
 }
 
@@ -683,6 +725,48 @@ resource "brocadevtm_pool" "acctest" {
       algorithm = "weighted_round_robin"
       priority_enabled = false
       priority_nodes = 1
+    },
+  ]
+  node = [
+    {
+      close_on_death = false
+      retry_fail_time = 45
+    },
+  ]
+  smtp = [
+    {
+      send_starttls = false
+    },
+  ]
+  ssl = [
+    {
+       client_auth = false
+       common_name_match = [ "another-example.com" ]
+       elliptic_curves = [ "P256", "P521" ]
+       enable = false
+       enhance = false
+       send_close_alerts = false
+       server_name = false
+       signature_algorithms = "RSA_SHA224 ECDSA_SHA224 DSA_SHA256"
+       ssl_ciphers = "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+       ssl_support_ssl2 = "use_default"
+       ssl_support_ssl3 = "use_default"
+       ssl_support_tls1 = "use_default"
+       ssl_support_tls1_1 = "use_default"
+       ssl_support_tls1_2 = "use_default"
+       strict_verify = false
+    },
+  ]
+  tcp = [
+    {
+      nagle = false
+    },
+  ]
+  udp = [
+    {
+      accept_from = "dest_ip_only"
+      accept_from_mask = "192.168.0.1/24"
+      response_timeout = 5
     },
   ]
 }`, poolName)

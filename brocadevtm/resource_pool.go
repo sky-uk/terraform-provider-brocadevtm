@@ -521,10 +521,9 @@ func resourcePool() *schema.Resource {
 							Description: "Whether or not to use the TLS 1.0 server_name extension",
 						},
 						"signature_algorithms": {
-							Type:        schema.TypeSet,
+							Type:        schema.TypeString,
 							Optional:    true,
 							Description: "SSL signature algorithm preference list",
-							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 						"ssl_ciphers": {
 							Type:        schema.TypeString,
@@ -991,10 +990,10 @@ func buildSSL(sslBlock interface{}) pool.Ssl {
 		sslObject.CommonNameMatch = util.BuildStringListFromSet(commonNameMatch.(*schema.Set))
 	}
 	if ellipticCurves, ok := sslItem["elliptic_curves"].(*schema.Set); ok {
-		sslObject.ElipticCurves = util.BuildStringListFromSet(ellipticCurves)
+		sslObject.EllipticCurves = util.BuildStringListFromSet(ellipticCurves)
 	}
 	if enable, ok := sslItem["enable"].(bool); ok {
-		sslObject.Enabled = &enable
+		sslObject.Enable = &enable
 	}
 	if sendCloseAlerts, ok := sslItem["send_close_alerts"].(bool); ok {
 		sslObject.SendCloseAlerts = &sendCloseAlerts

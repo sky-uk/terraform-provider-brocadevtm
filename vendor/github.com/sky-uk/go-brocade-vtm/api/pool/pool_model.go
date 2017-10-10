@@ -124,8 +124,8 @@ type SMTP struct {
 type Ssl struct {
 	ClientAuth          *bool    `json:"client_auth,omitempty"`
 	CommonNameMatch     []string `json:"common_name_match,omitempty"`
-	ElipticCurves       []string `json:"eliptic_curves,omitempty"`
-	Enabled             *bool    `json:"enabled,omitempty"`
+	EllipticCurves       []string `json:"elliptic_curves,omitempty"`
+	Enable              *bool    `json:"enable,omitempty"`
 	Enhance             *bool    `json:"enhance,omitempty"`
 	SendCloseAlerts     *bool    `json:"send_close_alerts,omitempty"`
 	ServerName          *bool    `json:"server_name,omitempty"`
