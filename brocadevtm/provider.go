@@ -1,10 +1,10 @@
 package brocadevtm
 
 import (
-	"fmt"
-	"github.com/hashicorp/terraform/helper/mutexkv"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/sky-uk/go-brocade-vtm/api"
+	"log"
 	"time"
 )
 
@@ -44,63 +44,80 @@ func Provider() terraform.ResourceProvider {
 				DefaultFunc: schema.EnvDefaultFunc("BROCADEVTM_SERVER", nil),
 				Description: "Server to authenticate with BrocadeVTM appliance",
 			},
+			"api_version": &schema.Schema{
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "3.8",
+				Description: "BrocadevTM REST API Server version",
+			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"brocadevtm_dns_zone":           resourceDNSZone(),
-			"brocadevtm_dns_zone_file":      resourceDNSZoneFile(),
-			"brocadevtm_glb":                resourceGLB(),
-			"brocadevtm_location":           resourceLocation(),
-			"brocadevtm_monitor":            resourceMonitor(),
-			"brocadevtm_pool":               resourcePool(),
-			"brocadevtm_rule":               resourceRule(),
-			"brocadevtm_ssl_server_key":     resourceSSLServerKey(),
-			"brocadevtm_traffic_ip_group":   resourceTrafficIPGroup(),
-			"brocadevtm_user_authenticator": resourceUserAuthenticator(),
-			"brocadevtm_user_group":         resourceUserGroup(),
-			"brocadevtm_virtual_server":     resourceVirtualServer(),
+			"brocadevtm_dns_zone": resourceDNSZone(),
+			/*
+				"brocadevtm_dns_zone_file":      resourceDNSZoneFile(),
+				"brocadevtm_glb":                resourceGLB(),
+				"brocadevtm_location":           resourceLocation(),
+				"brocadevtm_monitor":            resourceMonitor(),
+				"brocadevtm_pool":               resourcePool(),
+				"brocadevtm_rule":               resourceRule(),
+				"brocadevtm_ssl_server_key":     resourceSSLServerKey(),
+				"brocadevtm_traffic_ip_group":   resourceTrafficIPGroup(),
+				"brocadevtm_user_authenticator": resourceUserAuthenticator(),
+				"brocadevtm_user_group":         resourceUserGroup(),
+				"brocadevtm_virtual_server":     resourceVirtualServer(),
+			*/
 		},
 		ConfigureFunc: providerConfigure,
 	}
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+
 	clientDebug := d.Get("client_debug").(bool)
 	allowUnverifiedSSL := d.Get("allow_unverified_ssl").(bool)
-
 	vtmUser := d.Get("vtm_user").(string)
-	if vtmUser == "" {
-		return nil, fmt.Errorf("vtm_user must be provided")
-	}
-
 	vtmPassword := d.Get("vtm_password").(string)
-
-	if vtmPassword == "" {
-		return nil, fmt.Errorf("vtm_password must be provided")
-	}
-
 	vtmServer := d.Get("vtm_server").(string)
-
-	if vtmServer == "" {
-		return nil, fmt.Errorf("vtm_server must be provided")
-	}
-
+	apiVersion := d.Get("api_version").(string)
 	var timeout time.Duration = 30
-	headers := make(map[string]string)
-	headers["Content-Type"] = "application/json"
 
-	config := Config{
-		Debug:       clientDebug,
-		Insecure:    allowUnverifiedSSL,
-		VTMUser:     vtmUser,
-		VTMPassword: vtmPassword,
-		VTMServer:   vtmServer,
-		Headers:     headers,
-		Timeout:     timeout,
+	config := make(map[string]interface{})
+
+	jsonConfig := api.Params{
+		APIVersion: apiVersion,
+		Debug:      clientDebug,
+		IgnoreSSL:  allowUnverifiedSSL,
+		Username:   vtmUser,
+		Password:   vtmPassword,
+		Server:     vtmServer,
+		Headers:    map[string]string{"Content-Type": "application/json"},
+		Timeout:    timeout,
 	}
 
-	return config.Client()
-}
+	octetConfig := api.Params{
+		APIVersion: apiVersion,
+		Debug:      clientDebug,
+		IgnoreSSL:  allowUnverifiedSSL,
+		Username:   vtmUser,
+		Password:   vtmPassword,
+		Server:     vtmServer,
+		Headers:    map[string]string{"Content-Type": "application/octet-stream"},
+		Timeout:    timeout,
+	}
 
-// This is a global MutexKV for use within this plugin.
-var vtmMutexKV = mutexkv.NewMutexKV()
+	jsonClient, err := api.Connect(jsonConfig)
+	if err != nil {
+		log.Println("Error connecting to Brocade REST Server: ", err)
+		return nil, err
+	}
+	octetClient, err := api.Connect(octetConfig)
+	if err != nil {
+		log.Println("Error connecting to Brocade REST Server: ", err)
+		return nil, err
+	}
+
+	config["jsonClient"] = jsonClient
+	config["octetClient"] = octetClient
+	return config, nil
+}

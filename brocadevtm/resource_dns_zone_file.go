@@ -1,11 +1,14 @@
 package brocadevtm
 
+/*
+
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api/dns_zone_file"
 	"github.com/sky-uk/go-rest-api"
 	"net/http"
+    "github.com/sky-uk/go-brocade-vtm/api/model/3.8/dns_zone_file"
 )
 
 func resourceDNSZoneFile() *schema.Resource {
@@ -141,3 +144,4 @@ func resourceDNSZoneFileDelete(d *schema.ResourceData, m interface{}) error {
 	d.SetId("")
 	return nil
 }
+*/

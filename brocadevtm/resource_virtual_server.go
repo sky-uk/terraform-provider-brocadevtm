@@ -1,5 +1,6 @@
 package brocadevtm
 
+/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -664,3 +665,4 @@ func resourceVirtualServerDelete(d *schema.ResourceData, m interface{}) error {
 	d.SetId("")
 	return nil
 }
+*/
