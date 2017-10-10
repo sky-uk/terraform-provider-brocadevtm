@@ -119,6 +119,7 @@ func resourceDNSZoneDelete(d *schema.ResourceData, m interface{}) error {
 	client := config["jsonClient"].(*api.Client)
 	dnsZoneName := d.Id()
 
+    client.WorkWithConfigurationResources()
 	err := client.Delete("dns_server/zones", dnsZoneName)
 	if err != nil {
 		d.SetId("")
