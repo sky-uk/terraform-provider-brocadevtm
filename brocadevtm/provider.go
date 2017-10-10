@@ -102,7 +102,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		Username:   vtmUser,
 		Password:   vtmPassword,
 		Server:     vtmServer,
-		Headers:    map[string]string{"Content-Type": "application/json"},
+		Headers:    map[string]string{"Content-Type": "application/octet-stream"},
 		Timeout:    timeout,
 	}
 
