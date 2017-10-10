@@ -477,12 +477,20 @@
 			"revisionTime": "2017-03-21T23:07:31Z"
 		},
 		{
-			"checksumSHA1": "X84dNkBpjLK6n9jsgspCH8/lpe8=",
+			"checksumSHA1": "OHGB66ESfCMQNP1qSTKEGukjVvU=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api",
-			"revision": "7edb94fa5eaeb581cec13b082e023e76f3f3dd1b",
-			"revisionTime": "2017-10-05T09:07:53Z",
-			"version": "0.4.2",
-			"versionExact": "0.4.2"
+			"revision": "da86e240d1db27555e64fbc2e85426079a8328d2",
+			"revisionTime": "2017-10-09T15:43:17Z",
+			"version": "0.4.3",
+			"versionExact": "0.4.3"
+		},
+		{
+			"checksumSHA1": "yMDiOsemumxb4BCdM6nt5pPDqa0=",
+			"path": "github.com/sky-uk/go-brocade-vtm/api/model/3.8/dns_zone",
+			"revision": "da86e240d1db27555e64fbc2e85426079a8328d2",
+			"revisionTime": "2017-10-09T15:43:17Z",
+			"version": "0.4.3",
+			"versionExact": "0.4.3"
 		},
 		{
 			"checksumSHA1": "i+osz/kyJFBOCkb2ij2gAH88Ahw=",

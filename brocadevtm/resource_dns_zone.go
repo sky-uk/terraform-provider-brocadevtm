@@ -1,13 +1,10 @@
 package brocadevtm
 
-/*
-
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm/api/dns_zone"
-	"github.com/sky-uk/go-rest-api"
-	"net/http"
+	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/dns_zone"
 )
 
 func resourceDNSZone() *schema.Resource {
@@ -42,7 +39,8 @@ func resourceDNSZoneCreate(d *schema.ResourceData, m interface{}) error {
 
 	var dnsZoneName string
 	var dnsZoneObject dnsZone.DNSZone
-	vtmClient := m.(*rest.Client)
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
 	if v, ok := d.GetOk("name"); ok && v != "" {
 		dnsZoneName = v.(string)
@@ -54,10 +52,9 @@ func resourceDNSZoneCreate(d *schema.ResourceData, m interface{}) error {
 		dnsZoneObject.Properties.Basic.ZoneFile = v.(string)
 	}
 
-	createAPI := dnsZone.NewCreate(dnsZoneName, dnsZoneObject)
-	err := vtmClient.Do(createAPI)
+	err := client.Set("dns_server/zones", dnsZoneName, dnsZoneObject, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM DNS zone error whilst creating %s: %v", dnsZoneName, createAPI.ErrorObject())
+		return fmt.Errorf("BrocadeVTM DNS zone error whilst creating %s: %v", dnsZoneName, err)
 	}
 
 	d.SetId(dnsZoneName)
@@ -66,20 +63,16 @@ func resourceDNSZoneCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceDNSZoneRead(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 	dnsZoneName := d.Id()
 	var dnsZoneObject dnsZone.DNSZone
 
-	getAPI := dnsZone.NewGet(dnsZoneName)
-	err := vtmClient.Do(getAPI)
-	if getAPI.StatusCode() == http.StatusNotFound {
-		d.SetId("")
-		return nil
-	}
+	err := client.GetByName("dns_server/zones", dnsZoneName, &dnsZoneObject)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM DNS zone error whilst reading %s: %v", dnsZoneName, getAPI.ErrorObject())
+		d.SetId("")
+		return fmt.Errorf("BrocadeVTM DNS zone error whilst reading %s: %v", dnsZoneName, err)
 	}
-	dnsZoneObject = *getAPI.ResponseObject().(*dnsZone.DNSZone)
 	d.SetId(dnsZoneName)
 	d.Set("origin", dnsZoneObject.Properties.Basic.Origin)
 	d.Set("zone_file", dnsZoneObject.Properties.Basic.ZoneFile)
@@ -107,11 +100,11 @@ func resourceDNSZoneUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if hasChanges {
-		vtmClient := m.(*rest.Client)
-		updateAPI := dnsZone.NewUpdate(dnsZoneName, dnsZoneObject)
-		err := vtmClient.Do(updateAPI)
+		config := m.(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
+		err := client.Set("dns_server/zones", dnsZoneName, dnsZoneObject, nil)
 		if err != nil {
-			return fmt.Errorf(fmt.Sprintf("BrocadeVTM DNS zone error whilst updating %s: %v", dnsZoneName, updateAPI.ErrorObject()))
+			return fmt.Errorf("BrocadeVTM DNS zone error whilst updating %s: %v", dnsZoneName, err)
 		}
 	}
 
@@ -120,19 +113,15 @@ func resourceDNSZoneUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceDNSZoneDelete(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 	dnsZoneName := d.Id()
 
-	deleteAPI := dnsZone.NewDelete(dnsZoneName)
-	err := vtmClient.Do(deleteAPI)
-	if deleteAPI.StatusCode() != http.StatusNotFound {
-		d.SetId("")
-		return nil
-	}
+	err := client.Delete("dns_server/zones", dnsZoneName)
 	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("BrocadeVTM DNS zone error whilst deleting %s: %v", dnsZoneName, deleteAPI.ErrorObject()))
+		d.SetId("")
+		return fmt.Errorf("BrocadeVTM DNS zone error whilst deleting %s: %v", dnsZoneName, err)
 	}
 	d.SetId("")
 	return nil
 }
-*/
