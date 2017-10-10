@@ -138,7 +138,7 @@ func validateSocketOptimizations(v interface{}, k string) (ws []string, errors [
 
 func resourceGlobalSettingsCreate(d *schema.ResourceData, m interface{}) error {
 
-    // This resource can't actually be created
+	// This resource can't actually be created
 	globalSettings := make(map[string]interface{})
 	properties := make(map[string]interface{})
 	basic := d.Get("basic").([]interface{})
@@ -193,7 +193,7 @@ func resourceGlobalSettingsUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceGlobalSettingsDelete(d *schema.ResourceData, m interface{}) error {
-    // this resource can't actually be deleted
+	// this resource can't actually be deleted
 	d.SetId("")
 	return nil
 }
