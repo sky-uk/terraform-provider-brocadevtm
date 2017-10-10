@@ -898,6 +898,168 @@ func buildFTP(ftpBlock interface{}) pool.FTP {
 	return ftpObject
 }
 
+func buildHTTP(httpBlock interface{}) pool.HTTP {
+
+	httpObject := pool.HTTP{}
+	httpList := httpBlock.([]interface{})
+	httpItem := httpList[0].(map[string]interface{})
+
+	if keepalive, ok := httpItem["keepalive"].(bool); ok {
+		httpObject.HTTPKeepAlive = &keepalive
+	}
+	if keepaliveNonIdempotent, ok := httpItem["keepalive_non_idempotent"].(bool); ok {
+		httpObject.HTTPKeepAlive = &keepaliveNonIdempotent
+	}
+
+	return httpObject
+}
+
+func buildKerberosProtocolTransition(kerberosBlock interface{}) pool.KerberosProtocolTransition {
+
+	kerberosObject := pool.KerberosProtocolTransition{}
+	kerberosList := kerberosBlock.([]interface{})
+	kerberosItem := kerberosList[0].(map[string]interface{})
+
+	if principle, ok := kerberosItem["principal"].(string); ok {
+		kerberosObject.Principal = principle
+	}
+	if target, ok := kerberosItem["target"].(string); ok {
+		kerberosObject.Target = target
+	}
+
+	return kerberosObject
+}
+
+func buildLoadBalancing(loadBalancingBlock interface{}) pool.LoadBalancing {
+
+	loadBalancingObject := pool.LoadBalancing{}
+	loadBalancingList := loadBalancingBlock.([]interface{})
+	loadBalancingItem := loadBalancingList[0].(map[string]interface{})
+
+	if algorithm, ok := loadBalancingItem["algorithm"].(string); ok {
+		loadBalancingObject.Algorithm = algorithm
+	}
+	if priorityEnabled, ok := loadBalancingItem["priority_enabled"].(bool); ok {
+		loadBalancingObject.PriorityEnabled = &priorityEnabled
+	}
+	if priorityNodes, ok := loadBalancingItem["priority_nodes"].(int); ok {
+		priorityNodesUint := uint(priorityNodes)
+		loadBalancingObject.PriorityNodes = &priorityNodesUint
+	}
+
+	return loadBalancingObject
+}
+
+func buildNode(nodeBlock interface{}) pool.Node {
+
+	nodeObject := pool.Node{}
+	nodeList := nodeBlock.([]interface{})
+	nodeItem := nodeList[0].(map[string]interface{})
+
+	if closeOnDeath, ok := nodeItem["close_on_death"].(bool); ok {
+		nodeObject.CloseOnDeath = &closeOnDeath
+	}
+	if retryFailTime, ok := nodeItem["retry_fail_time"].(int); ok {
+		retryFailTimeUint := uint(retryFailTime)
+		nodeObject.RetryFailTime = &retryFailTimeUint
+	}
+	return nodeObject
+}
+
+func buildSMTP(smtpBlock interface{}) pool.SMTP {
+
+	smtpObject := pool.SMTP{}
+	smtpList := smtpBlock.([]interface{})
+	smtpItem := smtpList[0].(map[string]interface{})
+
+	if sendStartTLS, ok := smtpItem["send_starttls"].(bool); ok {
+		smtpObject.SendSTARTTLS = &sendStartTLS
+	}
+	return smtpObject
+}
+
+func buildSSL(sslBlock interface{}) pool.Ssl {
+
+	sslObject := pool.Ssl{}
+	sslList := sslBlock.([]interface{})
+	sslItem := sslList[0].(map[string]interface{})
+
+	if clientAuth, ok := sslItem["client_auth"].(bool); ok {
+		sslObject.ClientAuth = &clientAuth
+	}
+	if commonNameMatch, ok := sslItem["common_name_match"]; ok {
+		sslObject.CommonNameMatch = util.BuildStringListFromSet(commonNameMatch.(*schema.Set))
+	}
+	if ellipticCurves, ok := sslItem["elliptic_curves"].(*schema.Set); ok {
+		sslObject.ElipticCurves = util.BuildStringListFromSet(ellipticCurves)
+	}
+	if enable, ok := sslItem["enable"].(bool); ok {
+		sslObject.Enabled = &enable
+	}
+	if sendCloseAlerts, ok := sslItem["send_close_alerts"].(bool); ok {
+		sslObject.SendCloseAlerts = &sendCloseAlerts
+	}
+	if serverName, ok := sslItem["server_name"].(bool); ok {
+		sslObject.ServerName = &serverName
+	}
+	if signatureAlgorithms, ok := sslItem["signature_algorithms"].(string); ok {
+		sslObject.SignatureAlgorithms = signatureAlgorithms
+	}
+	if sslCiphers, ok := sslItem["ssl_ciphers"].(string); ok {
+		sslObject.SslCiphers = sslCiphers
+	}
+	if sslSupportSSL2, ok := sslItem["ssl_support_ssl2"].(string); ok {
+		sslObject.SSLSupportSSL2 = sslSupportSSL2
+	}
+	if sslSupportSSL3, ok := sslItem["ssl_support_ssl3"].(string); ok {
+		sslObject.SSLSupportSSL3 = sslSupportSSL3
+	}
+	if sslSupportTLS1, ok := sslItem["ssl_support_tls1"].(string); ok {
+		sslObject.SSLSupportTLS1 = sslSupportTLS1
+	}
+	if sslSupportTLS1_1, ok := sslItem["ssl_support_tls1_1"].(string); ok {
+		sslObject.SSLSupportTLS1_1 = sslSupportTLS1_1
+	}
+	if sslSupportTLS1_2, ok := sslItem["ssl_support_tls1_2"].(string); ok {
+		sslObject.SSLSupportTLS1_2 = sslSupportTLS1_2
+	}
+	if strictVerify, ok := sslItem["strict_verify"].(bool); ok {
+		sslObject.StrictVerify = &strictVerify
+	}
+	return sslObject
+}
+
+func buildTCP(tcpBlock interface{}) pool.TCP {
+
+	tcpObject := pool.TCP{}
+	tcpList := tcpBlock.([]interface{})
+	tcpItem := tcpList[0].(map[string]interface{})
+
+	if nagle, ok := tcpItem["nagle"].(bool); ok {
+		tcpObject.Nagle = &nagle
+	}
+	return tcpObject
+}
+
+func buildUDP(udpBlock interface{}) pool.UDP {
+
+	udpObject := pool.UDP{}
+	udpList := udpBlock.([]interface{})
+	udpItem := udpList[0].(map[string]interface{})
+
+	if acceptFrom, ok := udpItem["accept_from"].(string); ok {
+		udpObject.AcceptFrom = acceptFrom
+	}
+	if acceptFromMask, ok := udpItem["accept_from_mask"].(string); ok {
+		udpObject.AcceptFromMask = acceptFromMask
+	}
+	if responseTimeout, ok := udpItem["response_timeout"].(int); ok {
+		responseTimeoutUint := uint(responseTimeout)
+		udpObject.ResponseTimeout = &responseTimeoutUint
+	}
+	return udpObject
+}
+
 // resourcePoolCreate - Creates a  pool resource object
 func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 
@@ -966,6 +1128,30 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("ftp"); ok {
 		createPool.Properties.FTP = buildFTP(v)
 	}
+	if v, ok := d.GetOk("http"); ok {
+		createPool.Properties.HTTP = buildHTTP(v)
+	}
+	if v, ok := d.GetOk("kerberos_protocol_transition"); ok {
+		createPool.Properties.KerberosProtocolTransition = buildKerberosProtocolTransition(v)
+	}
+	if v, ok := d.GetOk("load_balancing"); ok {
+		createPool.Properties.LoadBalancing = buildLoadBalancing(v)
+	}
+	if v, ok := d.GetOk("node"); ok {
+		createPool.Properties.Node = buildNode(v)
+	}
+	if v, ok := d.GetOk("smtp"); ok {
+		createPool.Properties.SMTP = buildSMTP(v)
+	}
+	if v, ok := d.GetOk("ssl"); ok {
+		createPool.Properties.Ssl = buildSSL(v)
+	}
+	if v, ok := d.GetOk("tcp"); ok {
+		createPool.Properties.TCP = buildTCP(v)
+	}
+	if v, ok := d.GetOk("udp"); ok {
+		createPool.Properties.UDP = buildUDP(v)
+	}
 
 	createAPI := pool.NewCreate(poolName, createPool)
 	err := vtmClient.Do(createAPI)
@@ -1014,12 +1200,18 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("passive_monitoring", response.Properties.Basic.PassiveMonitoring)
 	d.Set("persistence_class", response.Properties.Basic.PersistenceClass)
 	d.Set("transparent", response.Properties.Basic.Transparent)
-
 	d.Set("auto_scaling", []pool.AutoScaling{response.Properties.AutoScaling})
 	d.Set("pool_connection", []pool.Connection{response.Properties.Connection})
 	d.Set("dns_autoscale", []pool.DNSAutoScale{response.Properties.DNSAutoScale})
 	d.Set("ftp", []pool.FTP{response.Properties.FTP})
-
+	d.Set("http", []pool.HTTP{response.Properties.HTTP})
+	d.Set("kerberos_protocol_transition", []pool.KerberosProtocolTransition{response.Properties.KerberosProtocolTransition})
+	d.Set("load_balancing", []pool.LoadBalancing{response.Properties.LoadBalancing})
+	d.Set("node", []pool.Node{response.Properties.Node})
+	d.Set("smtp", []pool.SMTP{response.Properties.SMTP})
+	d.Set("ssl", []pool.Ssl{response.Properties.Ssl})
+	d.Set("tcp", []pool.TCP{response.Properties.TCP})
+	d.Set("udp", []pool.UDP{response.Properties.UDP})
 	return nil
 }
 
@@ -1131,6 +1323,54 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 		hasChanges = true
 	}
+	if d.HasChange("http") {
+		if v, ok := d.GetOk("http"); ok {
+			updatePool.Properties.HTTP = buildHTTP(v)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("kerberos_protocol_transition") {
+		if v, ok := d.GetOk("kerberos_protocol_transition"); ok {
+			updatePool.Properties.KerberosProtocolTransition = buildKerberosProtocolTransition(v)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("load_balancing") {
+		if v, ok := d.GetOk("load_balancing"); ok {
+			updatePool.Properties.LoadBalancing = buildLoadBalancing(v)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("node") {
+		if v, ok := d.GetOk("node"); ok {
+			updatePool.Properties.Node = buildNode(v)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("smtp") {
+		if v, ok := d.GetOk("smtp"); ok {
+			updatePool.Properties.SMTP = buildSMTP(v)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("ssl") {
+		if v, ok := d.GetOk("ssl"); ok {
+			updatePool.Properties.Ssl = buildSSL(v)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("tcp") {
+		if v, ok := d.GetOk("tcp"); ok {
+			updatePool.Properties.TCP = buildTCP(v)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("udp") {
+		if v, ok := d.GetOk("udp"); ok {
+			updatePool.Properties.UDP = buildUDP(v)
+		}
+		hasChanges = true
+	}
 
 	if hasChanges {
 		updatePoolAPI := pool.NewUpdate(poolName, updatePool)
@@ -1142,7 +1382,6 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	return resourcePoolRead(d, m)
-
 }
 
 // resourcePoolDelete - Deletes a pool resource

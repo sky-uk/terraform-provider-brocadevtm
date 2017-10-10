@@ -147,6 +147,16 @@ func TestAccPool_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.port", "8080"),
 					resource.TestCheckResourceAttr(poolResourceName, "ftp.#", "1"),
 					resource.TestCheckResourceAttr(poolResourceName, "ftp.0.support_rfc_2428", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "http.#", "1"),
+					resource.TestCheckResourceAttr(poolResourceName, "http.0.keepalive", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "http.0.keepalive_non_idempotent", "true"),
+					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.#", "1"),
+					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.0.principle", ""),
+					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.0.target", ""),
+					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.#", "1"),
+					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.algorithm", "weighted_least_connections"),
+					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.priority_enabled", "true"),
+					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.priority_nodes", "3"),
 				),
 			},
 			{
@@ -221,6 +231,16 @@ func TestAccPool_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.port", "8090"),
 					resource.TestCheckResourceAttr(poolResourceName, "ftp.#", "1"),
 					resource.TestCheckResourceAttr(poolResourceName, "ftp.0.support_rfc_2428", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "http.#", "1"),
+					resource.TestCheckResourceAttr(poolResourceName, "http.0.keepalive", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "http.0.keepalive_non_idempotent", "false"),
+					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.#", "1"),
+					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.0.principle", ""),
+					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.0.target", ""),
+					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.#", "1"),
+					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.algorithm", "weighted_round_robin"),
+					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.priority_enabled", "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.priority_nodes", "1"),
 				),
 			},
 		},
@@ -538,6 +558,27 @@ resource "brocadevtm_pool" "acctest" {
       support_rfc_2428 = true
     },
   ]
+  http = [
+    {
+      keepalive = true
+      keepalive_non_idempotent = true
+    },
+  ]
+  /*
+  kerberos_protocol_transition = [
+    {
+      principle = ""
+      target = ""
+    },
+  ]
+  */
+  load_balancing = [
+    {
+      algorithm = "weighted_least_connections"
+      priority_enabled = true
+      priority_nodes = 3
+    },
+  ]
 }`, poolName)
 }
 
@@ -621,6 +662,27 @@ resource "brocadevtm_pool" "acctest" {
   ftp = [
     {
       support_rfc_2428 = false
+    },
+  ]
+  http = [
+    {
+      keepalive = false
+      keepalive_non_idempotent = false
+    },
+  ]
+  /*
+  kerberos_protocol_transition = [
+    {
+      principle = ""
+      target = ""
+    },
+  ]
+  */
+  load_balancing = [
+    {
+      algorithm = "weighted_round_robin"
+      priority_enabled = false
+      priority_nodes = 1
     },
   ]
 }`, poolName)

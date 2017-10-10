@@ -20,6 +20,7 @@ type Properties struct {
 	SMTP                       SMTP                       `json:"smtp,omitempty"`
 	Ssl                        Ssl                        `json:"ssl,omitempty"`
 	TCP                        TCP                        `json:"tcp,omitempty"`
+	UDP                        UDP                        `json:"udp,omitempty"`
 }
 
 // Basic - main pool definitions
@@ -141,6 +142,13 @@ type Ssl struct {
 // TCP - tcp setting
 type TCP struct {
 	Nagle *bool `json:"nagle,omitempty"`
+}
+
+// UDP - UDP setting
+type UDP struct {
+	AcceptFrom      string `json:"accept_from,omitempty"`
+	AcceptFromMask  string `json:"accept_from_mask,omitempty"`
+	ResponseTimeout *uint   `json:"response_timeout,omitempty"`
 }
 
 // MemberNode - Pool membership details / node /state / weight
