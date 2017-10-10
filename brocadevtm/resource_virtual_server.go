@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api/virtualserver"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/virtual_server"
 	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"log"
@@ -670,12 +671,12 @@ func resourceVirtualServer() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						//always_flush field is stated to exist in brocade API documentation but does not appear to exist in corresponding API version
 						/*
-						"always_flush": {
-							Type:        schema.TypeBool,
-							Description: "Write log data to disk immediately, rather than buffering data.",
-							Optional:    true,
-							Default:     false,
-						},
+							"always_flush": {
+								Type:        schema.TypeBool,
+								Description: "Write log data to disk immediately, rather than buffering data.",
+								Optional:    true,
+								Default:     false,
+							},
 						*/
 						"client_connection_failures": {
 							Type:        schema.TypeBool,
@@ -1597,8 +1598,8 @@ func assignKerberosProtocolTransitionValues(kptMap map[string]interface{}) (kptS
 
 func assignLogValues(logMap map[string]interface{}) (logStruct virtualserver.Log) {
 	/*
-	alwaysFlush := logMap["always_flush"].(bool)
-	logStruct.AlwaysFlush = &alwaysFlush
+		alwaysFlush := logMap["always_flush"].(bool)
+		logStruct.AlwaysFlush = &alwaysFlush
 	*/
 	clientConnectionFailures := logMap["client_connection_failures"].(bool)
 	logStruct.ClientConnectionFailures = &clientConnectionFailures
