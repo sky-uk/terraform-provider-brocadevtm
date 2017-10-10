@@ -668,12 +668,15 @@ func resourceVirtualServer() *schema.Resource {
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						//always_flush field is stated to exist in brocade API documentation but does not appear to exist in corresponding API version
+						/*
 						"always_flush": {
 							Type:        schema.TypeBool,
 							Description: "Write log data to disk immediately, rather than buffering data.",
 							Optional:    true,
 							Default:     false,
 						},
+						*/
 						"client_connection_failures": {
 							Type:        schema.TypeBool,
 							Description: "Should the virtual server log failures occurring on connections to clients.",
@@ -1126,7 +1129,7 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "Maximum length in bytes of a message sent to the remote syslog. Messages longer than this will be truncated before they are sent.",
 							Optional:     true,
 							Default:      1024,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validateSysLogMsgLenLimit,
 						},
 					},
 				},
@@ -1335,6 +1338,13 @@ func validateMaxBuffer(v interface{}, k string) (ws []string, errors []error) {
 func validateHeaderTableSize(v interface{}, k string) (ws []string, errors []error) {
 	if v.(int) < 4096 || v.(int) > 1048576 {
 		errors = append(errors, fmt.Errorf("header_table_size must be a value within 4096-1048576"))
+	}
+	return
+}
+
+func validateSysLogMsgLenLimit(v interface{}, k string) (ws []string, errors []error) {
+	if v.(int) < 480 || v.(int) > 65535 {
+		errors = append(errors, fmt.Errorf("msg_len_lemit must be a value within 480-65535"))
 	}
 	return
 }
@@ -1586,9 +1596,10 @@ func assignKerberosProtocolTransitionValues(kptMap map[string]interface{}) (kptS
 }
 
 func assignLogValues(logMap map[string]interface{}) (logStruct virtualserver.Log) {
+	/*
 	alwaysFlush := logMap["always_flush"].(bool)
 	logStruct.AlwaysFlush = &alwaysFlush
-
+	*/
 	clientConnectionFailures := logMap["client_connection_failures"].(bool)
 	logStruct.ClientConnectionFailures = &clientConnectionFailures
 
