@@ -1,10 +1,5 @@
 package brocadevtm
 
-import (
-	"fmt"
-	"regexp"
-)
-
 /*
 import (
 	"fmt"

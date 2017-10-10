@@ -1,13 +1,11 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm/api/dns_zone"
-	"github.com/sky-uk/go-rest-api"
+	"github.com/sky-uk/go-brocade-vtm/api"
 	"regexp"
 	"testing"
 )
@@ -56,7 +54,8 @@ func TestAccBrocadeVTMDNSZoneBasic(t *testing.T) {
 
 func testAccBrocadeVTMDNSZoneCheckDestroy(state *terraform.State, name string) error {
 
-	vtmClient := testAccProvider.Meta().(*rest.Client)
+	config := testAccProvider.Meta().(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "brocadevtm_dns_zone" {
@@ -65,13 +64,12 @@ func testAccBrocadeVTMDNSZoneCheckDestroy(state *terraform.State, name string) e
 		if id, ok := rs.Primary.Attributes["id"]; ok && id != "" {
 			return nil
 		}
-		api := dnsZone.NewGetAll()
-		err := vtmClient.Do(api)
+		zones, err := client.GetAllResources("dns_server/zones")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM DNS zone - error occurred whilst retrieving a list of all DNS zones")
+			return fmt.Errorf("Brocade vTM DNS zone - error occurred whilst retrieving a list of all DNS zones: %+v", err)
 		}
-		for _, dnsZone := range api.ResponseObject().(*dnsZone.DNSZones).Children {
-			if dnsZone.Name == name {
+		for _, dnsZone := range zones {
+			if dnsZone["name"] == name {
 				return fmt.Errorf("Brocade vTM DNS zone %s still exists", name)
 			}
 		}
@@ -90,14 +88,14 @@ func testAccBrocadeVTMDNSZoneExists(dnsZoneName, dnsZoneResourceName string) res
 			return fmt.Errorf("\nBrocade vTM DNS zone ID not set for %s in resources", dnsZoneName)
 		}
 
-		vtmClient := testAccProvider.Meta().(*rest.Client)
-		api := dnsZone.NewGetAll()
-		err := vtmClient.Do(api)
+		config := testAccProvider.Meta().(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
+		zones, err := client.GetAllResources("dns_server/zones")
 		if err != nil {
-			return fmt.Errorf("Error: %+v", err)
+			return fmt.Errorf("Error getting all dns zones: %+v", err)
 		}
-		for _, dnsZone := range api.ResponseObject().(*dnsZone.DNSZones).Children {
-			if dnsZone.Name == dnsZoneName {
+		for _, dnsZone := range zones {
+			if dnsZone["name"] == dnsZoneName {
 				return nil
 			}
 		}
@@ -133,4 +131,3 @@ resource "brocadevtm_dns_zone" "acctest" {
 }
 `, name)
 }
-*/

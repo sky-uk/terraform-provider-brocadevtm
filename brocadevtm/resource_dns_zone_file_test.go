@@ -1,7 +1,5 @@
 package brocadevtm
 
-import "fmt"
-
 /*
 import (
 	"fmt"
