@@ -68,6 +68,7 @@ func resourceDNSZoneRead(d *schema.ResourceData, m interface{}) error {
 	dnsZoneName := d.Id()
 	var dnsZoneObject dnsZone.DNSZone
 
+    client.WorkWithConfigurationResources()
 	err := client.GetByName("dns_server/zones", dnsZoneName, &dnsZoneObject)
 	if err != nil {
 		d.SetId("")
@@ -117,6 +118,7 @@ func resourceDNSZoneDelete(d *schema.ResourceData, m interface{}) error {
 	client := config["jsonClient"].(*api.Client)
 	dnsZoneName := d.Id()
 
+    client.WorkWithConfigurationResources()
 	err := client.Delete("dns_server/zones", dnsZoneName)
 	if err != nil {
 		d.SetId("")
