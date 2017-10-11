@@ -2,10 +2,11 @@ package brocadevtm
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_group"
-	"strings"
 )
 
 func resourceUserGroup() *schema.Resource {

@@ -1,11 +1,12 @@
 package brocadevtm
 
 import (
+	"log"
+	"time"
+
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"log"
-	"time"
 )
 
 // Provider is a basic structure that describes a provider: the configuration
@@ -64,8 +65,8 @@ func Provider() terraform.ResourceProvider {
 			//"brocadevtm_rule":               resourceRule(),
 			//"brocadevtm_ssl_server_key":     resourceSSLServerKey(),
 			//"brocadevtm_traffic_ip_group":   resourceTrafficIPGroup(),
-			//"brocadevtm_user_authenticator": resourceUserAuthenticator(),
-			"brocadevtm_user_group": resourceUserGroup(),
+			"brocadevtm_user_authenticator": resourceUserAuthenticator(),
+			"brocadevtm_user_group":         resourceUserGroup(),
 			//"brocadevtm_virtual_server":     resourceVirtualServer(),
 
 		},
