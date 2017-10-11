@@ -84,6 +84,10 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	config := make(map[string]interface{})
 
+	octetHeaders := make(map[string]string)
+	octetHeaders["Content-Type"] = "application/octet-stream"
+	octetHeaders["Content-Transfer-Encoding"] = "text"
+
 	jsonConfig := api.Params{
 		APIVersion: apiVersion,
 		Debug:      clientDebug,
@@ -102,7 +106,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		Username:   vtmUser,
 		Password:   vtmPassword,
 		Server:     vtmServer,
-		Headers:    map[string]string{"Content-Type": "application/octet-stream"},
+		Headers:    octetHeaders,
 		Timeout:    timeout,
 	}
 

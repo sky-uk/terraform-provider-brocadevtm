@@ -1,13 +1,12 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm/api/dns_zone_file"
-	"github.com/sky-uk/go-rest-api"
+	"github.com/sky-uk/go-brocade-vtm/api"
+	"log"
 	"regexp"
 	"testing"
 )
@@ -37,7 +36,7 @@ func TestAccBrocadeVTMDNSZoneFileBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMDNSZoneFileExists(dnsZoneFileName, dnsZoneFileResourceName),
 					resource.TestCheckResourceAttr(dnsZoneFileResourceName, "name", dnsZoneFileName),
-					resource.TestMatchResourceAttr(dnsZoneFileResourceName, "dns_zone_file", regexp.MustCompile(`example-service`)),
+					resource.TestMatchResourceAttr(dnsZoneFileResourceName, "dns_zone_config", regexp.MustCompile(`example-service`)),
 				),
 			},
 			{
@@ -45,8 +44,8 @@ func TestAccBrocadeVTMDNSZoneFileBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMDNSZoneFileExists(dnsZoneFileName, dnsZoneFileResourceName),
 					resource.TestCheckResourceAttr(dnsZoneFileResourceName, "name", dnsZoneFileName),
-					resource.TestMatchResourceAttr(dnsZoneFileResourceName, "dns_zone_file", regexp.MustCompile(``)),
-					resource.TestMatchResourceAttr(dnsZoneFileResourceName, "dns_zone_file", regexp.MustCompile(`updated-example-service`)),
+					resource.TestMatchResourceAttr(dnsZoneFileResourceName, "dns_zone_config", regexp.MustCompile(``)),
+					resource.TestMatchResourceAttr(dnsZoneFileResourceName, "dns_zone_config", regexp.MustCompile(`updated-example-service`)),
 				),
 			},
 		},
@@ -55,52 +54,33 @@ func TestAccBrocadeVTMDNSZoneFileBasic(t *testing.T) {
 
 func testAccBrocadeVTMDNSZoneFileCheckDestroy(state *terraform.State, name string) error {
 
-	vtmClient := testAccProvider.Meta().(*rest.Client)
+	log.Println("Checking DESTROY")
+	config := testAccProvider.Meta().(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
-	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "brocadevtm_dns_zone_file" {
-			continue
-		}
-		if id, ok := rs.Primary.Attributes["id"]; ok && id != "" {
-			return nil
-		}
-		api := dnsZoneFile.NewGetAll()
-		err := vtmClient.Do(api)
-		if err != nil {
-			return fmt.Errorf("Brocade vTM DNS Zone File - error occurred whilst retrieving a list of all DNS zone files")
-		}
-		for _, dnsZoneFile := range api.ResponseObject().(*dnsZoneFile.DNSZoneFiles).Children {
-			if dnsZoneFile.Name == name {
-				return fmt.Errorf("Brocade vTM DNS zone file %s still exists", name)
-			}
-		}
+	client.WorkWithConfigurationResources()
+	zone_config := new([]byte)
+	err := client.GetByName("dns_server/zone_files", name, zone_config)
+	if err != nil {
+		return nil
 	}
-	return nil
+	return fmt.Errorf("Error: resource %s still exists", name)
 }
 
 func testAccBrocadeVTMDNSZoneFileExists(dnsZoneFileName, dnsZoneResourceName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
-		rs, ok := state.RootModule().Resources[dnsZoneResourceName]
-		if !ok {
-			return fmt.Errorf("\nBrocade vTM DNS zone file %s wasn't found in resources", dnsZoneFileName)
-		}
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM DNS zone file ID not set for %s in resources", dnsZoneFileName)
-		}
+		log.Println("Checking EXISTS")
+		config := testAccProvider.Meta().(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
 
-		vtmClient := testAccProvider.Meta().(*rest.Client)
-		api := dnsZoneFile.NewGetAll()
-		err := vtmClient.Do(api)
+		client.WorkWithConfigurationResources()
+		zone_config := new([]byte)
+		err := client.GetByName("dns_server/zone_files", dnsZoneFileName, zone_config)
 		if err != nil {
-			return fmt.Errorf("Error: %+v", err)
+			return fmt.Errorf("Error: resource %s doesn't exists", dnsZoneFileName)
 		}
-		for _, dnsZoneFile := range api.ResponseObject().(*dnsZoneFile.DNSZoneFiles).Children {
-			if dnsZoneFile.Name == dnsZoneFileName {
-				return nil
-			}
-		}
-		return fmt.Errorf("Brocade vTM DNS zone file %s not found on remote vTM", dnsZoneFileName)
+		return nil
 	}
 }
 
@@ -116,7 +96,7 @@ func testAccBrocadeDNSZoneFileCreateTemplate(name string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_dns_zone_file" "acctest" {
   name = "%s"
-  dns_zone_file = <<DNS_ZONE_FILE
+  dns_zone_config = <<DNS_ZONE_CONFIG
 $TTL 3600
 @				30	IN	SOA	ns1.example.com. hostmaster.isp.sky.com. (
 							01	; serial
@@ -130,7 +110,7 @@ example-service			60	IN	A	10.1.0.2
 				60	IN	A	10.1.1.2
 another-example-service		60	IN	A	10.2.0.2
 				60	IN	A	10.2.1.2
-DNS_ZONE_FILE
+DNS_ZONE_CONFIG
 }
 `, name)
 }
@@ -139,7 +119,7 @@ func testAccBrocadeDNSZoneFileUpdateTemplate(name string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_dns_zone_file" "acctest" {
   name = "%s"
-  dns_zone_file = <<DNS_ZONE_FILE
+  dns_zone_config = <<DNS_ZONE_CONFIG
 $TTL 3600
 @ 				30	IN 	SOA 	ns2.example.com. hostmaster.isp.sky.com. (
 							02	; serial
@@ -153,8 +133,7 @@ updated-example-service		30	IN	A	10.110.0.2
 				30	IN	A	10.110.1.2
 another-example-service		30	IN	A	10.120.0.2
 				30	IN	A	10.120.1.2
-DNS_ZONE_FILE
+DNS_ZONE_CONFIG
 }
 `, name)
 }
-*/
