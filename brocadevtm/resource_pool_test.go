@@ -23,12 +23,9 @@ func TestAccPool_Basic(t *testing.T) {
 	sourceIPPattern := regexp.MustCompile(`nodes_table\.[0-9]+\.source_ip`)
 	statePattern := regexp.MustCompile(`nodes_table\.[0-9]+\.state`)
 	weightPattern := regexp.MustCompile(`nodes_table\.[0-9]+\.weight`)
-
 	securityIDPattern := regexp.MustCompile(`auto_scaling\.[0-9]+\.securitygroupids\.[0-9]+`)
 	subnetIDPattern := regexp.MustCompile(`auto_scaling\.[0-9]+\.subnetids\.[0-9]+`)
-
 	dnsAutoScaleHostnamePattern := regexp.MustCompile(`dns_autoscale\.[0-9]+\.hostnames\.[0-9]+`)
-
 	sslCNPattern := regexp.MustCompile(`ssl\.[0-9]+\.common_name_match\.[0-9]+`)
 	sslEllipticCurvesPattern := regexp.MustCompile(`ssl\.[0-9]+\.elliptic_curves\.[0-9]+`)
 
@@ -39,7 +36,7 @@ func TestAccPool_Basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccPoolNodeInvalidAlgo(poolName),
-				//ExpectError: regexp.MustCompile(`must be one of fastest_response_time, least_connections, perceptive, random, round_robin, weighted_least_connections, weighted_round_robin`),
+				ExpectError: regexp.MustCompile(`must be one of fastest_response_time, least_connections, perceptive, random, round_robin, weighted_least_connections, weighted_round_robin`),
 			},
 
 			{
@@ -582,7 +579,6 @@ resource "brocadevtm_pool" "acctest" {
       data_center = "vCentre server"
       enabled = true
       external = true
-      //extraargs = "some extra args"
       hysteresis = 100
       imageid = "image id"
       ips_to_use = "private_ips"
@@ -730,7 +726,6 @@ resource "brocadevtm_pool" "acctest" {
       data_center = "another vCentre server"
       enabled = false
       external = false
-      //extraargs = "some more extra args"
       hysteresis = 200
       imageid = "another image id"
       ips_to_use = "publicips"

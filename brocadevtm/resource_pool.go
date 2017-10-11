@@ -187,13 +187,6 @@ func resourcePool() *schema.Resource {
 							Default:     false,
 							Description: "Whether or not auto-scaling is handled by an external system",
 						},
-						/* extraargs is in doco, but causes errors as it doesn't appear to be in API
-						"extraargs": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "Extra comma separated arguments to send the auto-scaling API",
-						},
-						*/
 						"hysteresis": {
 							Type:        schema.TypeInt,
 							Optional:    true,
@@ -621,6 +614,7 @@ func resourcePool() *schema.Resource {
 
 }
 
+// validateSSLSupportOptions : check the assigned SSL support choice is valid
 func validateSSLSupportOptions(v interface{}, k string) (ws []string, errors []error) {
 	ssl2Support := v.(string)
 	ssl2SupportOptions := regexp.MustCompile(`^(disabled|enabled|use_default)$`)
@@ -630,6 +624,7 @@ func validateSSLSupportOptions(v interface{}, k string) (ws []string, errors []e
 	return
 }
 
+// validateAcceptFromMask : check the assigned accept from mask is valid
 func validateAcceptFromMask(v interface{}, k string) (ws []string, errors []error) {
 	acceptFromMask := v.(string)
 	acceptFromPattern := regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$`)
@@ -639,6 +634,7 @@ func validateAcceptFromMask(v interface{}, k string) (ws []string, errors []erro
 	return
 }
 
+// validateUDPAcceptFrom : checks the assigned UDP accept from choice is valid
 func validateUDPAcceptFrom(v interface{}, k string) (ws []string, errors []error) {
 	acceptFrom := v.(string)
 	acceptFromOptions := regexp.MustCompile(`^(all|dest_ip_only|dest_only|ip_mask)`)
@@ -648,6 +644,7 @@ func validateUDPAcceptFrom(v interface{}, k string) (ws []string, errors []error
 	return
 }
 
+// validateAutoScalingIPsToUse : check the assigned auto scaling IPs to use is a valid choice
 func validateAutoScalingIPsToUse(v interface{}, k string) (ws []string, errors []error) {
 	ipType := v.(string)
 	ipTypeOptions := regexp.MustCompile(`^(publicips|private_ips)`)
@@ -657,6 +654,7 @@ func validateAutoScalingIPsToUse(v interface{}, k string) (ws []string, errors [
 	return
 }
 
+// validateNodeDeleteBehaviour : check the assigned node delete behaviour is a valid choice
 func validateNodeDeleteBehaviour(v interface{}, k string) (ws []string, errors []error) {
 	behaviour := v.(string)
 	behvaiourOptions := regexp.MustCompile(`^(immediate|drain)$`)
@@ -666,6 +664,7 @@ func validateNodeDeleteBehaviour(v interface{}, k string) (ws []string, errors [
 	return
 }
 
+// validatePoolLBAlgo : check the assigned algorithm is a valid choice
 func validatePoolLBAlgo(v interface{}, k string) (ws []string, errors []error) {
 	algo := v.(string)
 	algoOptions := regexp.MustCompile(`^(fastest_response_time|least_connections|perceptive|random|round_robin|weighted_least_connections|weighted_round_robin)$`)
@@ -675,6 +674,7 @@ func validatePoolLBAlgo(v interface{}, k string) (ws []string, errors []error) {
 	return
 }
 
+// validateNode : check a node is given in the correct format
 func validateNode(v interface{}, k string) (ws []string, errors []error) {
 	node := v.(string)
 	validateNode := regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$`)
@@ -684,6 +684,7 @@ func validateNode(v interface{}, k string) (ws []string, errors []error) {
 	return
 }
 
+// validateWeight : check the assigned weight is a valid choice
 func validateWeight(v interface{}, k string) (ws []string, errors []error) {
 	weight := v.(int)
 
@@ -693,6 +694,7 @@ func validateWeight(v interface{}, k string) (ws []string, errors []error) {
 	return
 }
 
+// validateState : check the assigned state is a valid choice
 func validateState(v interface{}, k string) (ws []string, errors []error) {
 	state := v.(string)
 	stateOptions := regexp.MustCompile(`^(active|draining|disabled)$`)
@@ -702,6 +704,18 @@ func validateState(v interface{}, k string) (ws []string, errors []error) {
 	return
 }
 
+// checkStringPrefix : check a string starts with a given prefix
+func checkStringPrefix(prefix string, list []string) error {
+	for _, item := range list {
+		checkFormat := regexp.MustCompile(`^` + prefix)
+		if !checkFormat.MatchString(item) {
+			return fmt.Errorf("one or more items in the list of strings doesn't match the prefix %s", prefix)
+		}
+	}
+	return nil
+}
+
+// buildNodesTable : builds the nodes table
 func buildNodesTable(nodesTable *schema.Set) []pool.MemberNode {
 
 	memberNodes := make([]pool.MemberNode, 0)
@@ -729,16 +743,7 @@ func buildNodesTable(nodesTable *schema.Set) []pool.MemberNode {
 	return memberNodes
 }
 
-func checkStringPrefix(prefix string, list []string) error {
-	for _, item := range list {
-		checkFormat := regexp.MustCompile(`^` + prefix)
-		if !checkFormat.MatchString(item) {
-			return fmt.Errorf("one or more items in the list of strings doesn't match the prefix %s", prefix)
-		}
-	}
-	return nil
-}
-
+// buildAutoScaling : build the auto scaling object
 func buildAutoScaling(autoScalingBlock interface{}) (pool.AutoScaling, error) {
 
 	autoScalingObject := pool.AutoScaling{}
@@ -835,6 +840,7 @@ func buildAutoScaling(autoScalingBlock interface{}) (pool.AutoScaling, error) {
 	return autoScalingObject, nil
 }
 
+// buildConnection : build the connection object
 func buildConnection(connectionBlock interface{}) pool.Connection {
 
 	connectionObject := pool.Connection{}
@@ -865,6 +871,7 @@ func buildConnection(connectionBlock interface{}) pool.Connection {
 	return connectionObject
 }
 
+// buildDNSAutoScale : build the DNS auto scale object
 func buildDNSAutoScale(dnsAutoScaleBlock interface{}) pool.DNSAutoScale {
 
 	dnsAutoScaleObject := pool.DNSAutoScale{}
@@ -881,10 +888,10 @@ func buildDNSAutoScale(dnsAutoScaleBlock interface{}) pool.DNSAutoScale {
 		portUint := uint(port)
 		dnsAutoScaleObject.Port = &portUint
 	}
-
 	return dnsAutoScaleObject
 }
 
+// buildFTP : build the FTP object
 func buildFTP(ftpBlock interface{}) pool.FTP {
 
 	ftpObject := pool.FTP{}
@@ -897,6 +904,7 @@ func buildFTP(ftpBlock interface{}) pool.FTP {
 	return ftpObject
 }
 
+// buildHTTP : build the HTTP object
 func buildHTTP(httpBlock interface{}) pool.HTTP {
 
 	httpObject := pool.HTTP{}
@@ -909,10 +917,10 @@ func buildHTTP(httpBlock interface{}) pool.HTTP {
 	if keepaliveNonIdempotent, ok := httpItem["keepalive_non_idempotent"].(bool); ok {
 		httpObject.HTTPKeepAlive = &keepaliveNonIdempotent
 	}
-
 	return httpObject
 }
 
+// buildKerberosProtocolTransition : build the kerberos protocol transitition object
 func buildKerberosProtocolTransition(kerberosBlock interface{}) pool.KerberosProtocolTransition {
 
 	kerberosObject := pool.KerberosProtocolTransition{}
@@ -925,10 +933,10 @@ func buildKerberosProtocolTransition(kerberosBlock interface{}) pool.KerberosPro
 	if target, ok := kerberosItem["target"].(string); ok {
 		kerberosObject.Target = target
 	}
-
 	return kerberosObject
 }
 
+// buildLoadBalancing : build the load balancing object
 func buildLoadBalancing(loadBalancingBlock interface{}) pool.LoadBalancing {
 
 	loadBalancingObject := pool.LoadBalancing{}
@@ -945,10 +953,10 @@ func buildLoadBalancing(loadBalancingBlock interface{}) pool.LoadBalancing {
 		priorityNodesUint := uint(priorityNodes)
 		loadBalancingObject.PriorityNodes = &priorityNodesUint
 	}
-
 	return loadBalancingObject
 }
 
+// buildNode : build the Node object
 func buildNode(nodeBlock interface{}) pool.Node {
 
 	nodeObject := pool.Node{}
@@ -965,6 +973,7 @@ func buildNode(nodeBlock interface{}) pool.Node {
 	return nodeObject
 }
 
+// buildSMTP : build the SMTP object
 func buildSMTP(smtpBlock interface{}) pool.SMTP {
 
 	smtpObject := pool.SMTP{}
@@ -977,6 +986,7 @@ func buildSMTP(smtpBlock interface{}) pool.SMTP {
 	return smtpObject
 }
 
+// buildSSL : build the SSL object
 func buildSSL(sslBlock interface{}) pool.Ssl {
 
 	sslObject := pool.Ssl{}
@@ -1028,6 +1038,7 @@ func buildSSL(sslBlock interface{}) pool.Ssl {
 	return sslObject
 }
 
+// buildTCP : build the TCP object
 func buildTCP(tcpBlock interface{}) pool.TCP {
 
 	tcpObject := pool.TCP{}
@@ -1040,6 +1051,7 @@ func buildTCP(tcpBlock interface{}) pool.TCP {
 	return tcpObject
 }
 
+// buildUDP : build the UDP object
 func buildUDP(udpBlock interface{}) pool.UDP {
 
 	udpObject := pool.UDP{}
