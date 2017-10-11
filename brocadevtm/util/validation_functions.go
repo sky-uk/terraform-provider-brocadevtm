@@ -20,7 +20,7 @@ func ValidateIP(v interface{}, k string) (ws []string, errors []error) {
 	validateIP := regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]$`)
 	if !validateIP.MatchString(ip) {
 		errors = append(errors, fmt.Errorf("%q must be a valid IP. i.e 10.0.0.1", k))
-    }
+	}
 	return
 }
 
