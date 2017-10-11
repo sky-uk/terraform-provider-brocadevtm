@@ -5,9 +5,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_authenticator"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_group"
-	"github.com/sky-uk/go-rest-api"
-	"net/http"
 	"strings"
 )
 

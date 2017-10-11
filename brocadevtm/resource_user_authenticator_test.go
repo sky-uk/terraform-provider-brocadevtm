@@ -2,14 +2,11 @@ package brocadevtm
 
 import (
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_authenticator"
-	"github.com/sky-uk/go-rest-api"
-	"net/http"
 	"regexp"
 	"testing"
 )
