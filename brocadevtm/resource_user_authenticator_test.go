@@ -158,7 +158,7 @@ func testAccBrocadeVTMUserAuthenticatorCheckDestroy(state *terraform.State, name
 		if id, ok := rs.Primary.Attributes["id"]; ok && id == "" {
 			return nil
 		}
-		authenticators,err := client.GetAllResources("user_authenticators")
+		authenticators, err := client.GetAllResources("user_authenticators")
 		if err != nil {
 			return fmt.Errorf("Error getting all User Authenticators: %+v", err)
 		}
@@ -182,7 +182,7 @@ func testAccBrocadeVTMUserAuthenticatorExists(name, resourceName string) resourc
 		}
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
-		authenticators,err := client.GetAllResources("user_authenticators")
+		authenticators, err := client.GetAllResources("user_authenticators")
 		if err != nil {
 			return fmt.Errorf("Error getting all User Authenticators: %+v", err)
 		}
