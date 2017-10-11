@@ -2,11 +2,10 @@ package brocadevtm
 
 import (
 	"fmt"
-	"log"
-
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
+	"log"
 )
 
 func resourceGlobalSettings() *schema.Resource {
