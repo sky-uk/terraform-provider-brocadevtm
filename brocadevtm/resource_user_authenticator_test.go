@@ -1,12 +1,13 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm/api/user_authenticators"
+	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_authenticator"
 	"github.com/sky-uk/go-rest-api"
 	"net/http"
 	"regexp"
@@ -150,7 +151,10 @@ func TestAccBrocadeVTMUserAuthenticatorBasic(t *testing.T) {
 }
 
 func testAccBrocadeVTMUserAuthenticatorCheckDestroy(state *terraform.State, name string) error {
-	vtmClient := testAccProvider.Meta().(*rest.Client)
+	config := testAccProvider.Meta().(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+	var userAuthenticatorObject userAuthenticator.UserAuthenticator
+
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "infoblox_user_authenticator" {
 			continue
@@ -158,13 +162,10 @@ func testAccBrocadeVTMUserAuthenticatorCheckDestroy(state *terraform.State, name
 		if id, ok := rs.Primary.Attributes["id"]; ok && id == "" {
 			return nil
 		}
-		api := userauthenticators.NewGet(name)
-		err := vtmClient.Do(api)
+		err := client.GetByName("user_authenticators", name, &userAuthenticatorObject)
+
 		if err != nil {
 			return fmt.Errorf("Error: Brocade vTM error occurred while retrieving User Authenticator: %v", err)
-		}
-		if api.StatusCode() == http.StatusOK {
-			return fmt.Errorf("Error: Brocade vTM User Authenticator %s still exists", name)
 		}
 	}
 	return nil
@@ -174,21 +175,19 @@ func testAccBrocadeVTMUserAuthenticatorExists(name, resourceName string) resourc
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM User Group %s wasn't found in resources", name)
+			return fmt.Errorf("\nBrocade vTM User Authenticator %s wasn't found in resources", name)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM User Group ID not set for %s in resources", name)
+			return fmt.Errorf("\nBrocade vTM User Authenticator ID not set for %s in resources", name)
 		}
-		vtmClient := testAccProvider.Meta().(*rest.Client)
-		api := userauthenticators.NewGet(name)
-		err := vtmClient.Do(api)
+		config := testAccProvider.Meta().(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
+		var userAuthenticatorObject userAuthenticator.UserAuthenticator
+		err := client.GetByName("user_authenticators", name, &userAuthenticatorObject)
 		if err != nil {
-			return fmt.Errorf("Brocade vTM User Group - error while retrieving User Group: %v", err)
+			return fmt.Errorf("Brocade vTM User Authenticator - error while retrieving User Authenticator: %v", err)
 		}
-		if api.StatusCode() == http.StatusOK {
-			return nil
-		}
-		return fmt.Errorf("Brocade vTM User Group %s not found on remote vTM", name)
+		return nil
 	}
 }
 
@@ -470,4 +469,3 @@ func testAccBrocadeUserAuthenticatorTooManyRadius() string {
        }
 `)
 }
-*/
