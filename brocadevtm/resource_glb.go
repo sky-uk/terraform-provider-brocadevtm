@@ -324,33 +324,33 @@ func resourceGLBRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 	client.WorkWithConfigurationResources()
-	var glb glb.GLB
+	var glbObject glb.GLB
 
-	err := client.GetByName("glb_services", d.Id(), &glb)
+	err := client.GetByName("glb_services", d.Id(), &glbObject)
 
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM GLB error whilst retrieving %s: %v", d.Id(), err)
 	}
 
-	d.Set("algorithm", glb.Properties.Basic.Algorithm)
-	d.Set("all_monitors_needed", glb.Properties.Basic.AllMonitorsNeeded)
-	d.Set("auto_recovery", glb.Properties.Basic.AutoRecovery)
-	d.Set("chained_auto_failback", glb.Properties.Basic.ChainedAutoFailback)
-	d.Set("disable_on_failure", glb.Properties.Basic.DisableOnFailure)
-	d.Set("enabled", glb.Properties.Basic.Enabled)
-	d.Set("return_ips_on_fail", glb.Properties.Basic.ReturnIPSOnFail)
-	d.Set("ttl", glb.Properties.Basic.TTL)
-	d.Set("geo_effect", glb.Properties.Basic.GeoEffect)
-	d.Set("chained_location_order", glb.Properties.Basic.ChainedLocationOrder)
-	d.Set("rules", glb.Properties.Basic.Rules)
-	d.Set("domains", glb.Properties.Basic.Domains)
-	d.Set("last_resort_response", glb.Properties.Basic.LastResortResponse)
-	d.Set("location_draining", glb.Properties.Basic.LocationDraining)
-	d.Set("location_settings", glb.Properties.Basic.LocationSettings)
-	d.Set("dns_sec_keys", glb.Properties.Basic.DNSSecKeys)
-	d.Set("logging_enabled", glb.Properties.Log.Enabled)
-	d.Set("log_file_name", glb.Properties.Log.Filename)
-	d.Set("log_format", glb.Properties.Log.Format)
+	d.Set("algorithm", glbObject.Properties.Basic.Algorithm)
+	d.Set("all_monitors_needed", glbObject.Properties.Basic.AllMonitorsNeeded)
+	d.Set("auto_recovery", glbObject.Properties.Basic.AutoRecovery)
+	d.Set("chained_auto_failback", glbObject.Properties.Basic.ChainedAutoFailback)
+	d.Set("disable_on_failure", glbObject.Properties.Basic.DisableOnFailure)
+	d.Set("enabled", glbObject.Properties.Basic.Enabled)
+	d.Set("return_ips_on_fail", glbObject.Properties.Basic.ReturnIPSOnFail)
+	d.Set("ttl", glbObject.Properties.Basic.TTL)
+	d.Set("geo_effect", glbObject.Properties.Basic.GeoEffect)
+	d.Set("chained_location_order", glbObject.Properties.Basic.ChainedLocationOrder)
+	d.Set("rules", glbObject.Properties.Basic.Rules)
+	d.Set("domains", glbObject.Properties.Basic.Domains)
+	d.Set("last_resort_response", glbObject.Properties.Basic.LastResortResponse)
+	d.Set("location_draining", glbObject.Properties.Basic.LocationDraining)
+	d.Set("location_settings", glbObject.Properties.Basic.LocationSettings)
+	d.Set("dns_sec_keys", glbObject.Properties.Basic.DNSSecKeys)
+	d.Set("logging_enabled", glbObject.Properties.Log.Enabled)
+	d.Set("log_file_name", glbObject.Properties.Log.Filename)
+	d.Set("log_format", glbObject.Properties.Log.Format)
 
 	return nil
 }
@@ -467,7 +467,7 @@ func resourceGLBUpdate(d *schema.ResourceData, m interface{}) error {
 	if hasChanges {
 		config := m.(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
-		err := client.Set("glb_services", d.Id(), &updateGLB, nil)
+		err := client.Set("glb_services",name, &updateGLB, nil)
 		if err != nil {
 			return fmt.Errorf("BrocadeVTM GLB error whilst updating %s: %v", name, err)
 		}
