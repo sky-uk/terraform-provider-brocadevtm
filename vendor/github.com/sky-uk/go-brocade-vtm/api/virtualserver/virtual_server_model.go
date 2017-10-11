@@ -249,7 +249,7 @@ type Ssl struct {
 type SysLog struct {
 	Enabled     *bool  `json:"enabled,omitempty"`
 	Format      string `json:"format,omitempty"`
-	IPEndpoint  string `json:"ip_endpoint,omitempty"`
+	IPEndpoint  string `json:"ip_end_point,omitempty"`
 	MsgLenLimit *uint  `json:"msg_len_limit,omitempty"`
 }
 
