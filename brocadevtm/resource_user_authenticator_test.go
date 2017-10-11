@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_authenticator"
 	"regexp"
 	"testing"
 )
