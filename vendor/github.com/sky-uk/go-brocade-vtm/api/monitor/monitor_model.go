@@ -18,16 +18,19 @@ type Properties struct {
 
 // Basic : Basic monitor configration
 type Basic struct {
-	Delay    uint   `json:"delay,omitempty"`
-	Failures uint   `json:"failures,omitempty"`
-	Type     string `json:"type,omitempty"`
-	Timeout  uint   `json:"timeout,omitempty"`
-	UseSSL   *bool  `json:"use_ssl,omitempty"`
-	Verbose  *bool  `json:"verbose,omitempty"`
-	BackOff  *bool  `json:"back_off,omitempty"`
-	Machine  string `json:"machine,omitempty"`
-	Note     string `json:"note,omitempty"`
-	Scope    string `json:"scope,omitempty"`
+	Delay        uint     `json:"delay,omitempty"`
+	Failures     uint     `json:"failures,omitempty"`
+	Type         string   `json:"type,omitempty"`
+	Timeout      uint     `json:"timeout,omitempty"`
+	UseSSL       *bool    `json:"use_ssl,omitempty"`
+	Verbose      *bool    `json:"verbose,omitempty"`
+	BackOff      *bool    `json:"back_off,omitempty"`
+	Machine      string   `json:"machine,omitempty"`
+	Note         string   `json:"note,omitempty"`
+	Scope        string   `json:"scope,omitempty"`
+	CanEditSSL   bool     `json:"can_edit_ssl"`
+	CanUseSSL    bool     `json:"can_use_ssl"`
+	EditableKeys []string `json:"editable_keys,omitempty"`
 }
 
 // HTTP : HTTP monitor set up
