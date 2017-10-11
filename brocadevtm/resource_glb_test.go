@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/glb"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 )
 
@@ -149,10 +148,9 @@ func TestAccBrocadeVTMGLBBasic(t *testing.T) {
 	})
 }
 
-func testAccBrocadeVTMGLBCheckDestroy(state *terraform.State, name string) error {
+func testAccBrocadeVTMGLBCheckDestroy(state *terraform.State, glbName string) error {
 	config := testAccProvider.Meta().(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	var glbObject glb.GLB
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "brocadevtm_glb" {
@@ -161,10 +159,14 @@ func testAccBrocadeVTMGLBCheckDestroy(state *terraform.State, name string) error
 		if id, ok := rs.Primary.Attributes["id"]; ok && id == "" {
 			return nil
 		}
-		err := client.GetByName("glb_services", name, &glbObject)
-
+		glbServices, err := client.GetAllResources("glb_services")
 		if err != nil {
-			return fmt.Errorf("Error: Brocade vTM error occurred while retrieving GLB: %v", err)
+			return fmt.Errorf("Brocade vTM GLB - error while retrieving GLB: %v", err)
+		}
+		for _, glb := range glbServices {
+			if glb["name"] == glbName {
+				return fmt.Errorf("Brocade vTM GLB %s still exists", glbName)
+			}
 		}
 	}
 	return nil
@@ -181,10 +183,14 @@ func testAccBrocadeVTMGLBExists(glbName, glbResourceName string) resource.TestCh
 		}
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
-		var glbObject glb.GLB
-		err := client.GetByName("glb_services", glbName, &glbObject)
+		glbServices, err := client.GetAllResources("glb_services")
 		if err != nil {
 			return fmt.Errorf("Brocade vTM GLB - error while retrieving GLB: %v", err)
+		}
+		for _, glb := range glbServices {
+			if glb["name"] == glbName {
+				return nil
+			}
 		}
 		return nil
 	}
