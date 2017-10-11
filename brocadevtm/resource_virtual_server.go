@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api/virtualserver"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/virtual_server"
 	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"log"
