@@ -1,12 +1,10 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm/api/user_groups"
-	"github.com/sky-uk/go-rest-api"
-	"net/http"
+	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_group"
 	"strings"
 )
 
@@ -71,11 +69,11 @@ func ValidateAccessLevel(v interface{}, k string) (ws []string, errors []error) 
 	return
 }
 
-func buildPermissionsObject(permissions *schema.Set) []usergroups.Permission {
-	permissionValues := []usergroups.Permission{}
+func buildPermissionsObject(permissions *schema.Set) []userGroup.Permission {
+	permissionValues := []userGroup.Permission{}
 	for _, permission := range permissions.List() {
 		permissionObject := permission.(map[string]interface{})
-		newPermission := usergroups.Permission{}
+		newPermission := userGroup.Permission{}
 		if conigurationElement, ok := permissionObject["name"].(string); ok {
 			newPermission.Name = conigurationElement
 		}
@@ -88,14 +86,10 @@ func buildPermissionsObject(permissions *schema.Set) []usergroups.Permission {
 }
 
 func resourceUserGroupCreate(d *schema.ResourceData, m interface{}) error {
-	var userGroup usergroups.UserGroup
-	headers := make(map[string]string)
+	var userGroup userGroup.UserGroup
 
-	client := m.(*rest.Client)
-	vtmClient := *client
-	headers["Content-Type"] = "application/json"
-	vtmClient.Headers = headers
-	vtmClient.Debug = true
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
 	userGroupName := d.Get("name").(string)
 
@@ -115,8 +109,7 @@ func resourceUserGroupCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	createAPI := usergroups.NewPut(userGroupName, userGroup)
-	err := vtmClient.Do(createAPI)
+	err := client.Set("user_groups", userGroupName, &userGroup, nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM User Group error whilst creating %s: %v", userGroupName, err)
 	}
@@ -127,33 +120,27 @@ func resourceUserGroupCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceUserGroupRead(d *schema.ResourceData, m interface{}) error {
-	client := m.(*rest.Client)
-	vtmClient := *client
-	headers := make(map[string]string)
-	headers["Content-Type"] = "application/json"
-	vtmClient.Headers = headers
-	readAPI := usergroups.NewGet(d.Id())
-	err := vtmClient.Do(readAPI)
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+	client.WorkWithConfigurationResources()
+	var userGroupObject userGroup.UserGroup
+
+	err := client.GetByName("user_groups", d.Id(), &userGroupObject)
 	if err != nil {
-		if readAPI.StatusCode() == http.StatusNotFound {
-			d.SetId("")
-			return nil
-		}
+		d.SetId("")
 		return fmt.Errorf("BrocadeVTM User Group error whilst retrieving %s: %v", d.Id(), err)
 	}
 
-	returnedUserGroup := readAPI.ResponseObject().(*usergroups.UserGroup)
-
-	d.Set("description", returnedUserGroup.Properties.Basic.Description)
-	d.Set("password_expire_time", returnedUserGroup.Properties.Basic.PasswordExpireTime)
-	d.Set("timeout", returnedUserGroup.Properties.Basic.Timeout)
-	d.Set("permissions", returnedUserGroup.Properties.Basic.Permissions)
+	d.Set("description", userGroupObject.Properties.Basic.Description)
+	d.Set("password_expire_time", userGroupObject.Properties.Basic.PasswordExpireTime)
+	d.Set("timeout", userGroupObject.Properties.Basic.Timeout)
+	d.Set("permissions", userGroupObject.Properties.Basic.Permissions)
 
 	return nil
 }
 
 func resourceUserGroupUpdate(d *schema.ResourceData, m interface{}) error {
-	var updatedUserGroup usergroups.UserGroup
+	var updatedUserGroup userGroup.UserGroup
 	hasChanges := false
 
 	if d.HasChange("description") {
@@ -173,31 +160,26 @@ func resourceUserGroupUpdate(d *schema.ResourceData, m interface{}) error {
 		hasChanges = true
 	}
 	if hasChanges {
-		headers := make(map[string]string)
-		client := m.(*rest.Client)
-		vtmClient := *client
-		headers["Content-Type"] = "application/json"
-		vtmClient.Headers = headers
-
-		updateAPI := usergroups.NewPut(d.Id(), updatedUserGroup)
-		err := vtmClient.Do(updateAPI)
-
+		config := m.(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
+		err := client.Set("user_groups", d.Id(), updatedUserGroup, nil)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM User Group error whilst updating %s: %vv", d.Id(), err)
+			return fmt.Errorf("BrocadeVTM User Group error whilst updating %s: %v", d.Id(), err)
 		}
-		return resourceUserGroupRead(d, m)
 	}
-	return nil
+	return resourceUserGroupRead(d, m)
 }
 
 func resourceUserGroupDelete(d *schema.ResourceData, m interface{}) error {
-	vtmClient := m.(*rest.Client)
-	deleteAPI := usergroups.NewDelete(d.Id())
-	err := vtmClient.Do(deleteAPI)
-	if err != nil && deleteAPI.StatusCode() != http.StatusNotFound {
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+	client.WorkWithConfigurationResources()
+	err := client.Delete("user_groups", d.Id())
+	if err != nil {
+		d.SetId("")
 		return fmt.Errorf("BrocadeVTM User Group error whilst deleting %s: %v", d.Id(), err)
 	}
+
 	d.SetId("")
 	return nil
 }
-*/
