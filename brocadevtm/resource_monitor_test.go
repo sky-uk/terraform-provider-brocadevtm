@@ -1,13 +1,11 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm/api/monitor"
-	"github.com/sky-uk/go-rest-api"
+	"github.com/sky-uk/go-brocade-vtm/api"
 	"regexp"
 	"testing"
 )
@@ -93,7 +91,8 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 
 func testAccBrocadeVTMMonitorCheckDestroy(state *terraform.State, name string) error {
 
-	vtmClient := testAccProvider.Meta().(*rest.Client)
+	config := testAccProvider.Meta().(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "brocadevtm_monitor" {
@@ -103,13 +102,13 @@ func testAccBrocadeVTMMonitorCheckDestroy(state *terraform.State, name string) e
 			return nil
 		}
 
-		api := monitor.NewGetAll()
-		err := vtmClient.Do(api)
+		monitors, err := client.GetAllResources("monitors")
+
 		if err != nil {
-			return nil
+			return fmt.Errorf("Brocade vTM Monitor - error occurred whilst retrieving a list of all monitors: %+v", err)
 		}
-		for _, monitorChild := range api.ResponseObject().(*monitor.MonitorsList).Children {
-			if monitorChild.Name == name {
+		for _, monitorChild := range monitors {
+			if monitorChild["name"] == name {
 				return fmt.Errorf("Brocade vTM monitor %s still exists", name)
 			}
 		}
@@ -128,15 +127,16 @@ func testAccBrocadeVTMMonitorExists(monitorName, monitorResourceName string) res
 			return fmt.Errorf("\nBrocade vTM Monitor ID not set in resources")
 		}
 
-		vtmClient := testAccProvider.Meta().(*rest.Client)
-		getAllAPI := monitor.NewGetAll()
+		config := testAccProvider.Meta().(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
+		monitors, err := client.GetAllResources("dns_server/zones")
 
-		err := vtmClient.Do(getAllAPI)
 		if err != nil {
-			return fmt.Errorf("Error: %+v", err)
+			//return fmt.Errorf("Error: %+v", err)
+			return fmt.Errorf("Error getting all monitors: %+v", err)
 		}
-		for _, monitorChild := range getAllAPI.ResponseObject().(*monitor.MonitorsList).Children {
-			if monitorChild.Name == monitorName {
+		for _, monitorChild := range monitors {
+			if monitorChild["name"] == monitorName {
 				return nil
 			}
 		}
@@ -220,4 +220,3 @@ resource "brocadevtm_monitor" "acctest" {
 }
 `)
 }
-*/

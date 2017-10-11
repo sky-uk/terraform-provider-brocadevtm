@@ -1,12 +1,10 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm/api/monitor"
-	"github.com/sky-uk/go-rest-api"
-	"net/http"
+	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/monitor"
 )
 
 func resourceMonitor() *schema.Resource {
@@ -173,9 +171,10 @@ func validateMonitorUnsignedInteger(v interface{}, k string) (ws []string, error
 
 func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
 	var createMonitor monitor.Monitor
 	var name string
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
 	if v, ok := d.GetOk("name"); ok {
 		name = v.(string)
@@ -274,9 +273,9 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 		monitorAcceptAll := v.(bool)
 		createMonitor.Properties.UDP.AcceptAll = &monitorAcceptAll
 	}
-	createAPI := monitor.NewCreate(name, createMonitor)
 
-	err := vtmClient.Do(createAPI)
+	err := client.Set("monitors", name, createMonitor, nil)
+
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Monitor error whilst creating %s: %v", name, err)
 	}
@@ -288,60 +287,60 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
-	var readName string
+	var readMonitor monitor.Monitor
+	var name string
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
 	if v, ok := d.GetOk("name"); ok {
-		readName = v.(string)
+		name = v.(string)
 	}
 
-	getSingleMonitorAPI := monitor.NewGet(readName)
-	err := vtmClient.Do(getSingleMonitorAPI)
+	client.WorkWithConfigurationResources()
+	err := client.GetByName("monitors", name, &readMonitor)
+
 	if err != nil {
-		if getSingleMonitorAPI.StatusCode() == http.StatusNotFound {
-			d.SetId("")
-			return nil
-		}
-		return fmt.Errorf("BrocadeVTM Monitor error whilst retrieving %s: %v", readName, err)
+		d.SetId("")
+		return fmt.Errorf("BrocadeVTM Monitor error whilst retrieving %s: %v", name, err)
 	}
 
-	getMonitorProperties := getSingleMonitorAPI.ResponseObject().(*monitor.Monitor)
-	d.Set("name", readName)
-	d.Set("delay", getMonitorProperties.Properties.Basic.Delay)
-	d.Set("timeout", getMonitorProperties.Properties.Basic.Timeout)
-	d.Set("failures", getMonitorProperties.Properties.Basic.Failures)
-	d.Set("verbose", getMonitorProperties.Properties.Basic.Verbose)
-	d.Set("use_ssl", getMonitorProperties.Properties.Basic.UseSSL)
-	d.Set("http_host_header", getMonitorProperties.Properties.HTTP.HostHeader)
-	d.Set("http_path", getMonitorProperties.Properties.HTTP.URIPath)
-	d.Set("http_authentication", getMonitorProperties.Properties.HTTP.Authentication)
-	d.Set("http_body_regex", getMonitorProperties.Properties.HTTP.BodyRegex)
-	d.Set("http_status_regex", getMonitorProperties.Properties.HTTP.StatusRegex)
-	d.Set("rtsp_body_regex", getMonitorProperties.Properties.RTSP.BodyRegex)
-	d.Set("rtsp_status_regex", getMonitorProperties.Properties.RTSP.StatusRegex)
-	d.Set("rtsp_path", getMonitorProperties.Properties.RTSP.URIPath)
-	d.Set("script_program", getMonitorProperties.Properties.SCRIPT.Program)
-	d.Set("script_arguments", getMonitorProperties.Properties.SCRIPT.Arguments)
-	d.Set("sip_body_regex", getMonitorProperties.Properties.SIP.BodyRegex)
-	d.Set("sip_status_regex", getMonitorProperties.Properties.SIP.StatusRegex)
-	d.Set("sip_transport", getMonitorProperties.Properties.SIP.Transport)
-	d.Set("tcp_close_string", getMonitorProperties.Properties.TCP.CloseString)
-	d.Set("tcp_max_response_len", getMonitorProperties.Properties.TCP.MaxResponseLen)
-	d.Set("tcp_response_regex", getMonitorProperties.Properties.TCP.ResponseRegex)
-	d.Set("tcp_write_string", getMonitorProperties.Properties.TCP.WriteString)
-	d.Set("udp_accept_all", getMonitorProperties.Properties.UDP.AcceptAll)
+	d.Set("name", name)
+	d.Set("delay", readMonitor.Properties.Basic.Delay)
+	d.Set("timeout", readMonitor.Properties.Basic.Timeout)
+	d.Set("failures", readMonitor.Properties.Basic.Failures)
+	d.Set("verbose", readMonitor.Properties.Basic.Verbose)
+	d.Set("use_ssl", readMonitor.Properties.Basic.UseSSL)
+	d.Set("http_host_header", readMonitor.Properties.HTTP.HostHeader)
+	d.Set("http_path", readMonitor.Properties.HTTP.URIPath)
+	d.Set("http_authentication", readMonitor.Properties.HTTP.Authentication)
+	d.Set("http_body_regex", readMonitor.Properties.HTTP.BodyRegex)
+	d.Set("http_status_regex", readMonitor.Properties.HTTP.StatusRegex)
+	d.Set("rtsp_body_regex", readMonitor.Properties.RTSP.BodyRegex)
+	d.Set("rtsp_status_regex", readMonitor.Properties.RTSP.StatusRegex)
+	d.Set("rtsp_path", readMonitor.Properties.RTSP.URIPath)
+	d.Set("script_program", readMonitor.Properties.SCRIPT.Program)
+	d.Set("script_arguments", readMonitor.Properties.SCRIPT.Arguments)
+	d.Set("sip_body_regex", readMonitor.Properties.SIP.BodyRegex)
+	d.Set("sip_status_regex", readMonitor.Properties.SIP.StatusRegex)
+	d.Set("sip_transport", readMonitor.Properties.SIP.Transport)
+	d.Set("tcp_close_string", readMonitor.Properties.TCP.CloseString)
+	d.Set("tcp_max_response_len", readMonitor.Properties.TCP.MaxResponseLen)
+	d.Set("tcp_response_regex", readMonitor.Properties.TCP.ResponseRegex)
+	d.Set("tcp_write_string", readMonitor.Properties.TCP.WriteString)
+	d.Set("udp_accept_all", readMonitor.Properties.UDP.AcceptAll)
 	return nil
 }
 
 func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
-	var readName string
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 	var updateMonitor monitor.Monitor
+	var name string
 	hasChanges := false
 
 	if v, ok := d.GetOk("name"); ok {
-		readName = v.(string)
+		name = v.(string)
 	}
 	if d.HasChange("delay") {
 		if v, ok := d.GetOk("delay"); ok {
@@ -502,10 +501,10 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 		hasChanges = true
 	}
 	if hasChanges {
-		updateAPI := monitor.NewUpdate(readName, updateMonitor)
-		err := vtmClient.Do(updateAPI)
+
+		err := client.Set("monitors", name, updateMonitor, nil)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM Monitor error whilst updating %s: %v", readName, err)
+			return fmt.Errorf("BrocadeVTM Monitor error whilst updating %s: %v", name, err)
 		}
 	}
 	return resourceMonitorRead(d, m)
@@ -513,20 +512,21 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceMonitorDelete(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
-	var readName string
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+	var name string
 
 	if v, ok := d.GetOk("name"); ok {
-		readName = v.(string)
+		name = v.(string)
 	}
 
-	deleteAPI := monitor.NewDelete(readName)
-	err := vtmClient.Do(deleteAPI)
-	if err != nil && deleteAPI.StatusCode() != http.StatusNotFound {
-		return fmt.Errorf("BrocadeVTM Monitor error whilst deleting %s: %v", readName, err)
-	}
+	client.WorkWithConfigurationResources()
+	err := client.Delete("monitors", name)
 
+	if err != nil {
+		d.SetId("")
+		return fmt.Errorf("BrocadeVTM Monitor error whilst deleting %s: %v", name, err)
+	}
 	d.SetId("")
 	return nil
 }
-*/
