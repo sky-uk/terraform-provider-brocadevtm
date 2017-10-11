@@ -611,16 +611,16 @@ func testAccBrocadeVTMVirtualServerExists(name, resourceName string) resource.Te
 }
 
 func testAccBrocadeVTMVirtualServerNoName() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 pool = "test-pool"
 port = 80
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateOCSPRequired() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 pool = "test-pool"
 port = 80
@@ -632,11 +632,11 @@ ssl = {
 
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateOCSPNonce() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 pool = "test-pool"
 port = 80
@@ -647,32 +647,32 @@ ssl = {
 	}
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateSSLClientCertHeaders() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 pool = "test-pool"
 port = 80
 ssl_client_cert_headers = "INVALID"
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateServerHonorFallbackSCSV() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
 port = 80
 ssl_honor_fallback_scsv = "INVALID"
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateCookieDomain() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -681,11 +681,11 @@ cookie = {
 	domain = "INVALID"
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateCookieSecure() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -694,11 +694,11 @@ cookie = {
 	secure = "INVALID"
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateDNSRRSETOrder() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -707,11 +707,11 @@ dns = {
 	rrset_order = "INVALID"
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateGZIPCompressLevel() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -720,11 +720,11 @@ gzip = {
 	compress_level = 50
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateDataFrameSize() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -733,11 +733,11 @@ http2 = {
 	data_frame_size = 50
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateMaxFrameSize() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -746,11 +746,11 @@ http2 = {
 	max_frame_size = 1
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateETagRewrite() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -759,11 +759,11 @@ gzip = {
 	etag_rewrite = "INVALID"
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateMaxBuffer() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -772,11 +772,11 @@ vs_connection = {
 	max_client_buffer = 1
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateHeaderTableSize() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -785,11 +785,11 @@ http2 = {
 	header_table_size = 1
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateSysLogMsgLenLimit() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -798,11 +798,11 @@ syslog = {
 	msg_len_limit = 1
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateChunkOverheadForwarding() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -811,11 +811,11 @@ http = {
 	chunk_overhead_forwarding = "INVALID"
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateLocationRewrite() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -824,11 +824,11 @@ http = {
 	location_rewrite = "INVALID"
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateSIPDangerousRequestsAction() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -837,11 +837,11 @@ sip = {
 	dangerous_requests = "INVALID"
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateSIPMode() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -850,11 +850,11 @@ sip = {
 	mode = "INVALID"
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateSSLRequestClientCert() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -863,11 +863,11 @@ ssl = {
 	request_client_cert = "INVALID"
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerValidateServerUseSSLSupport() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_virtual_server" "acctest" {
 name = "%s"
 pool = "test-pool"
@@ -876,7 +876,7 @@ ssl = {
 	ssl_support_ssl2 = "INVALID"
 }
 }
-`)
+`
 }
 
 func testAccBrocadeVTMVirtualServerInvalidProtocol(virtualServerName string) string {
