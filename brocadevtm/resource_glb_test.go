@@ -190,11 +190,11 @@ func testAccBrocadeVTMGLBExists(glbName, glbResourceName string) resource.TestCh
 }
 
 func testAccBrocadeVTMGLBNoNameTemplate() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_glb" "acctest" {
 
 }
-`)
+`
 }
 
 func testAccBrocadeVTMGLBInvalidAlgorithmTemplate(name string) string {
