@@ -129,7 +129,7 @@ func testAccBrocadeVTMMonitorExists(monitorName, monitorResourceName string) res
 
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
-		monitors, err := client.GetAllResources("dns_server/zones")
+		monitors, err := client.GetAllResources("monitors")
 
 		if err != nil {
 			//return fmt.Errorf("Error: %+v", err)
