@@ -3,10 +3,10 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/glb"
-	"regexp"
-	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/glb"
+	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
+	"regexp"
 )
 
 func resourceGLB() *schema.Resource {
@@ -468,7 +468,7 @@ func resourceGLBUpdate(d *schema.ResourceData, m interface{}) error {
 		client := config["jsonClient"].(*api.Client)
 		err := client.Set("glb_services", d.Id(), &updateGLB, nil)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM GLB error whilst updating %s: %v", name,err)
+			return fmt.Errorf("BrocadeVTM GLB error whilst updating %s: %v", name, err)
 		}
 	}
 	d.SetId(name)
@@ -484,10 +484,9 @@ func resourceGLBDelete(d *schema.ResourceData, m interface{}) error {
 	err := client.Delete("glb_services", d.Id())
 
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM GLB error whilst deleting %s: %v", d.Id(),err)
+		return fmt.Errorf("BrocadeVTM GLB error whilst deleting %s: %v", d.Id(), err)
 	}
 
 	d.SetId("")
 	return nil
 }
-
