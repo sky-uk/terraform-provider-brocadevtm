@@ -467,7 +467,7 @@ func resourceGLBUpdate(d *schema.ResourceData, m interface{}) error {
 	if hasChanges {
 		config := m.(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
-		err := client.Set("glb_services",name, &updateGLB, nil)
+		err := client.Set("glb_services", name, &updateGLB, nil)
 		if err != nil {
 			return fmt.Errorf("BrocadeVTM GLB error whilst updating %s: %v", name, err)
 		}
