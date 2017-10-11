@@ -1,14 +1,12 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm/api/glb"
-	"github.com/sky-uk/go-rest-api"
-	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
-	"net/http"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/glb"
 	"regexp"
+	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
+	"github.com/sky-uk/go-brocade-vtm/api"
 )
 
 func resourceGLB() *schema.Resource {
@@ -256,7 +254,8 @@ func buildDNSSecKeys(dnsSecKeysSet *schema.Set) []glb.DNSSecKey {
 
 func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 	var createGLB glb.GLB
 	var name string
 
@@ -312,51 +311,45 @@ func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 		createGLB.Properties.Log.Format = v.(string)
 	}
 
-	createGLBAPI := glb.NewCreate(name, createGLB)
-	err := vtmClient.Do(createGLBAPI)
+	err := client.Set("glb_services", name, &createGLB, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM GLB error whilst creating %s: %v", name, createGLBAPI.ErrorObject())
+		return fmt.Errorf("BrocadeVTM GLB error whilst creating %s: %v", name, err)
 	}
 	d.SetId(name)
 	return resourceGLBRead(d, m)
 }
 
 func resourceGLBRead(d *schema.ResourceData, m interface{}) error {
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+	client.WorkWithConfigurationResources()
+	var glb glb.GLB
 
-	vtmClient := m.(*rest.Client)
-	glbName := d.Id()
+	err := client.GetByName("glb_services", d.Id(), &glb)
 
-	getGLBAPI := glb.NewGet(glbName)
-	err := vtmClient.Do(getGLBAPI)
-	if getGLBAPI.StatusCode() == http.StatusNotFound {
-		d.SetId("")
-		return nil
-	}
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM GLB error whilst retrieving %s: %v", glbName, getGLBAPI.ErrorObject())
+		return fmt.Errorf("BrocadeVTM GLB error whilst retrieving %s: %v", d.Id(), err)
 	}
 
-	getGLBObject := getGLBAPI.ResponseObject().(*glb.GLB)
-	d.Set("name", glbName)
-	d.Set("algorithm", getGLBObject.Properties.Basic.Algorithm)
-	d.Set("all_monitors_needed", getGLBObject.Properties.Basic.AllMonitorsNeeded)
-	d.Set("auto_recovery", getGLBObject.Properties.Basic.AutoRecovery)
-	d.Set("chained_auto_failback", getGLBObject.Properties.Basic.ChainedAutoFailback)
-	d.Set("disable_on_failure", getGLBObject.Properties.Basic.DisableOnFailure)
-	d.Set("enabled", getGLBObject.Properties.Basic.Enabled)
-	d.Set("return_ips_on_fail", getGLBObject.Properties.Basic.ReturnIPSOnFail)
-	d.Set("ttl", getGLBObject.Properties.Basic.TTL)
-	d.Set("geo_effect", getGLBObject.Properties.Basic.GeoEffect)
-	d.Set("chained_location_order", getGLBObject.Properties.Basic.ChainedLocationOrder)
-	d.Set("rules", getGLBObject.Properties.Basic.Rules)
-	d.Set("domains", getGLBObject.Properties.Basic.Domains)
-	d.Set("last_resort_response", getGLBObject.Properties.Basic.LastResortResponse)
-	d.Set("location_draining", getGLBObject.Properties.Basic.LocationDraining)
-	d.Set("location_settings", getGLBObject.Properties.Basic.LocationSettings)
-	d.Set("dns_sec_keys", getGLBObject.Properties.Basic.DNSSecKeys)
-	d.Set("logging_enabled", getGLBObject.Properties.Log.Enabled)
-	d.Set("log_file_name", getGLBObject.Properties.Log.Filename)
-	d.Set("log_format", getGLBObject.Properties.Log.Format)
+	d.Set("algorithm", glb.Properties.Basic.Algorithm)
+	d.Set("all_monitors_needed", glb.Properties.Basic.AllMonitorsNeeded)
+	d.Set("auto_recovery", glb.Properties.Basic.AutoRecovery)
+	d.Set("chained_auto_failback", glb.Properties.Basic.ChainedAutoFailback)
+	d.Set("disable_on_failure", glb.Properties.Basic.DisableOnFailure)
+	d.Set("enabled", glb.Properties.Basic.Enabled)
+	d.Set("return_ips_on_fail", glb.Properties.Basic.ReturnIPSOnFail)
+	d.Set("ttl", glb.Properties.Basic.TTL)
+	d.Set("geo_effect", glb.Properties.Basic.GeoEffect)
+	d.Set("chained_location_order", glb.Properties.Basic.ChainedLocationOrder)
+	d.Set("rules", glb.Properties.Basic.Rules)
+	d.Set("domains", glb.Properties.Basic.Domains)
+	d.Set("last_resort_response", glb.Properties.Basic.LastResortResponse)
+	d.Set("location_draining", glb.Properties.Basic.LocationDraining)
+	d.Set("location_settings", glb.Properties.Basic.LocationSettings)
+	d.Set("dns_sec_keys", glb.Properties.Basic.DNSSecKeys)
+	d.Set("logging_enabled", glb.Properties.Log.Enabled)
+	d.Set("log_file_name", glb.Properties.Log.Filename)
+	d.Set("log_format", glb.Properties.Log.Format)
 
 	return nil
 }
@@ -471,11 +464,11 @@ func resourceGLBUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if hasChanges {
-		vtmClient := m.(*rest.Client)
-		updateGLBAPI := glb.NewUpdate(name, updateGLB)
-		err := vtmClient.Do(updateGLBAPI)
+		config := m.(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
+		err := client.Set("glb_services", d.Id(), &updateGLB, nil)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM GLB error whilst updating %s: %v", name, updateGLBAPI.ErrorObject())
+			return fmt.Errorf("BrocadeVTM GLB error whilst updating %s: %v", name,err)
 		}
 	}
 	d.SetId(name)
@@ -484,20 +477,17 @@ func resourceGLBUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceGLBDelete(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
-	glbName := d.Id()
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+	client.WorkWithConfigurationResources()
 
-	deleteGLBAPI := glb.NewDelete(glbName)
-	err := vtmClient.Do(deleteGLBAPI)
-	if deleteGLBAPI.StatusCode() == http.StatusNotFound {
-		d.SetId("")
-		return nil
-	}
+	err := client.Delete("glb_services", d.Id())
+
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM GLB error whilst deleting %s: %v", glbName, deleteGLBAPI.ErrorObject())
+		return fmt.Errorf("BrocadeVTM GLB error whilst deleting %s: %v", d.Id(),err)
 	}
 
 	d.SetId("")
 	return nil
 }
-*/
+
