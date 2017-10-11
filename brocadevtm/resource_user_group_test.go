@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_group"
 	"regexp"
 	"testing"
 )
@@ -64,7 +63,6 @@ func TestAccBrocadeVTMUserGroupBasic(t *testing.T) {
 func testAccBrocadeVTMUserGroupCheckDestroy(state *terraform.State, name string) error {
 	config := testAccProvider.Meta().(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	var userGroupObject userGroup.UserGroup
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "infoblox_user_group" {
@@ -73,9 +71,14 @@ func testAccBrocadeVTMUserGroupCheckDestroy(state *terraform.State, name string)
 		if id, ok := rs.Primary.Attributes["id"]; ok && id == "" {
 			return nil
 		}
-		err := client.GetByName("user_groups", name, &userGroupObject)
+		userGroups, err := client.GetAllResources("user_groups")
 		if err != nil {
 			return fmt.Errorf("BrocadeVTM User Group error whilst retrieving %s: %v", name, err)
+		}
+		for _, individualUserGroup := range userGroups {
+			if individualUserGroup["name"] == name {
+				return fmt.Errorf("Brocade vTM User Group %s still exists", name)
+			}
 		}
 	}
 	return nil
@@ -92,12 +95,16 @@ func testAccBrocadeVTMUserGroupExists(name, resourceName string) resource.TestCh
 		}
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
-		var userGroupObject userGroup.UserGroup
-		err := client.GetByName("user_groups", name, &userGroupObject)
+		userGroups, err := client.GetAllResources("user_groups")
 		if err != nil {
 			return fmt.Errorf("BrocadeVTM User Group error whilst retrieving %s: %v", name, err)
 		}
-		return nil
+		for _, individualUserGroup := range userGroups {
+			if individualUserGroup["name"] == name {
+				return nil
+			}
+		}
+		return fmt.Errorf("Brocade vTM User Group %s not found on remote vTM", name)
 	}
 }
 
