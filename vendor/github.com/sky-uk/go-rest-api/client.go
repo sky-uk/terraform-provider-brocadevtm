@@ -105,7 +105,10 @@ func (restClient *Client) Do(api *BaseAPI) error {
 	}
 
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: restClient.IgnoreSSL},
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: restClient.IgnoreSSL},
+		MaxIdleConns:      10,
+		IdleConnTimeout:   30 * time.Second,
+		DisableKeepAlives: true,
 	}
 
 	httpClient := &http.Client{
@@ -115,7 +118,7 @@ func (restClient *Client) Do(api *BaseAPI) error {
 
 	res, err := httpClient.Do(req)
 	if err != nil {
-		log.Println("ERROR executing request: ", err)
+		log.Println("Error executing request: ", err)
 		return err
 	}
 	defer res.Body.Close()
@@ -181,11 +184,22 @@ func (restClient *Client) handleResponse(apiObj *BaseAPI, res *http.Response) er
 			}
 
 		case "octet-stream":
-			apiObj.SetResponseObject(&bodyText)
+			if apiObj.ResponseObject() != nil {
+				if pstream, is := apiObj.ResponseObject().(*[]byte); is {
+					*pstream = bodyText
+				} else {
+					log.Println("[WARN]: Response object expected to be *[]byte")
+				}
+			}
 
 		case "plain", "html":
-			plainStr := string(bodyText)
-			apiObj.SetResponseObject(&plainStr)
+			if apiObj.ResponseObject() != nil {
+				if pstream, is := apiObj.ResponseObject().(*string); is {
+					*pstream = string(bodyText)
+				} else {
+					log.Println("[WARN]: Response object expected to be *string")
+				}
+			}
 
 		default:
 			log.Printf("Content type %s not supported yet", contentType)

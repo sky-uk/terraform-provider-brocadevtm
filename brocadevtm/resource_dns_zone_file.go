@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"log"
 )
 
 func resourceDNSZoneFile() *schema.Resource {
@@ -59,15 +58,14 @@ func resourceDNSZoneFileRead(d *schema.ResourceData, m interface{}) error {
 	client := config["jsonClient"].(*api.Client)
 
 	name := d.Id()
-	var zone_config []byte
+	zoneConfig := new([]byte)
 	client.WorkWithConfigurationResources()
-	err := client.GetByName("dns_server/zone_files", name, &zone_config)
+	err := client.GetByName("dns_server/zone_files", name, zoneConfig)
 	if err != nil {
 		d.SetId("")
 		return fmt.Errorf("BrocadeVTM DNS zone file error whilst reading %s: %v", name, err)
 	}
-	log.Println("Going to set dns_zone_config to: ", string(zone_config))
-	d.Set("dns_zone_config", string(zone_config))
+	d.Set("dns_zone_config", string(*zoneConfig))
 	return nil
 }
 

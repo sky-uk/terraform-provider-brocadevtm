@@ -10,7 +10,7 @@ Encoding schemes supported: json/xml.
 
 ```
 import(
-    "rest"
+    "github.com/sky-uk/go-rest-api"
     "net/http"
 )
 ```
