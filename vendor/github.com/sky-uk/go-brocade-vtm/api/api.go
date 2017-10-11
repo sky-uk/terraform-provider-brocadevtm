@@ -2,12 +2,13 @@ package api
 
 import (
 	"fmt"
-	"github.com/sky-uk/go-rest-api"
 	"log"
 	"net/http"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/sky-uk/go-rest-api"
 )
 
 const defaultAPIVersion = "3.8"

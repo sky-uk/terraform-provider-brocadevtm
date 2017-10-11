@@ -2,12 +2,13 @@ package brocadevtm
 
 import (
 	"fmt"
+	"regexp"
+	"testing"
+
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"regexp"
-	"testing"
 )
 
 func TestAccBrocadeVTMDNSZoneBasic(t *testing.T) {
