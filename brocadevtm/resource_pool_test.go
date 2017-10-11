@@ -35,7 +35,7 @@ func TestAccPool_Basic(t *testing.T) {
 		CheckDestroy: testAccPoolCheckDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccPoolNodeInvalidAlgo(poolName),
+				Config:      testAccPoolNodeInvalidAlgo(poolName),
 				ExpectError: regexp.MustCompile(`must be one of fastest_response_time, least_connections, perceptive, random, round_robin, weighted_least_connections, weighted_round_robin`),
 			},
 

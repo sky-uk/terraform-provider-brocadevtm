@@ -124,7 +124,7 @@ type SMTP struct {
 type Ssl struct {
 	ClientAuth          *bool    `json:"client_auth,omitempty"`
 	CommonNameMatch     []string `json:"common_name_match,omitempty"`
-	EllipticCurves       []string `json:"elliptic_curves,omitempty"`
+	EllipticCurves      []string `json:"elliptic_curves,omitempty"`
 	Enable              *bool    `json:"enable,omitempty"`
 	Enhance             *bool    `json:"enhance,omitempty"`
 	SendCloseAlerts     *bool    `json:"send_close_alerts,omitempty"`
@@ -148,7 +148,7 @@ type TCP struct {
 type UDP struct {
 	AcceptFrom      string `json:"accept_from,omitempty"`
 	AcceptFromMask  string `json:"accept_from_mask,omitempty"`
-	ResponseTimeout *uint   `json:"response_timeout,omitempty"`
+	ResponseTimeout *uint  `json:"response_timeout,omitempty"`
 }
 
 // MemberNode - Pool membership details / node /state / weight
