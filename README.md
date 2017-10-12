@@ -1,4 +1,4 @@
-****Terraform Provider
+Terraform Provider
 ==================
 
 Terraform provider for BrocadeVTM appliance
