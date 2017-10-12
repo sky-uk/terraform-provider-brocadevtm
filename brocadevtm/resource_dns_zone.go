@@ -2,7 +2,6 @@ package brocadevtm
 
 import (
 	"fmt"
-
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/dns_zone"
