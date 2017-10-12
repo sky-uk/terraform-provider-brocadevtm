@@ -192,7 +192,7 @@ func testAccBrocadeVTMGLBExists(glbName, glbResourceName string) resource.TestCh
 				return nil
 			}
 		}
-		return nil
+		return fmt.Errorf("Brocade vTM  GLB %s not found on remote vTM", glbName)
 	}
 }
 
