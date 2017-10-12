@@ -2,9 +2,9 @@ package brocadevtm
 
 import (
 	"fmt"
-        "log"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
+	"log"
 	"net/http"
 )
 
@@ -110,7 +110,7 @@ func resourceDNSZoneFileDelete(d *schema.ResourceData, m interface{}) error {
 	err := client.Delete("dns_server/zone_files", name)
 	if client.StatusCode == http.StatusNoContent || client.StatusCode == http.StatusNotFound {
 		d.SetId("")
-                return nil
+		return nil
 	}
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM DNS zone file error whilst deleting %s: %v", name, err)
