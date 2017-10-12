@@ -59,7 +59,7 @@ func Provider() terraform.ResourceProvider {
 			//	"brocadevtm_dns_zone_file":      resourceDNSZoneFile(),
 			"brocadevtm_glb": resourceGLB(),
 			//	"brocadevtm_location":           resourceLocation(),
-				"brocadevtm_monitor":            resourceMonitor(),
+			"brocadevtm_monitor": resourceMonitor(),
 			//	"brocadevtm_pool":               resourcePool(),
 			//	"brocadevtm_rule":               resourceRule(),
 			//	"brocadevtm_ssl_server_key":     resourceSSLServerKey(),

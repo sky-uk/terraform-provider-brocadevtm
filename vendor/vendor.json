@@ -505,7 +505,8 @@
 			"revision": "",
 			"version": "0.4.4",
 			"versionExact": "0.4.4"
-    },
+        },
+        {
 			"checksumSHA1": "bb9bEoXmeKcB8tHTgkGzAj2DZOM=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api/model/3.8/glb",
 			"revision": "b88dde322823bbe2bf198db70ff2ecf9d6bb1959",
