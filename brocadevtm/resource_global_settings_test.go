@@ -2,11 +2,10 @@ package brocadevtm
 
 import (
 	"fmt"
-	"testing"
-
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
+	"testing"
 )
 
 func TestAccBrocadeVTMResourceGlobalSettings(t *testing.T) {

@@ -28,7 +28,7 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccBrocadeVTMMonitorInvalidName(),
-				ExpectError: regexp.MustCompile(`BrocadeVTM Monitor error whilst creating ../virtual_servers/some_random_virtual_server: Response status code: 400`),
+				ExpectError: regexp.MustCompile(`BrocadeVTM Monitor error whilst creating ../virtual_servers/some_random_virtual_server: The path '/api/tm/3.8/config/active/monitors/../virtual_servers/some_random_virtual_server' is invalid`),
 			},
 			{
 				Config: testAccBrocadeVTMMonitorCreateTemplate(monitorName),
