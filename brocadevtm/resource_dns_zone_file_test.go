@@ -59,8 +59,8 @@ func testAccBrocadeVTMDNSZoneFileCheckDestroy(state *terraform.State, name strin
 	client := config["jsonClient"].(*api.Client)
 
 	client.WorkWithConfigurationResources()
-	zone_config := new([]byte)
-	err := client.GetByName("dns_server/zone_files", name, zone_config)
+	zoneConfig := new([]byte)
+	err := client.GetByName("dns_server/zone_files", name, zoneConfig)
 	if err != nil {
 		return nil
 	}
@@ -76,8 +76,8 @@ func testAccBrocadeVTMDNSZoneFileExists(dnsZoneFileName, dnsZoneResourceName str
 		client := config["jsonClient"].(*api.Client)
 
 		client.WorkWithConfigurationResources()
-		zone_config := new([]byte)
-		err := client.GetByName("dns_server/zone_files", dnsZoneFileName, zone_config)
+		zoneConfig := new([]byte)
+		err := client.GetByName("dns_server/zone_files", dnsZoneFileName, zoneConfig)
 		if err != nil {
 			return fmt.Errorf("Error: resource %s doesn't exists", dnsZoneFileName)
 		}
