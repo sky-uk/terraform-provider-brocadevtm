@@ -103,7 +103,6 @@ func resourceDNSZoneFileDelete(d *schema.ResourceData, m interface{}) error {
 	name := d.Id()
 	err := client.Delete("dns_server/zone_files", name)
 	if err != nil {
-		d.SetId("")
 		return fmt.Errorf("BrocadeVTM DNS zone file error whilst deleting %s: %v", name, err)
 	}
 	d.SetId("")
