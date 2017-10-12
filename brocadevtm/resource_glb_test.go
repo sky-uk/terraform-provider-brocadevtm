@@ -1,16 +1,15 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
+	"regexp"
+	"testing"
+
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm/api/glb"
-	"github.com/sky-uk/go-rest-api"
+	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
-	"regexp"
-	"testing"
 )
 
 func TestAccBrocadeVTMGLBBasic(t *testing.T) {
@@ -149,25 +148,24 @@ func TestAccBrocadeVTMGLBBasic(t *testing.T) {
 	})
 }
 
-func testAccBrocadeVTMGLBCheckDestroy(state *terraform.State, name string) error {
-
-	vtmClient := testAccProvider.Meta().(*rest.Client)
+func testAccBrocadeVTMGLBCheckDestroy(state *terraform.State, glbName string) error {
+	config := testAccProvider.Meta().(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "brocadevtm_glb" {
 			continue
 		}
-		if id, ok := rs.Primary.Attributes["id"]; ok && id != "" {
+		if id, ok := rs.Primary.Attributes["id"]; ok && id == "" {
 			return nil
 		}
-		api := glb.NewGetAll()
-		err := vtmClient.Do(api)
+		glbServices, err := client.GetAllResources("glb_services")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM GLB - error occurred whilst retrieving a list of all GLBs")
+			return fmt.Errorf("Brocade vTM GLB - error while retrieving GLB: %v", err)
 		}
-		for _, glb := range api.ResponseObject().(*glb.GlobalLoadBalancers).Children {
-			if glb.Name == name {
-				return fmt.Errorf("Brocade vTM GLB %s still exists", name)
+		for _, glb := range glbServices {
+			if glb["name"] == glbName {
+				return fmt.Errorf("Brocade vTM GLB %s still exists", glbName)
 			}
 		}
 	}
@@ -176,7 +174,6 @@ func testAccBrocadeVTMGLBCheckDestroy(state *terraform.State, name string) error
 
 func testAccBrocadeVTMGLBExists(glbName, glbResourceName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-
 		rs, ok := state.RootModule().Resources[glbResourceName]
 		if !ok {
 			return fmt.Errorf("\nBrocade vTM GLB %s wasn't found in resources", glbName)
@@ -184,28 +181,27 @@ func testAccBrocadeVTMGLBExists(glbName, glbResourceName string) resource.TestCh
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("\nBrocade vTM GLB ID not set for %s in resources", glbName)
 		}
-
-		vtmClient := testAccProvider.Meta().(*rest.Client)
-		api := glb.NewGetAll()
-		err := vtmClient.Do(api)
+		config := testAccProvider.Meta().(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
+		glbServices, err := client.GetAllResources("glb_services")
 		if err != nil {
-			return fmt.Errorf("Error: %+v", err)
+			return fmt.Errorf("Brocade vTM GLB - error while retrieving GLB: %v", err)
 		}
-		for _, glb := range api.ResponseObject().(*glb.GlobalLoadBalancers).Children {
-			if glb.Name == glbName {
+		for _, glb := range glbServices {
+			if glb["name"] == glbName {
 				return nil
 			}
 		}
-		return fmt.Errorf("Brocade vTM GLB %s not found on remote vTM", glbName)
+		return nil
 	}
 }
 
 func testAccBrocadeVTMGLBNoNameTemplate() string {
-	return fmt.Sprintf(`
+	return `
 resource "brocadevtm_glb" "acctest" {
 
 }
-`)
+`
 }
 
 func testAccBrocadeVTMGLBInvalidAlgorithmTemplate(name string) string {
@@ -339,4 +335,3 @@ resource "brocadevtm_glb" "acctest" {
 }
 `, glbName)
 }
-*/

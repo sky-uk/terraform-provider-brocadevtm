@@ -1,13 +1,12 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm/api/user_authenticators"
-	"github.com/sky-uk/go-rest-api"
-	"net/http"
 	"strings"
+
+	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_authenticator"
 )
 
 func resourceUserAuthenticator() *schema.Resource {
@@ -273,14 +272,9 @@ func validateDistinguishedNameMethod(v interface{}, k string) (ws []string, erro
 }
 
 func resourceUserAuthenticatorCreate(d *schema.ResourceData, m interface{}) error {
-	var userAuthenticator userauthenticators.UserAuthenticator
-	headers := make(map[string]string)
-
-	client := m.(*rest.Client)
-	vtmClient := *client
-	headers["Content-Type"] = "application/json"
-	vtmClient.Headers = headers
-	vtmClient.Debug = true
+	var userAuthenticator userAuthenticator.UserAuthenticator
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
 	userAuthenticatorName := d.Get("name").(string)
 
@@ -318,17 +312,16 @@ func resourceUserAuthenticatorCreate(d *schema.ResourceData, m interface{}) erro
 		userAuthenticator.TACACSPlus = assignTACACSPlusValues(tacacsPlusList)
 	}
 
-	createAPI := userauthenticators.NewPut(userAuthenticatorName, userAuthenticator)
-	err := vtmClient.Do(createAPI)
+	err := client.Set("user_authenticators", userAuthenticatorName, &userAuthenticator, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst creating user authenticator %s: %v", userAuthenticatorName, string(createAPI.RawResponse()))
+		return fmt.Errorf("BrocadeVTM error whilst creating user authenticator %s: %v", userAuthenticatorName, err)
 	}
 	d.SetId(userAuthenticatorName)
 	return resourceUserAuthenticatorRead(d, m)
 }
 
 func resourceUserAuthenticatorUpdate(d *schema.ResourceData, m interface{}) error {
-	var updatedUserAuthenticator userauthenticators.UserAuthenticator
+	var updatedUserAuthenticator userAuthenticator.UserAuthenticator
 	hasChanges := false
 
 	if d.HasChange("description") {
@@ -377,17 +370,12 @@ func resourceUserAuthenticatorUpdate(d *schema.ResourceData, m interface{}) erro
 	}
 
 	if hasChanges {
-		headers := make(map[string]string)
-		client := m.(*rest.Client)
-		vtmClient := *client
-		headers["Content-Type"] = "application/json"
-		vtmClient.Headers = headers
+		config := m.(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
 
-		updateAPI := userauthenticators.NewPut(d.Id(), updatedUserAuthenticator)
-		err := vtmClient.Do(updateAPI)
-
+		err := client.Set("user_authenticators", d.Id(), &updatedUserAuthenticator, nil)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM error whilst updating user authenticator %s: %vv", d.Id(), err)
+			return fmt.Errorf("BrocadeVTM error whilst updating user authenticator %s: %v", d.Id(), err)
 		}
 		return resourceUserAuthenticatorRead(d, m)
 	}
@@ -396,47 +384,42 @@ func resourceUserAuthenticatorUpdate(d *schema.ResourceData, m interface{}) erro
 }
 
 func resourceUserAuthenticatorRead(d *schema.ResourceData, m interface{}) error {
-	client := m.(*rest.Client)
-	vtmClient := *client
-	headers := make(map[string]string)
-	headers["Content-Type"] = "application/json"
-	vtmClient.Headers = headers
-	readAPI := userauthenticators.NewGet(d.Id())
-	err := vtmClient.Do(readAPI)
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+	client.WorkWithConfigurationResources()
+	var userGroupAuthenticator userAuthenticator.UserAuthenticator
+
+	err := client.GetByName("user_authenticators", d.Id(), &userGroupAuthenticator)
 	if err != nil {
-		if readAPI.StatusCode() == http.StatusNotFound {
-			d.SetId("")
-			return nil
-		}
 		return fmt.Errorf("BrocadeVTM error whilst retrieving user authenticator %s: %v", d.Id(), err)
 	}
 
-	returnedUserAuthenticator := readAPI.ResponseObject().(*userauthenticators.UserAuthenticator)
-
-	d.Set("description", returnedUserAuthenticator.Properties.Basic.Description)
-	d.Set("enabled", returnedUserAuthenticator.Properties.Basic.Enabled)
-	d.Set("type", returnedUserAuthenticator.Properties.Basic.Type)
-	ldapList := []userauthenticators.LDAP{returnedUserAuthenticator.Properties.LDAP}
+	d.Set("description", userGroupAuthenticator.Properties.Basic.Description)
+	d.Set("enabled", userGroupAuthenticator.Properties.Basic.Enabled)
+	d.Set("type", userGroupAuthenticator.Properties.Basic.Type)
+	ldapList := []userAuthenticator.LDAP{userGroupAuthenticator.Properties.LDAP}
 	d.Set("ldap", ldapList)
-	radiusList := []userauthenticators.Radius{returnedUserAuthenticator.Properties.Radius}
+	radiusList := []userAuthenticator.Radius{userGroupAuthenticator.Properties.Radius}
 	d.Set("radius", radiusList)
-	tacacsPlusList := []userauthenticators.TACACSPlus{returnedUserAuthenticator.Properties.TACACSPlus}
+	tacacsPlusList := []userAuthenticator.TACACSPlus{userGroupAuthenticator.Properties.TACACSPlus}
 	d.Set("tacacs_plus", tacacsPlusList)
 	return nil
 }
 
 func resourceUserAuthenticatorDelete(d *schema.ResourceData, m interface{}) error {
-	vtmClient := m.(*rest.Client)
-	deleteAPI := userauthenticators.NewDelete(d.Id())
-	err := vtmClient.Do(deleteAPI)
-	if err != nil && deleteAPI.StatusCode() != http.StatusNotFound {
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+	client.WorkWithConfigurationResources()
+	err := client.Delete("user_authenticators", d.Id())
+
+	if err != nil {
 		return fmt.Errorf("BrocadeVTM error whilst deleting user authenticator %s: %v", d.Id(), err)
 	}
 	d.SetId("")
 	return nil
 }
 
-func assignLDAPValues(ldapList []map[string]interface{}) (ldapStruct userauthenticators.LDAP) {
+func assignLDAPValues(ldapList []map[string]interface{}) (ldapStruct userAuthenticator.LDAP) {
 
 	if v, ok := ldapList[0]["base_dn"].(string); ok && v != "" {
 		ldapStruct.BaseDN = v
@@ -481,7 +464,7 @@ func assignLDAPValues(ldapList []map[string]interface{}) (ldapStruct userauthent
 	return
 }
 
-func assignRadiusValues(radiusList []map[string]interface{}) (radiusStruct userauthenticators.Radius) {
+func assignRadiusValues(radiusList []map[string]interface{}) (radiusStruct userAuthenticator.Radius) {
 
 	if v, ok := radiusList[0]["fallback_group"].(string); ok {
 		radiusStruct.FallbackGroup = v
@@ -514,7 +497,7 @@ func assignRadiusValues(radiusList []map[string]interface{}) (radiusStruct usera
 	return
 }
 
-func assignTACACSPlusValues(tacacsPlusList []map[string]interface{}) (tacacsPlusStruct userauthenticators.TACACSPlus) {
+func assignTACACSPlusValues(tacacsPlusList []map[string]interface{}) (tacacsPlusStruct userAuthenticator.TACACSPlus) {
 
 	if v, ok := tacacsPlusList[0]["auth_type"].(string); ok {
 		tacacsPlusStruct.AuthType = v
@@ -543,4 +526,3 @@ func assignTACACSPlusValues(tacacsPlusList []map[string]interface{}) (tacacsPlus
 
 	return
 }
-*/
