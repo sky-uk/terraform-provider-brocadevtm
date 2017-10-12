@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	//"github.com/sky-uk/go-brocade-vtm/api"
-	//	"log"
+	"github.com/sky-uk/go-brocade-vtm/api"
+	"log"
 	"regexp"
 	"testing"
 )
@@ -54,37 +54,33 @@ func TestAccBrocadeVTMDNSZoneFileBasic(t *testing.T) {
 
 func testAccBrocadeVTMDNSZoneFileCheckDestroy(state *terraform.State, name string) error {
 
-	/*
-		log.Println("Checking DESTROY")
-		config := testAccProvider.Meta().(map[string]interface{})
-		client := config["jsonClient"].(*api.Client)
+	log.Println("Checking DESTROY")
+	config := testAccProvider.Meta().(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
-		client.WorkWithConfigurationResources()
-		zone_config := new([]byte)
-		err := client.GetByName("dns_server/zone_files", name, zone_config)
-		if err != nil {
-			return nil
-		}
-		return fmt.Errorf("Error: resource %s still exists", name)
-	*/
+	client.WorkWithConfigurationResources()
+	zone_config := new([]byte)
+	err := client.GetByName("dns_server/zone_files", name, zone_config)
+	if err != nil {
+		return nil
+	}
+	return fmt.Errorf("Error: resource %s still exists", name)
 	return nil
 }
 
 func testAccBrocadeVTMDNSZoneFileExists(dnsZoneFileName, dnsZoneResourceName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
-		/*
-			log.Println("Checking EXISTS")
-			config := testAccProvider.Meta().(map[string]interface{})
-			client := config["jsonClient"].(*api.Client)
+		log.Println("Checking EXISTS")
+		config := testAccProvider.Meta().(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
 
-			client.WorkWithConfigurationResources()
-			zone_config := new([]byte)
-			err := client.GetByName("dns_server/zone_files", dnsZoneFileName, zone_config)
-			if err != nil {
-				return fmt.Errorf("Error: resource %s doesn't exists", dnsZoneFileName)
-			}
-		*/
+		client.WorkWithConfigurationResources()
+		zone_config := new([]byte)
+		err := client.GetByName("dns_server/zone_files", dnsZoneFileName, zone_config)
+		if err != nil {
+			return fmt.Errorf("Error: resource %s doesn't exists", dnsZoneFileName)
+		}
 		return nil
 	}
 }
