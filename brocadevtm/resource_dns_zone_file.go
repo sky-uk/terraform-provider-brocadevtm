@@ -34,16 +34,16 @@ func resourceDNSZoneFileCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(map[string]interface{})
 	client := config["octetClient"].(*api.Client)
 
-	var name, dns_zone_config string
+	var name, dnsZoneConfig string
 
 	if v, ok := d.GetOk("name"); ok && v != "" {
 		name = v.(string)
 	}
 	if v, ok := d.GetOk("dns_zone_config"); ok {
-		dns_zone_config = v.(string)
+		dnsZoneConfig = v.(string)
 	}
 
-	err := client.Set("dns_server/zone_files", name, []byte(dns_zone_config), nil)
+	err := client.Set("dns_server/zone_files", name, []byte(dnsZoneConfig), nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM DNS Zone File error whilst creating %s: %v", name, err)
 	}
@@ -76,21 +76,21 @@ func resourceDNSZoneFileUpdate(d *schema.ResourceData, m interface{}) error {
 
 	hasChanges := false
 	name := d.Id()
-	var zone_config string
+	var zoneConfig string
 
 	if d.HasChange("dns_zone_config") {
 		if v, ok := d.GetOk("dns_zone_config"); ok {
-			zone_config = v.(string)
+			zoneConfig = v.(string)
 		}
 		hasChanges = true
 	}
 
 	if hasChanges {
-		err := client.Set("dns_server/zone_files", name, []byte(zone_config), nil)
+		err := client.Set("dns_server/zone_files", name, []byte(zoneConfig), nil)
 		if err != nil {
 			return fmt.Errorf("BrocadeVTM DNS Zone File error whilst updating %s: %v", name, err)
 		}
-		d.Set("dns_zone_config", zone_config)
+		d.Set("dns_zone_config", zoneConfig)
 	}
 	return resourceDNSZoneFileRead(d, m)
 }
