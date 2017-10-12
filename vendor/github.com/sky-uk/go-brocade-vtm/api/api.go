@@ -34,6 +34,7 @@ type Client struct {
 	RootPath          string
 	currentServer     string
 	params            Params
+	StatusCode        int
 }
 
 // WorkWithStatus - sets the root path to work with status resources
@@ -45,7 +46,7 @@ func (client *Client) WorkWithStatus() {
 }
 
 // GetStatistics - returns all statistics...
-func (client Client) GetStatistics(node string) (map[string]interface{}, error) {
+func (client *Client) GetStatistics(node string) (map[string]interface{}, error) {
 	client.WorkWithStatus()
 	path := client.RootPath + "/" + node + "/statistics"
 	all := make(map[string]interface{})
@@ -54,7 +55,7 @@ func (client Client) GetStatistics(node string) (map[string]interface{}, error) 
 }
 
 // GetState - get a node state
-func (client Client) GetState(node string) (map[string]interface{}, error) {
+func (client *Client) GetState(node string) (map[string]interface{}, error) {
 	client.WorkWithStatus()
 	path := client.RootPath + "/" + node + "/state"
 	state := make(map[string]interface{})
@@ -70,7 +71,7 @@ func (client Client) GetState(node string) (map[string]interface{}, error) {
 }
 
 // GetInformation - returns all information...
-func (client Client) GetInformation(node string) (map[string]interface{}, error) {
+func (client *Client) GetInformation(node string) (map[string]interface{}, error) {
 	client.WorkWithStatus()
 	path := client.RootPath + "/" + node + "/information"
 	all := make(map[string]interface{})
@@ -158,7 +159,7 @@ func Connect(params Params) (*Client, error) {
 }
 
 // GetAllResourceTypes - returns the list of all types of configuration resources
-func (client Client) GetAllResourceTypes() ([]map[string]interface{}, error) {
+func (client *Client) GetAllResourceTypes() ([]map[string]interface{}, error) {
 
 	// work with an environment
 	client.WorkWithConfigurationResources()
@@ -188,11 +189,9 @@ func (client Client) GetAllResourceTypes() ([]map[string]interface{}, error) {
 	return resTypes, nil
 }
 
-func (client Client) request(api *rest.BaseAPI) error {
+func (client *Client) request(api *rest.BaseAPI) error {
 	err := client.restClient.Do(api)
-	if err != nil {
-		return err
-	}
+	client.StatusCode = client.restClient.StatusCode
 	tmErr := api.ErrorObject().(*VTMError)
 	if tmErr.ErrorText != "" {
 		err = fmt.Errorf(tmErr.ErrorText)
@@ -204,7 +203,7 @@ func (client Client) request(api *rest.BaseAPI) error {
 // for each nested resource
 // Fill up the passed slice of resources, returns the first error it
 // eventually bumps into
-func (client Client) TraverseTree(url string, resources map[string]interface{}) error {
+func (client *Client) TraverseTree(url string, resources map[string]interface{}) error {
 	res := make(map[string]interface{})
 
 	if url == "" {
@@ -245,7 +244,7 @@ func (client Client) TraverseTree(url string, resources map[string]interface{}) 
 }
 
 // GetAllResources - returns all resources of the specified type
-func (client Client) GetAllResources(resType string) ([]map[string]interface{}, error) {
+func (client *Client) GetAllResources(resType string) ([]map[string]interface{}, error) {
 	path := client.RootPath + "/" + resType
 	res := make(map[string]interface{})
 
@@ -274,7 +273,7 @@ func (client Client) GetAllResources(resType string) ([]map[string]interface{}, 
 }
 
 // GetByName - gets a resource profile given its type and name
-func (client Client) GetByName(resType, resName string, out interface{}) error {
+func (client *Client) GetByName(resType, resName string, out interface{}) error {
 	path := client.RootPath + "/" + resType + "/" + resName
 	api := rest.NewBaseAPI(
 		http.MethodGet,
@@ -287,7 +286,7 @@ func (client Client) GetByName(resType, resName string, out interface{}) error {
 }
 
 // GetByURL - gets a resource profile given its type and URL
-func (client Client) GetByURL(resURL string, out interface{}) error {
+func (client *Client) GetByURL(resURL string, out interface{}) error {
 	api := rest.NewBaseAPI(
 		http.MethodGet,
 		resURL,
@@ -303,7 +302,7 @@ func (client Client) GetByURL(resURL string, out interface{}) error {
 // A new resources gets created if not existent or an existent resource gets updated
 // The restClient.StatusCode is set properly to http.StatusCreated or http.StatusOK accordingly
 // Returns the created/updated object or an error
-func (client Client) Set(resType, name string, profile interface{}, out interface{}) error {
+func (client *Client) Set(resType, name string, profile interface{}, out interface{}) error {
 
 	// you can only set configuration resources...
 	client.WorkWithConfigurationResources()
@@ -324,7 +323,7 @@ func (client Client) Set(resType, name string, profile interface{}, out interfac
 }
 
 // Delete - deletes a resource
-func (client Client) Delete(resType, name string) error {
+func (client *Client) Delete(resType, name string) error {
 
 	// you can only delete configuration resources...
 	client.WorkWithConfigurationResources()

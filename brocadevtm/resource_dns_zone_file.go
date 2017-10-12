@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
+	"net/http"
 )
 
 func resourceDNSZoneFile() *schema.Resource {
@@ -61,8 +62,11 @@ func resourceDNSZoneFileRead(d *schema.ResourceData, m interface{}) error {
 	zoneConfig := new([]byte)
 	client.WorkWithConfigurationResources()
 	err := client.GetByName("dns_server/zone_files", name, zoneConfig)
-	if err != nil {
+	if client.StatusCode == http.StatusNoContent {
 		d.SetId("")
+		return fmt.Errorf("BrocadeVTM DNS zone file %s not found", name)
+	}
+	if err != nil {
 		return fmt.Errorf("BrocadeVTM DNS zone file error whilst reading %s: %v", name, err)
 	}
 	d.Set("dns_zone_config", string(*zoneConfig))
@@ -102,9 +106,11 @@ func resourceDNSZoneFileDelete(d *schema.ResourceData, m interface{}) error {
 
 	name := d.Id()
 	err := client.Delete("dns_server/zone_files", name)
+	if client.StatusCode == http.StatusNoContent {
+		d.SetId("")
+	}
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM DNS zone file error whilst deleting %s: %v", name, err)
 	}
-	d.SetId("")
 	return nil
 }

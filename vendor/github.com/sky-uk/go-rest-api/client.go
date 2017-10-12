@@ -17,13 +17,14 @@ import (
 
 // Client struct.
 type Client struct {
-	URL       string
-	User      string
-	Password  string
-	IgnoreSSL bool
-	Debug     bool
-	Headers   map[string]string
-	Timeout   time.Duration // in seconds
+	URL        string
+	User       string
+	Password   string
+	IgnoreSSL  bool
+	Debug      bool
+	Headers    map[string]string
+	Timeout    time.Duration // in seconds
+	StatusCode int
 }
 
 func (restClient *Client) formatRequestPayload(api *BaseAPI) (io.Reader, error) {
@@ -122,6 +123,7 @@ func (restClient *Client) Do(api *BaseAPI) error {
 		return err
 	}
 	defer res.Body.Close()
+	restClient.StatusCode = res.StatusCode
 	return restClient.handleResponse(api, res)
 }
 
