@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/pool"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"net/http"
@@ -335,21 +336,26 @@ func testAccPoolCheckDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testCheckPoolExists(name string) resource.TestCheckFunc {
+func testCheckPoolExists(resName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[name]
+		config := testAccProvider.Meta().(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
+
+		rs, ok := s.RootModule().Resources[resName]
 		if !ok {
-			return fmt.Errorf("Not found: %s", name)
+			return fmt.Errorf("Not found: %s", resName)
 		}
 
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("No pool name is set")
 		}
 
-		if name, ok := rs.Primary.Attributes["name"]; ok && name == "" {
+		var name string
+		if name, ok = rs.Primary.Attributes["name"]; ok && name == "" {
 			return fmt.Errorf("No pool name is set")
 		}
 
+		var poolObj pool.Pool
 		err := client.GetByName("pools", name, &poolObj)
 		if err != nil {
 			return fmt.Errorf("Received an error retrieving service with name: %s, %s", name, err)

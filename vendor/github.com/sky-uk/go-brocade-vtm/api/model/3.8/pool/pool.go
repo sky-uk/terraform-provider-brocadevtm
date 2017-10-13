@@ -1,5 +1,11 @@
 package pool
 
+// ChildPools - Used to display data about all pools ie name and link
+type ChildPools struct {
+	Name string `json:"name,omitempty"`
+	Href string `json:"href,omitempty"`
+}
+
 // Pool - main pool struct
 type Pool struct {
 	Properties Properties `json:"properties"`
@@ -16,6 +22,7 @@ type Properties struct {
 	KerberosProtocolTransition KerberosProtocolTransition `json:"kerberos_protocol_transition,omitempty"`
 	LoadBalancing              LoadBalancing              `json:"load_balancing,omitempty"`
 	Node                       Node                       `json:"node,omitempty"`
+	SMTP                       SMTP                       `json:"smtp,omitempty"`
 	Ssl                        Ssl                        `json:"ssl,omitempty"`
 	TCP                        TCP                        `json:"tcp,omitempty"`
 	UDP                        UDP                        `json:"udp,omitempty"`
@@ -25,25 +32,24 @@ type Properties struct {
 type Basic struct {
 	BandwidthClass               string       `json:"bandwidth_class,omitempty"`
 	FailurePool                  string       `json:"failure_pool,omitempty"`
-	LARDSize                     uint         `json:"lard_size,omitempty"`
-	MaxConnectionAttempts        uint         `json:"max_connection_attempts,omitempty"`
+	MaxConnectionAttempts        *uint        `json:"max_connection_attempts,omitempty"`
 	MaxIdleConnectionsPerNode    uint         `json:"max_idle_connections_pernode,omitempty"`
 	MaxTimeoutConnectionAttempts uint         `json:"max_timed_out_connection_attempts,omitempty"`
 	Monitors                     []string     `json:"monitors,omitempty"`
-	NodeCloseWithReset           *bool        `json:"node_close_with_rst,omitempty"`
+	NodeCloseWithReset           bool         `json:"node_close_with_rst"`
 	NodeConnectionAttempts       uint         `json:"node_connection_attempts,omitempty"`
 	NodeDeleteBehavior           string       `json:"node_delete_behavior,omitempty"`
-	NodeDrainDeleteTimeout       uint         `json:"node_drain_to_delete_timeout"`
+	NodeDrainDeleteTimeout       *uint        `json:"node_drain_to_delete_timeout,omitempty"`
 	NodesTable                   []MemberNode `json:"nodes_table,omitempty"`
 	Note                         string       `json:"note,omitempty"`
-	PassiveMonitoring            *bool        `json:"passive_monitoring,omitempty"`
+	PassiveMonitoring            bool         `json:"passive_monitoring"`
 	PersistenceClass             string       `json:"persistence_class,omitempty"`
-	Transparent                  *bool        `json:"transparent,omitempty"`
+	Transparent                  bool         `json:"transparent"`
 }
 
 // AutoScaling - AutoScaling settings
 type AutoScaling struct {
-	AddNodeDelayTime uint     `json:"addnode_delaytime"`
+	AddNodeDelayTime *uint    `json:"addnode_delaytime,omitempty"`
 	CloudCredentials string   `json:"cloud_credentials,omitempty"`
 	Cluster          string   `json:"cluster,omitempty"`
 	DataCenter       string   `json:"data_center,omitempty"`
@@ -51,37 +57,37 @@ type AutoScaling struct {
 	Enabled          *bool    `json:"enabled,omitempty"`
 	External         *bool    `json:"external,omitempty"`
 	ExtraArgs        string   `json:"extraargs,omitempty"`
-	Hysteresis       uint     `json:"hysteresis"`
+	Hysteresis       *uint    `json:"hysteresis,omitempty"`
 	ImageID          string   `json:"imageid,omitempty"`
 	IPsToUse         string   `json:"ips_to_use,omitempty"`
-	LastNodeIdleTime uint     `json:"last_node_idle_time"`
-	MaxNodes         uint     `json:"max_nodes"`
-	MinNodes         uint     `json:"min_nodes"`
-	Name             string   `json:"name,omitempty"`
-	Port             uint     `json:"port,omitempty"`
-	Refractory       uint     `json:"refractory"`
-	ResponseTime     uint     `json:"response_time"`
-	ScaleDownLevel   uint     `json:"scale_down_level"`
-	ScaleUpLevel     uint     `json:"scale_up_level"`
+	LastNodeIdleTime *uint    `json:"last_node_idle_time,omitempty"`
+	MaxNodes         *uint    `json:"max_nodes,omitempty"`
+	MinNodes         *uint    `json:"min_nodes,omitempty"`
+	Name             string   `json:"name,omitempty,omitempty"`
+	Port             *uint    `json:"port,omitempty,omitempty"`
+	Refractory       *uint    `json:"refractory,omitempty"`
+	ResponseTime     *uint    `json:"response_time,omitempty"`
+	ScaleDownLevel   *uint    `json:"scale_down_level,omitempty"`
+	ScaleUpLevel     *uint    `json:"scale_up_level,omitempty"`
 	SecurityGroupIDs []string `json:"securitygroupids,omitempty"`
 	SizeID           string   `json:"size_id,omitempty"`
 	SubnetIDs        []string `json:"subnetids,omitempty"`
 }
 
-// Connection - Connection settings
+// Connection - Connection setting
 type Connection struct {
-	MaxConnectTime        uint `json:"max_connect_time,omitempty"`
-	MaxConnectionsPerNode uint `json:"max_connections_per_node,omitempty"`
-	MaxQueueSize          uint `json:"max_queue_size,omitempty"`
-	MaxReplyTime          uint `json:"max_reply_time,omitempty"`
-	QueueTimeout          uint `json:"queue_timeout,omitempty"`
+	MaxConnectTime        *uint `json:"max_connect_time,omitempty"`
+	MaxConnectionsPerNode *uint `json:"max_connections_per_node,omitempty"`
+	MaxQueueSize          *uint `json:"max_queue_size,omitempty"`
+	MaxReplyTime          *uint `json:"max_reply_time,omitempty"`
+	QueueTimeout          *uint `json:"queue_timeout,omitempty"`
 }
 
 // DNSAutoScale - DNSAutoScale settings
 type DNSAutoScale struct {
 	Enabled   *bool    `json:"enabled,omitempty"`
 	Hostnames []string `json:"hostnames,omitempty"`
-	Port      uint     `json:"port,omitempty"`
+	Port      *uint    `json:"port,omitempty"`
 }
 
 // FTP - FTP settings
@@ -101,17 +107,31 @@ type KerberosProtocolTransition struct {
 	Target    string `json:"target,omitempty"`
 }
 
+// LBPoolList - Used to return all pools
+type LBPoolList struct {
+	ChildPools []ChildPools `json:"children,omitempty"`
+}
+
 // LoadBalancing - Pool Load balancing settings
 type LoadBalancing struct {
 	Algorithm       string `json:"algorithm,omitempty"`
 	PriorityEnabled *bool  `json:"priority_enabled,omitempty"`
-	PriorityNodes   uint   `json:"priority_nodes,omitempty"`
+	PriorityNodes   *uint  `json:"priority_nodes,omitempty"`
+}
+
+// MemberNode - Pool membership details / node /state / weight
+type MemberNode struct {
+	Node     string `json:"node,omitempty"`
+	Priority *uint  `json:"priority,omitempty"`
+	State    string `json:"state,omitempty"`
+	Weight   *int   `json:"weight,omitempty"`
+	SourceIP string `json:"source_ip,omitempty"`
 }
 
 // Node - Node Specific settings
 type Node struct {
 	CloseOnDeath  *bool `json:"close_on_death,omitempty"`
-	RetryFailTime int   `json:"retry_fail_time,omitempty"`
+	RetryFailTime *uint `json:"retry_fail_time,omitempty"`
 }
 
 // SMTP - SMTP settings
@@ -123,8 +143,8 @@ type SMTP struct {
 type Ssl struct {
 	ClientAuth          *bool    `json:"client_auth,omitempty"`
 	CommonNameMatch     []string `json:"common_name_match,omitempty"`
-	ElipticCurves       []string `json:"eliptic_curves,omitempty"`
-	Enabled             *bool    `json:"enabled,omitempty"`
+	EllipticCurves      []string `json:"elliptic_curves,omitempty"`
+	Enable              *bool    `json:"enable,omitempty"`
 	Enhance             *bool    `json:"enhance,omitempty"`
 	SendCloseAlerts     *bool    `json:"send_close_alerts,omitempty"`
 	ServerName          *bool    `json:"server_name,omitempty"`
@@ -133,7 +153,8 @@ type Ssl struct {
 	SSLSupportSSL2      string   `json:"ssl_support_ssl2,omitempty"`
 	SSLSupportSSL3      string   `json:"ssl_support_ssl3,omitempty"`
 	SSLSupportTLS1      string   `json:"ssl_support_tls1,omitempty"`
-	SSLSupportTLS2      string   `json:"ssl_support_tls2,omitempty"`
+	SSLSupportTLS1_1    string   `json:"ssl_support_tls1_1,omitempty"`
+	SSLSupportTLS1_2    string   `json:"ssl_support_tls1_2,omitempty"`
 	StrictVerify        *bool    `json:"strict_verify,omitempty"`
 }
 
@@ -146,25 +167,5 @@ type TCP struct {
 type UDP struct {
 	AcceptFrom      string `json:"accept_from,omitempty"`
 	AcceptFromMask  string `json:"accept_from_mask,omitempty"`
-	ResponseTimeout uint   `json:"response_timeout"`
-}
-
-// MemberNode - Pool membership details / node /state / weight
-type MemberNode struct {
-	Node     string `json:"node"`
-	Priority int    `json:"priority"`
-	State    string `json:"state"`
-	Weight   int    `json:"weight"`
-	SourceIP string `json:"source_ip"`
-}
-
-// LBPoolList - Used to return all pools
-type LBPoolList struct {
-	ChildPools []ChildPools `json:"children,omitempty"`
-}
-
-// ChildPools - Used to display data about all pools ie name and link
-type ChildPools struct {
-	Name string `json:"name,omitempty"`
-	Href string `json:"href,omitempty"`
+	ResponseTimeout *uint  `json:"response_timeout,omitempty"`
 }

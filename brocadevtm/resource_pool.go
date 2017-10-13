@@ -3,6 +3,7 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/pool"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"log"
