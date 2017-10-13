@@ -1,13 +1,11 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm/api/location"
-	"github.com/sky-uk/go-rest-api"
+	"github.com/sky-uk/go-brocade-vtm/api"
 	"regexp"
 	"testing"
 )
@@ -85,7 +83,8 @@ func TestAccBrocadeVTMLocationBasic(t *testing.T) {
 
 func testAccBrocadeVTMLocationCheckDestroy(state *terraform.State, name string) error {
 
-	vtmClient := testAccProvider.Meta().(*rest.Client)
+	config := testAccProvider.Meta().(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "brocadevtm_location" {
@@ -94,13 +93,14 @@ func testAccBrocadeVTMLocationCheckDestroy(state *terraform.State, name string) 
 		if id, ok := rs.Primary.Attributes["id"]; ok && id != "" {
 			return nil
 		}
-		api := location.NewGetAll()
-		err := vtmClient.Do(api)
+
+		locations, err := client.GetAllResources("locations")
+
 		if err != nil {
-			return fmt.Errorf("Brocade vTM Location - error occurred whilst retrieving a list of all locations")
+			return fmt.Errorf("Brocade vTM Location - error occurred whilst retrieving a list of all locations: %+v", err)
 		}
-		for _, location := range api.ResponseObject().(*location.Locations).Children {
-			if location.Name == name {
+		for _, locationChild := range locations {
+			if locationChild["name"] == name {
 				return fmt.Errorf("Brocade vTM Location %s still exists", name)
 			}
 		}
@@ -119,14 +119,16 @@ func testAccBrocadeVTMLocationExists(locationName, locationResourceName string) 
 			return fmt.Errorf("\nBrocade vTM Location ID not set for %s in resources", locationName)
 		}
 
-		vtmClient := testAccProvider.Meta().(*rest.Client)
-		api := location.NewGetAll()
-		err := vtmClient.Do(api)
+		config := testAccProvider.Meta().(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
+		locations, err := client.GetAllResources("locations")
+
 		if err != nil {
-			return fmt.Errorf("Error: %+v", err)
+			return fmt.Errorf("Error getting all locations: %+v", err)
 		}
-		for _, location := range api.ResponseObject().(*location.Locations).Children {
-			if location.Name == locationName {
+
+		for _, locationChild := range locations {
+			if locationChild["name"] == locationName {
 				return nil
 			}
 		}
@@ -248,4 +250,3 @@ resource "brocadevtm_location" "acctest" {
 }
 `, locationName)
 }
-*/
