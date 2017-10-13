@@ -44,7 +44,7 @@ func resourceRuleCreate(d *schema.ResourceData, m interface{}) error {
 		vtmRule.Script = v.(string)
 	}
 
-	err := client.Set("rules", vtmRule.Name, &vtmRule, nil)
+	err := client.Set("rules", vtmRule.Name, []byte(vtmRule.Script), nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Rule error whilst creating %s: %v", vtmRule.Name, err)
 	}
@@ -63,7 +63,7 @@ func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 	client := config["octetClient"].(*api.Client)
 	vtmRule.Name = d.Id()
 	client.WorkWithConfigurationResources()
-	err := client.GetByName("rules", vtmRule.Name, &vtmRule)
+	err := client.GetByName("rules", vtmRule.Name, []byte(vtmRule.Script))
 
 	if err != nil {
 		d.SetId("")
@@ -92,7 +92,7 @@ func resourceRuleUpdate(d *schema.ResourceData, m interface{}) error {
 	if hasChanges {
 		// We need to copy the client as we want to specify different headers for rule which will conflict with other resources.
 		client := config["octetClient"].(*api.Client)
-		err := client.Set("rules", vtmRule.Name, &vtmRule, nil)
+		err := client.Set("rules", vtmRule.Name, []byte(vtmRule.Script), nil)
 
 		if err != nil {
 			return fmt.Errorf("BrocadeVTM Rule error whilst updating %s: %vv", vtmRule.Name, err)
