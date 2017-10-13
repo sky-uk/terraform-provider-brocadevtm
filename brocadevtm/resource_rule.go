@@ -1,6 +1,5 @@
 package brocadevtm
 
-
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -35,7 +34,6 @@ func resourceRuleCreate(d *schema.ResourceData, m interface{}) error {
 	var vtmRule rule.TrafficScriptRule
 	config := m.(map[string]interface{})
 
-
 	// We need to copy the client as we want to specify different headers for rule which will conflict with other resources.
 	client := config["octetClient"].(*api.Client)
 
@@ -46,7 +44,7 @@ func resourceRuleCreate(d *schema.ResourceData, m interface{}) error {
 		vtmRule.Script = v.(string)
 	}
 
-	err := client.Set("rules",vtmRule.Name, vtmRule, nil)
+	err := client.Set("rules", vtmRule.Name, vtmRule, nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Rule error whilst creating %s: %v", vtmRule.Name, err)
 	}
@@ -71,7 +69,6 @@ func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 		d.SetId("")
 		return fmt.Errorf("BrocadeVTM Rule error whilst retrieving %s: %v", vtmRule.Name, err)
 	}
-
 
 	d.SetId(vtmRule.Name)
 	d.Set("rule", vtmRule.Script)
@@ -114,7 +111,7 @@ func resourceRuleDelete(d *schema.ResourceData, m interface{}) error {
 	client := config["octetClient"].(*api.Client)
 	vtmRule.Name = d.Id()
 
-	err := client.Delete("rules",vtmRule.Name)
+	err := client.Delete("rules", vtmRule.Name)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Rule error whilst deleting %s: %v", vtmRule.Name, err)
 	}
@@ -122,4 +119,3 @@ func resourceRuleDelete(d *schema.ResourceData, m interface{}) error {
 	d.SetId("")
 	return nil
 }
-

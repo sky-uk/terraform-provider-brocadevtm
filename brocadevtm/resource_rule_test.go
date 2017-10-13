@@ -1,9 +1,5 @@
 package brocadevtm
 
-import "fmt"
-
-
-
 
 import (
 	"fmt"
@@ -158,4 +154,3 @@ RULE
 }
 `, name)
 }
-
