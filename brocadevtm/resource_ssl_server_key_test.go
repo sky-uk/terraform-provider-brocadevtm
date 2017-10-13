@@ -1,15 +1,15 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm/api/ssl_server_key"
-	"github.com/sky-uk/go-rest-api"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/ssl_server_key"
 	"regexp"
 	"testing"
+
+	"github.com/sky-uk/go-brocade-vtm/api"
 )
 
 func TestAccBrocadeVTMSSLServerKeyBasic(t *testing.T) {
@@ -61,21 +61,19 @@ func TestAccBrocadeVTMSSLServerKeyBasic(t *testing.T) {
 }
 
 func testAccBrocadeVTMSSLServerKeyCheckDestroy(state *terraform.State, sslServerKeyName string) error {
-
-	vtmClient := testAccProvider.Meta().(*rest.Client)
+	config := testAccProvider.Meta().(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+	client.WorkWithConfigurationResources()
 	for _, rs := range state.RootModule().Resources {
-
 		if rs.Type != "brocadevtm_ssl_server_key" {
 			continue
 		}
-
-		api := sslServerKey.NewGetAll()
-		err := vtmClient.Do(api)
+		sslKeys, err := client.GetAllResources("ssl/server_keys")
 		if err != nil {
-			return nil
+			return fmt.Errorf("Brocade vTM error whilst retrieving SSL Server Keys: %+v", err)
 		}
-		for _, sslKey := range api.ResponseObject().(*sslServerKey.SSLServerKeysList).Children {
-			if sslKey.Name == sslServerKeyName {
+		for _, sslKey := range sslKeys {
+			if sslKey["Name"] == sslServerKeyName {
 				return fmt.Errorf("Brocade vTM SSL Server Key %s still exists", sslServerKeyName)
 			}
 		}
@@ -94,18 +92,15 @@ func testAccBrocadeVTMSSLServerKeyExists(sslServerKeyName, sslServerKeyResourceN
 			return fmt.Errorf("\nBrocade vTM SSL Server Key ID not set for %s in resources", sslServerKeyName)
 		}
 
-		vtmClient := testAccProvider.Meta().(*rest.Client)
-		api := sslServerKey.NewGetAll()
-		err := vtmClient.Do(api)
+		config := testAccProvider.Meta().(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
+		client.WorkWithConfigurationResources()
+		var sslKeyName sslServerKey.SSLServerKey
+		err := client.GetByName("ssl/server_keys", sslServerKeyName, &sslKeyName)
 		if err != nil {
-			return fmt.Errorf("Error: %v", err)
+			return fmt.Errorf("Brocade vTM error whilst retrieving SSL Server Key: %+v", err)
 		}
-		for _, sslKey := range api.ResponseObject().(*sslServerKey.SSLServerKeysList).Children {
-			if sslKey.Name == sslServerKeyName {
-				return nil
-			}
-		}
-		return fmt.Errorf("Brocade vTM SSL Server Key %s not found on remote vTM", sslServerKeyName)
+		return nil
 	}
 }
 
@@ -482,4 +477,3 @@ REQUEST
 }
 `, name)
 }
-*/
