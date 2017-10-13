@@ -57,8 +57,12 @@ func TestAccBrocadeVTMRuleBasic(t *testing.T) {
 }
 
 func testAccBrocadeVTMRuleCheckDestroy(state *terraform.State, name string) error {
+	config := testAccProvider.Meta().(map[string]interface{})
 
-	vtmClient := testAccProvider.Meta().(*api.Client)
+	// We need to copy the client as we want to specify different headers for rule which will conflict with other resources.
+	vtmClient := config["octetClient"].(*api.Client)
+
+	//vtmClient := testAccProvider.Meta().(*api.Client)
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "brocadevtm_rule" {
@@ -91,7 +95,8 @@ func testAccBrocadeVTMRuleExists(ruleName, ruleResourceName string) resource.Tes
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("\nBrocade vTM Rule ID not set for %s in resources", ruleName)
 		}
-		vtmClient := testAccProvider.Meta().(*api.Client)
+		config := testAccProvider.Meta().(map[string]interface{})
+		vtmClient := config["octetClient"].(*api.Client)
 		allRules, err := vtmClient.GetAllResources("rules")
 		if err != nil {
 			return fmt.Errorf("Brocade vTM Rule - error while retrieving a list of all rules: %v", err)
