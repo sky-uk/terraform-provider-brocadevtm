@@ -100,10 +100,7 @@ func testAccBrocadeVTMRuleExists(ruleName, ruleResourceName string) resource.Tes
 		if err != nil {
 			return fmt.Errorf("Brocade vTM Rule - error while retrieving a list of all rules: %v", err)
 		}
-		log.Println("LOG")
-		log.Println(allRules)
 		for _, childRule := range allRules {
-			log.Println(childRule)
 			if childRule["name"] == ruleName {
 				return nil
 			}
