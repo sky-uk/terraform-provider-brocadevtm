@@ -54,6 +54,7 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
+			"brocadevtm_bandwidth":       resourceBandwidth(),
 			"brocadevtm_dns_zone":        resourceDNSZone(),
 			"brocadevtm_global_settings": resourceGlobalSettings(),
 			"brocadevtm_dns_zone_file":   resourceDNSZoneFile(),
