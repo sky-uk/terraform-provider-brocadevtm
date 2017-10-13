@@ -74,7 +74,7 @@ func resourceSSLServerKeyCreate(d *schema.ResourceData, meta interface{}) error 
 	err := client.Set("ssl/server_keys", name, &payloadObject, nil)
 
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM SSL Server Key error whilst updating %s: %v", name, err)
+		return fmt.Errorf("BrocadeVTM SSL Server Key error whilst creating %s: %v", name, err)
 	}
 	d.SetId(name)
 	return resourceSSLServerKeyRead(d, meta)
@@ -107,13 +107,9 @@ func resourceSSLServerKeyRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error {
-	var name string
 	var payloadObject sslServerKey.SSLServerKey
 	hasChanges := false
 
-	if v, ok := d.GetOk("name"); ok {
-		name = v.(string)
-	}
 	if d.HasChange("note") {
 		if v, ok := d.GetOk("note"); ok {
 			payloadObject.Properties.Basic.Note = v.(string)
@@ -142,12 +138,11 @@ func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error 
 	if hasChanges {
 		config := meta.(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
-		err := client.Set("ssl/server_keys", name, &payloadObject, nil)
+		err := client.Set("ssl/server_keys", d.Id(), &payloadObject, nil)
 
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM SSL Server Key error whilst updating %s: %v", name, err)
+			return fmt.Errorf("BrocadeVTM SSL Server Key error whilst updating %s: %v", d.Id(), err)
 		}
-		d.SetId(name)
 	}
 	return resourceSSLServerKeyRead(d, meta)
 }
