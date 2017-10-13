@@ -63,7 +63,8 @@ func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 	client := config["octetClient"].(*api.Client)
 	vtmRule.Name = d.Id()
 	client.WorkWithConfigurationResources()
-	err := client.GetByName("rules", vtmRule.Name, []byte(vtmRule.Script))
+	ruleText := new([]byte)
+	err := client.GetByName("rules", vtmRule.Name, ruleText)
 
 	if err != nil {
 		d.SetId("")
@@ -71,7 +72,7 @@ func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	d.SetId(vtmRule.Name)
-	d.Set("rule", vtmRule.Script)
+	d.Set("rule", string(*ruleText))
 	return nil
 }
 

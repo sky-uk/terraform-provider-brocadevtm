@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
+	"log"
 	"regexp"
 	"testing"
 )
@@ -62,8 +63,6 @@ func testAccBrocadeVTMRuleCheckDestroy(state *terraform.State, name string) erro
 	// We need to copy the client as we want to specify different headers for rule which will conflict with other resources.
 	vtmClient := config["octetClient"].(*api.Client)
 
-	//vtmClient := testAccProvider.Meta().(*api.Client)
-
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "brocadevtm_rule" {
 			continue
@@ -76,7 +75,7 @@ func testAccBrocadeVTMRuleCheckDestroy(state *terraform.State, name string) erro
 			return fmt.Errorf("Error: Brocade vTM error occurred while retrieving list of rules, %v", err)
 		}
 		for _, childRule := range allRules {
-			if childRule["Name"] == name {
+			if childRule["name"] == name {
 				return fmt.Errorf("Error: Brocade vTM Rule %s still exists", name)
 			}
 		}
@@ -101,8 +100,11 @@ func testAccBrocadeVTMRuleExists(ruleName, ruleResourceName string) resource.Tes
 		if err != nil {
 			return fmt.Errorf("Brocade vTM Rule - error while retrieving a list of all rules: %v", err)
 		}
+		log.Println("LOG")
+		log.Println(allRules)
 		for _, childRule := range allRules {
-			if childRule["Name"] == ruleName {
+			log.Println(childRule)
+			if childRule["name"] == ruleName {
 				return nil
 			}
 		}
