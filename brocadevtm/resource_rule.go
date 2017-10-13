@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/rule"
+	"net/http"
 )
 
 func resourceRule() *schema.Resource {
@@ -115,6 +116,10 @@ func resourceRuleDelete(d *schema.ResourceData, m interface{}) error {
 	err := client.Delete("rules", vtmRule.Name)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Rule error whilst deleting %s: %v", vtmRule.Name, err)
+	}
+
+	if client.StatusCode == http.StatusNoContent || client.StatusCode == http.StatusNotFound {
+		return nil
 	}
 
 	d.SetId("")
