@@ -150,7 +150,6 @@ func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error 
 func resourceSSLServerKeyDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	client.WorkWithConfigurationResources()
 	name := d.Id()
 
 	err := client.Delete("ssl/server_keys", name)
