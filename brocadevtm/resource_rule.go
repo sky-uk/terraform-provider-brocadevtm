@@ -67,8 +67,11 @@ func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 	ruleText := new([]byte)
 	err := client.GetByName("rules", vtmRule.Name, ruleText)
 
-	if err != nil {
+	if client.StatusCode == http.StatusNotFound {
 		d.SetId("")
+	}
+
+	if err != nil {
 		return fmt.Errorf("BrocadeVTM Rule error whilst retrieving %s: %v", vtmRule.Name, err)
 	}
 
