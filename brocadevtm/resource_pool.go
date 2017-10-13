@@ -1,11 +1,11 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm/api/pool"
-	"github.com/sky-uk/go-rest-api"
+	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/pool"
+	"log"
 	"net/http"
 	"regexp"
 )
@@ -186,7 +186,8 @@ func validateState(v interface{}, k string) (ws []string, errors []error) {
 // resourcePoolCreate - Creates a  pool resource object
 func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
 	var createPool pool.Pool
 	var poolName string
@@ -278,8 +279,7 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 		createPool.Properties.TCP.Nagle = &tcpNagle
 	}
 
-	createAPI := pool.NewCreate(poolName, createPool)
-	err := vtmClient.Do(createAPI)
+	err := client.Set("pools", poolName, createPool, nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Pool error whilst creating %s: %v", poolName, err)
 	}
@@ -291,42 +291,44 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 // resourcePoolRead - Reads a  pool resource
 func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
-	var poolName string
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
+	var poolName string
 	if v, ok := d.GetOk("name"); ok {
 		poolName = v.(string)
 	}
 
-	getAPI := pool.NewGet(poolName)
-	readErr := vtmClient.Do(getAPI)
-	if readErr != nil {
-		if getAPI.StatusCode() == http.StatusNotFound {
+	var poolObj pool.Pool
+	client.WorkWithConfigurationResources()
+	err := client.GetByName("pools", poolName, &poolObj)
+	if err != nil {
+		if client.StatusCode == http.StatusNotFound {
 			d.SetId("")
+			log.Printf("BrocadeVTM Pool Resource %s does not exists", poolName)
 			return nil
 		}
-		return fmt.Errorf("BrocadeVTM Pool error whilst retrieving %s: %v", poolName, readErr)
+		return fmt.Errorf("BrocadeVTM Pool error whilst retrieving %s: %v", poolName, err)
 	}
-	response := getAPI.ResponseObject().(*pool.Pool)
 
 	d.Set("name", poolName)
-	d.Set("node", response.Properties.Basic.NodesTable)
-	d.Set("monitorlist", response.Properties.Basic.Monitors)
-	d.Set("max_connection_attempts", response.Properties.Basic.MaxConnectionAttempts)
-	d.Set("max_idle_connections_pernode", response.Properties.Basic.MaxIdleConnectionsPerNode)
-	d.Set("max_timed_out_connection_attempts", response.Properties.Basic.MaxTimeoutConnectionAttempts)
-	d.Set("node_close_with_rst", *response.Properties.Basic.NodeCloseWithReset)
-	d.Set("max_connection_timeout", response.Properties.Connection.MaxConnectTime)
-	d.Set("max_connections_per_node", response.Properties.Connection.MaxConnectionsPerNode)
-	d.Set("max_queue_size", response.Properties.Connection.MaxQueueSize)
-	d.Set("max_reply_time", response.Properties.Connection.MaxReplyTime)
-	d.Set("queue_timeout", response.Properties.Connection.QueueTimeout)
-	d.Set("http_keepalive", *response.Properties.HTTP.HTTPKeepAlive)
-	d.Set("http_keepalive_non_idempotent", *response.Properties.HTTP.HTTPKeepAliveNonIdempotent)
-	d.Set("load_balancing_priority_enabled", *response.Properties.LoadBalancing.PriorityEnabled)
-	d.Set("load_balancing_priority_nodes", response.Properties.LoadBalancing.PriorityNodes)
-	d.Set("load_balancing_algorithm", response.Properties.LoadBalancing.Algorithm)
-	d.Set("tcp_nagle", *response.Properties.TCP.Nagle)
+	d.Set("node", poolObj.Properties.Basic.NodesTable)
+	d.Set("monitorlist", poolObj.Properties.Basic.Monitors)
+	d.Set("max_connection_attempts", poolObj.Properties.Basic.MaxConnectionAttempts)
+	d.Set("max_idle_connections_pernode", poolObj.Properties.Basic.MaxIdleConnectionsPerNode)
+	d.Set("max_timed_out_connection_attempts", poolObj.Properties.Basic.MaxTimeoutConnectionAttempts)
+	d.Set("node_close_with_rst", *poolObj.Properties.Basic.NodeCloseWithReset)
+	d.Set("max_connection_timeout", poolObj.Properties.Connection.MaxConnectTime)
+	d.Set("max_connections_per_node", poolObj.Properties.Connection.MaxConnectionsPerNode)
+	d.Set("max_queue_size", poolObj.Properties.Connection.MaxQueueSize)
+	d.Set("max_reply_time", poolObj.Properties.Connection.MaxReplyTime)
+	d.Set("queue_timeout", poolObj.Properties.Connection.QueueTimeout)
+	d.Set("http_keepalive", *poolObj.Properties.HTTP.HTTPKeepAlive)
+	d.Set("http_keepalive_non_idempotent", *poolObj.Properties.HTTP.HTTPKeepAliveNonIdempotent)
+	d.Set("load_balancing_priority_enabled", *poolObj.Properties.LoadBalancing.PriorityEnabled)
+	d.Set("load_balancing_priority_nodes", poolObj.Properties.LoadBalancing.PriorityNodes)
+	d.Set("load_balancing_algorithm", poolObj.Properties.LoadBalancing.Algorithm)
+	d.Set("tcp_nagle", *poolObj.Properties.TCP.Nagle)
 
 	return nil
 }
@@ -334,7 +336,6 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 // resourcePoolUpdate - Updates an existing pool resource
 func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
 	var poolName string
 	var updatePool pool.Pool
 	hasChanges := false
@@ -484,10 +485,12 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if hasChanges {
-		updatePoolAPI := pool.NewUpdate(poolName, updatePool)
-		updatePoolErr := vtmClient.Do(updatePoolAPI)
-		if updatePoolErr != nil {
-			return fmt.Errorf("BrocadeVTM Pool error whilst updating %s: %v", poolName, updatePoolErr)
+		config := m.(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
+
+		err := client.Set("pools", poolName, updatePool, nil)
+		if err != nil {
+			return fmt.Errorf("BrocadeVTM Pool error whilst updating %s: %v", poolName, err)
 		}
 		d.SetId(poolName)
 	}
@@ -498,18 +501,21 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 // resourcePoolDelete - Deletes a pool resource
 func resourcePoolDelete(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+
 	var poolName string
 	if v, ok := d.GetOk("name"); ok {
 		poolName = v.(string)
 	}
 
-	deleteAPI := pool.NewDelete(poolName)
-	deleteErr := vtmClient.Do(deleteAPI)
-	if deleteErr != nil && deleteAPI.StatusCode() != http.StatusNotFound {
-		return fmt.Errorf(fmt.Sprintf("BrocadeVTM Pool error whilst deleting %s: %v", poolName, deleteErr))
+	err := client.Delete("pools", poolName)
+	if client.StatusCode == http.StatusNoContent || client.StatusCode == http.StatusNotFound {
+		return nil
 	}
-	d.SetId("")
+
+	if err != nil {
+		return fmt.Errorf("BrocadeVTM Pool error whilst deleting %s: %v", poolName, err)
+	}
 	return nil
 }
-*/

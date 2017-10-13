@@ -1,13 +1,13 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm/api/pool"
-	"github.com/sky-uk/go-rest-api"
+	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/pool"
+	"net/http"
 	"regexp"
 	"testing"
 )
@@ -117,51 +117,55 @@ func TestAccPool_Basic(t *testing.T) {
 }
 
 func testAccPoolCheckDestroy(s *terraform.State) error {
-	vtmClient := testAccProvider.Meta().(*rest.Client)
-	var name string
+	config := testAccProvider.Meta().(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 	for _, r := range s.RootModule().Resources {
 		if r.Type != "brocadevtm_pool" {
 			continue
 		}
 
-		if name, ok := r.Primary.Attributes["name"]; ok && name == "" {
-			return nil
+		var name string
+		var ok bool
+		if name, ok = r.Primary.Attributes["name"]; !ok {
+			return fmt.Errorf("Resource has no name")
 		}
 
-		api := pool.NewGet(name)
-		err := vtmClient.Do(api)
-
-		if err != nil {
-			return err
+		var poolObj pool.Pool
+		err := client.GetByName("pools", name, &poolObj)
+		if client.StatusCode != http.StatusNotFound {
+			return fmt.Errorf("Brocade vTM Pools: error checking resource existance: %s", err)
 		}
 	}
 	return nil
 }
 
-func testCheckPoolExists(name string) resource.TestCheckFunc {
+func testCheckPoolExists(resName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[name]
+		config := testAccProvider.Meta().(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
+
+		rs, ok := s.RootModule().Resources[resName]
 		if !ok {
-			return fmt.Errorf("Not found: %s", name)
+			return fmt.Errorf("Not found: %s", resName)
 		}
 
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("No pool name is set")
 		}
 
+		var name string
 		if name, ok := rs.Primary.Attributes["name"]; ok && name == "" {
 			return fmt.Errorf("No pool name is set")
 		}
 
-		vtmClient := testAccProvider.Meta().(*rest.Client)
-
-		api := pool.NewGet(rs.Primary.Attributes["name"])
-		err := vtmClient.Do(api)
-
-		if err != nil {
-			return fmt.Errorf("Received an error retrieving service with name: %s, %s", rs.Primary.Attributes["name"], err)
+		var poolObj pool.Pool
+		err := client.GetByName("pools", name, &poolObj)
+		if client.StatusCode != http.StatusOK {
+			return fmt.Errorf("Resource %s not found, status code: %d", name, client.StatusCode)
 		}
-
+		if err != nil {
+			return fmt.Errorf("Error retrieving resource %s: %s", name, err)
+		}
 		return nil
 	}
 }
@@ -462,4 +466,3 @@ resource "brocadevtm_pool" "acctest" {
   tcp_nagle = false
 }`, poolName)
 }
-*/
