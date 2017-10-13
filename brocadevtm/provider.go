@@ -62,7 +62,7 @@ func Provider() terraform.ResourceProvider {
 			//	"brocadevtm_location":           resourceLocation(),
 			"brocadevtm_monitor": resourceMonitor(),
 			//	"brocadevtm_pool":               resourcePool(),
-			//	"brocadevtm_rule":               resourceRule(),
+			"brocadevtm_rule":               resourceRule(),
 			//	"brocadevtm_ssl_server_key":     resourceSSLServerKey(),
 			//	"brocadevtm_traffic_ip_group":   resourceTrafficIPGroup(),in
 			"brocadevtm_user_authenticator": resourceUserAuthenticator(),
