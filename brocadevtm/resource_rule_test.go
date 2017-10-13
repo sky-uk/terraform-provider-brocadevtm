@@ -5,8 +5,7 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm/api/rule"
-	"github.com/sky-uk/go-rest-api"
+	"github.com/sky-uk/go-brocade-vtm/api"
 	"regexp"
 	"testing"
 )
@@ -59,7 +58,7 @@ func TestAccBrocadeVTMRuleBasic(t *testing.T) {
 
 func testAccBrocadeVTMRuleCheckDestroy(state *terraform.State, name string) error {
 
-	vtmClient := testAccProvider.Meta().(*rest.Client)
+	vtmClient := testAccProvider.Meta().(*api.Client)
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "brocadevtm_rule" {
@@ -68,13 +67,12 @@ func testAccBrocadeVTMRuleCheckDestroy(state *terraform.State, name string) erro
 		if id, ok := rs.Primary.Attributes["id"]; ok && id != "" {
 			return nil
 		}
-		api := rule.NewGetAll()
-		err := vtmClient.Do(api)
+		allRules, err := vtmClient.GetAllResources("rules")
 		if err != nil {
 			return fmt.Errorf("Error: Brocade vTM error occurred while retrieving list of rules, %v", err)
 		}
-		for _, childRule := range api.ResponseObject().(*rule.Rules).Children {
-			if childRule.Name == name {
+		for _, childRule := range allRules {
+			if childRule["Name"] == name {
 				return fmt.Errorf("Error: Brocade vTM Rule %s still exists", name)
 			}
 		}
@@ -93,14 +91,13 @@ func testAccBrocadeVTMRuleExists(ruleName, ruleResourceName string) resource.Tes
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("\nBrocade vTM Rule ID not set for %s in resources", ruleName)
 		}
-		vtmClient := testAccProvider.Meta().(*rest.Client)
-		api := rule.NewGetAll()
-		err := vtmClient.Do(api)
+		vtmClient := testAccProvider.Meta().(*api.Client)
+		allRules, err := vtmClient.GetAllResources("rules")
 		if err != nil {
 			return fmt.Errorf("Brocade vTM Rule - error while retrieving a list of all rules: %v", err)
 		}
-		for _, childRule := range api.ResponseObject().(*rule.Rules).Children {
-			if childRule.Name == ruleName {
+		for _, childRule := range allRules {
+			if childRule["Name"] == ruleName {
 				return nil
 			}
 		}
