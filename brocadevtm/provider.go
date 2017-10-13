@@ -61,6 +61,7 @@ func Provider() terraform.ResourceProvider {
 			"brocadevtm_glb":             resourceGLB(),
 			"brocadevtm_location":        resourceLocation(),
 			"brocadevtm_monitor":         resourceMonitor(),
+			"brocadevtm_persistence":     resourcePersistence(),
 			//	"brocadevtm_pool":               resourcePool(),
 			//	"brocadevtm_rule":               resourceRule(),
 			//	"brocadevtm_ssl_server_key":     resourceSSLServerKey(),
