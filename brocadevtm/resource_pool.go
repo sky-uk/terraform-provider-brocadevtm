@@ -6,7 +6,6 @@ import (
 	"github.com/sky-uk/go-brocade-vtm/api/pool"
 	"github.com/sky-uk/go-rest-api"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
-	"log"
 	"net/http"
 	"regexp"
 )
@@ -45,14 +44,14 @@ func resourcePool() *schema.Resource {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ValidateFunc: util.ValidateUnsignedInteger,
-				Default:      50,
+				Computed:     true,
 				Description:  "Maximum number of unused HTTP keepalive connections",
 			},
 			"max_timed_out_connection_attempts": {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ValidateFunc: util.ValidateUnsignedInteger,
-				Default:      2,
+				Computed:     true,
 				Description:  "Maxiumum failed connection attempts within the max_reply_time.",
 			},
 			"monitors": {
@@ -65,12 +64,12 @@ func resourcePool() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Description: "Whether or not a connection to a node should be closed with a RST rather than a FIN packet",
-				Default:     false,
+				Computed:    true,
 			},
 			"node_connection_attempts": {
 				Type:         schema.TypeInt,
 				Optional:     true,
-				Default:      3,
+				Computed:     true,
 				Description:  "Number of times an attempt to connect to the same node before marking it as failed. Only used when passive_monitoring is enabled",
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
@@ -134,7 +133,7 @@ func resourcePool() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Description: "Whether or not the software should check that real requests are working",
-				Default:     false,
+				Computed:    true,
 			},
 			"persistence_class": {
 				Type:        schema.TypeString,
@@ -144,7 +143,7 @@ func resourcePool() *schema.Resource {
 			"transparent": {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     false,
+				Computed:    true,
 				Description: "Whether or not connections to the back ends appears to originate from the source client IP",
 			},
 
@@ -1092,23 +1091,28 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 		createPool.Properties.Basic.MaxConnectionAttempts = &maxConnectionAttempts
 	}
 	if v, ok := d.GetOk("max_idle_connections_pernode"); ok {
-		createPool.Properties.Basic.MaxIdleConnectionsPerNode = uint(v.(int))
+		maxIdleConnectionsPerNode := uint(v.(int))
+		createPool.Properties.Basic.MaxIdleConnectionsPerNode = &maxIdleConnectionsPerNode
 	}
 	if v, ok := d.GetOk("max_timed_out_connection_attempts"); ok {
-		createPool.Properties.Basic.MaxTimeoutConnectionAttempts = uint(v.(int))
+		maxTimedOutConnectionAttempts := uint(v.(int))
+		createPool.Properties.Basic.MaxTimeoutConnectionAttempts = &maxTimedOutConnectionAttempts
 	}
 	if v, ok := d.GetOk("monitors"); ok {
 		createPool.Properties.Basic.Monitors = util.BuildStringArrayFromInterface(v)
 	}
-	createPool.Properties.Basic.NodeCloseWithReset = d.Get("node_close_with_rst").(bool)
+	if v, ok := d.GetOk("node_close_with_rst"); ok {
+		nodeCloseWithRst := v.(bool)
+		createPool.Properties.Basic.NodeCloseWithReset = &nodeCloseWithRst
+	}
 	if v, ok := d.GetOk("node_connection_attempts"); ok {
-		createPool.Properties.Basic.NodeConnectionAttempts = uint(v.(int))
+		nodeConnectionAttempts := uint(v.(int))
+		createPool.Properties.Basic.NodeConnectionAttempts = &nodeConnectionAttempts
 	}
 	if v, ok := d.GetOk("node_delete_behaviour"); ok {
 		createPool.Properties.Basic.NodeDeleteBehavior = v.(string)
 	}
 	if v, ok := d.GetOk("node_drain_to_delete_timeout"); ok {
-		log.Println("The node drain to delete timeout is: ", v.(int))
 		nodeDrainDeleteTimeout := uint(v.(int))
 		createPool.Properties.Basic.NodeDrainDeleteTimeout = &nodeDrainDeleteTimeout
 	}
@@ -1118,11 +1122,17 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("note"); ok {
 		createPool.Properties.Basic.Note = v.(string)
 	}
-	createPool.Properties.Basic.PassiveMonitoring = d.Get("passive_monitoring").(bool)
+	if v, ok := d.GetOk("passive_monitoring"); ok {
+		passiveMonitoring := v.(bool)
+		createPool.Properties.Basic.PassiveMonitoring = &passiveMonitoring
+	}
 	if v, ok := d.GetOk("persistence_class"); ok {
 		createPool.Properties.Basic.PersistenceClass = v.(string)
 	}
-	createPool.Properties.Basic.Transparent = d.Get("transparent").(bool)
+	if v, ok := d.GetOk("transparent"); ok {
+		transparent := v.(bool)
+		createPool.Properties.Basic.Transparent = &transparent
+	}
 	if v, ok := d.GetOk("auto_scaling"); ok {
 		autoScaling, err := buildAutoScaling(v)
 		if err != nil {
@@ -1199,18 +1209,18 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("bandwidth_class", response.Properties.Basic.BandwidthClass)
 	d.Set("failure_pool", response.Properties.Basic.FailurePool)
 	d.Set("max_connection_attempts", *response.Properties.Basic.MaxConnectionAttempts)
-	d.Set("max_idle_connections_pernode", response.Properties.Basic.MaxIdleConnectionsPerNode)
-	d.Set("max_timed_out_connection_attempts", response.Properties.Basic.MaxTimeoutConnectionAttempts)
+	d.Set("max_idle_connections_pernode", *response.Properties.Basic.MaxIdleConnectionsPerNode)
+	d.Set("max_timed_out_connection_attempts", *response.Properties.Basic.MaxTimeoutConnectionAttempts)
 	d.Set("monitors", response.Properties.Basic.Monitors)
-	d.Set("node_close_with_rst", response.Properties.Basic.NodeCloseWithReset)
-	d.Set("node_connection_attempts", response.Properties.Basic.NodeConnectionAttempts)
+	d.Set("node_close_with_rst", *response.Properties.Basic.NodeCloseWithReset)
+	d.Set("node_connection_attempts", *response.Properties.Basic.NodeConnectionAttempts)
 	d.Set("node_delete_behaviour", response.Properties.Basic.NodeDeleteBehavior)
 	d.Set("node_drain_to_delete_timeout", *response.Properties.Basic.NodeDrainDeleteTimeout)
 	d.Set("nodes_table", response.Properties.Basic.NodesTable)
 	d.Set("note", response.Properties.Basic.Note)
-	d.Set("passive_monitoring", response.Properties.Basic.PassiveMonitoring)
+	d.Set("passive_monitoring", *response.Properties.Basic.PassiveMonitoring)
 	d.Set("persistence_class", response.Properties.Basic.PersistenceClass)
-	d.Set("transparent", response.Properties.Basic.Transparent)
+	d.Set("transparent", *response.Properties.Basic.Transparent)
 	d.Set("auto_scaling", []pool.AutoScaling{response.Properties.AutoScaling})
 	d.Set("pool_connection", []pool.Connection{response.Properties.Connection})
 	d.Set("dns_autoscale", []pool.DNSAutoScale{response.Properties.DNSAutoScale})
@@ -1252,23 +1262,28 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 		hasChanges = true
 	}
 	if d.HasChange("max_idle_connections_pernode") {
-		updatePool.Properties.Basic.MaxIdleConnectionsPerNode = uint(d.Get("max_idle_connections_pernode").(int))
+		maxIdleConnectionsPerNode := uint(d.Get("max_idle_connections_pernode").(int))
+		updatePool.Properties.Basic.MaxIdleConnectionsPerNode = &maxIdleConnectionsPerNode
 		hasChanges = true
 	}
 	if d.HasChange("max_timed_out_connection_attempts") {
-		updatePool.Properties.Basic.MaxTimeoutConnectionAttempts = uint(d.Get("max_timed_out_connection_attempts").(int))
+		maxTimedOutConnectionAttempts := uint(d.Get("max_timed_out_connection_attempts").(int))
+		updatePool.Properties.Basic.MaxTimeoutConnectionAttempts = &maxTimedOutConnectionAttempts
 		hasChanges = true
 	}
 	if d.HasChange("monitors") {
 		updatePool.Properties.Basic.Monitors = util.BuildStringArrayFromInterface(d.Get("monitors"))
 		hasChanges = true
 	}
-	updatePool.Properties.Basic.NodeCloseWithReset = d.Get("node_close_with_rst").(bool)
+
 	if d.HasChange("node_close_with_rst") {
+		nodeCloseWithRst := d.Get("node_close_with_rst").(bool)
+		updatePool.Properties.Basic.NodeCloseWithReset = &nodeCloseWithRst
 		hasChanges = true
 	}
 	if d.HasChange("node_connection_attempts") {
-		updatePool.Properties.Basic.NodeConnectionAttempts = uint(d.Get("node_connection_attempts").(int))
+		nodeConnectionAttempts := uint(d.Get("node_connection_attempts").(int))
+		updatePool.Properties.Basic.NodeConnectionAttempts = &nodeConnectionAttempts
 		hasChanges = true
 	}
 	if d.HasChange("node_delete_behaviour") {
@@ -1292,8 +1307,10 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 		hasChanges = true
 	}
-	updatePool.Properties.Basic.PassiveMonitoring = d.Get("passive_monitoring").(bool)
+
 	if d.HasChange("passive_monitoring") {
+		passiveMonitoring := d.Get("passive_monitoring").(bool)
+		updatePool.Properties.Basic.PassiveMonitoring = &passiveMonitoring
 		hasChanges = true
 	}
 	if d.HasChange("persistence_class") {
@@ -1302,8 +1319,9 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 		hasChanges = true
 	}
-	updatePool.Properties.Basic.Transparent = d.Get("transparent").(bool)
 	if d.HasChange("transparent") {
+		transparent := d.Get("transparent").(bool)
+		updatePool.Properties.Basic.Transparent = &transparent
 		hasChanges = true
 	}
 	if d.HasChange("auto_scaling") {
