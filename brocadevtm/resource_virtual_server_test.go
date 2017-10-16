@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm/api/virtualserver"
-	"github.com/sky-uk/go-rest-api"
+	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/virtual_server"
 	"net/http"
 	"regexp"
 	"testing"
@@ -568,7 +568,9 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 }
 
 func testAccBrocadeVTMVirtualServerCheckDestroy(state *terraform.State, name string) error {
-	vtmClient := testAccProvider.Meta().(*rest.Client)
+	config := testAccProvider.Meta().(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "infoblox_virtual_server" {
 			continue
@@ -576,12 +578,13 @@ func testAccBrocadeVTMVirtualServerCheckDestroy(state *terraform.State, name str
 		if id, ok := rs.Primary.Attributes["id"]; ok && id == "" {
 			return nil
 		}
-		api := virtualserver.NewGet(name)
-		err := vtmClient.Do(api)
+		var vs virtualserver.VirtualServer
+		client.WorkWithConfigurationResources()
+		err := client.GetByName("virtual_servers", name, &vs)
 		if err != nil {
-			return fmt.Errorf("Error: Brocade vTM error occurred while retrieving Virtual Server: %v", err)
+			return fmt.Errorf("Error: Brocade vTM error occurred while retrieving Virtual Server: %s", err)
 		}
-		if api.StatusCode() == http.StatusOK {
+		if client.StatusCode == http.StatusOK {
 			return fmt.Errorf("Error: Brocade vTM Virtual Server %s still exists", name)
 		}
 	}
@@ -597,13 +600,17 @@ func testAccBrocadeVTMVirtualServerExists(name, resourceName string) resource.Te
 		if rs.Primary.ID == "" {
 			return fmt.Errorf("\nBrocade vTM Virtual Server ID not set for %s in resources", name)
 		}
-		vtmClient := testAccProvider.Meta().(*rest.Client)
-		api := virtualserver.NewGet(name)
-		err := vtmClient.Do(api)
+
+		config := testAccProvider.Meta().(map[string]interface{})
+		client := config["jsonClient"].(*api.Client)
+
+		var vs virtualserver.VirtualServer
+		client.WorkWithConfigurationResources()
+		err := client.GetByName("virtual_servers", name, &vs)
 		if err != nil {
-			return fmt.Errorf("Brocade vTM Virtual Server - error while retrieving User Group: %v", err)
+			return fmt.Errorf("Brocade vTM Virtual Server - error while retrieving virtual server %s: %s", name, err)
 		}
-		if api.StatusCode() == http.StatusOK {
+		if client.StatusCode == http.StatusOK {
 			return nil
 		}
 		return fmt.Errorf("Brocade vTM Virtual Server %s not found on remote vTM", name)
