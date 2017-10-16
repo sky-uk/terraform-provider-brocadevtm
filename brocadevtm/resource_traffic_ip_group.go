@@ -38,10 +38,10 @@ func resourceTrafficIPGroup() *schema.Resource {
 				Optional:    true,
 			},
 			"ip_assignment_mode": {
-				Type:        schema.TypeString,
-				Description: "Configure how traffic IPs are assigned to traffic managers in single hosted mode",
-				Computed:    true,
-				Optional:    true,
+				Type:         schema.TypeString,
+				Description:  "Configure how traffic IPs are assigned to traffic managers in single hosted mode",
+				Computed:     true,
+				Optional:     true,
 				ValidateFunc: validateIPAssignmentMode,
 			},
 			"ip_mapping": {
@@ -77,9 +77,9 @@ func resourceTrafficIPGroup() *schema.Resource {
 				Optional:    true,
 			},
 			"location": {
-				Type:        schema.TypeInt,
-				Description: "The location where the traffic IP group is based",
-				Optional:    true,
+				Type:         schema.TypeInt,
+				Description:  "The location where the traffic IP group is based",
+				Optional:     true,
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"machines": {
@@ -93,7 +93,7 @@ func resourceTrafficIPGroup() *schema.Resource {
 				Type:         schema.TypeString,
 				Description:  "The method used to distribute traffic IPs across machines in the cluster",
 				Optional:     true,
-				Computed:    true,
+				Computed:     true,
 				ValidateFunc: validateTrafficIPGroupMode,
 			},
 			"multicast": {
@@ -108,37 +108,37 @@ func resourceTrafficIPGroup() *schema.Resource {
 				Optional:    true,
 			},
 			"rhi_bgp_metric_base": {
-				Type:        schema.TypeInt,
-				Description: "Base BGP routing metric",
-				Computed:    true,
-				Optional:    true,
+				Type:         schema.TypeInt,
+				Description:  "Base BGP routing metric",
+				Computed:     true,
+				Optional:     true,
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"rhi_bgp_passive_metric_offset": {
-				Type:        schema.TypeInt,
-				Description: "BGP routing metric offset",
-				Computed:    true,
-				Optional:    true,
+				Type:         schema.TypeInt,
+				Description:  "BGP routing metric offset",
+				Computed:     true,
+				Optional:     true,
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"rhi_ospfv2_metric_base": {
-				Type:        schema.TypeInt,
-				Description: "OSPFv2 routing metric",
-				Computed:    true,
-				Optional:    true,
+				Type:         schema.TypeInt,
+				Description:  "OSPFv2 routing metric",
+				Computed:     true,
+				Optional:     true,
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"rhi_ospfv2_passive_metric_offset": {
-				Type:        schema.TypeInt,
-				Description: "OSPFv2 routing metric offset",
-				Computed:    true,
-				Optional:    true,
+				Type:         schema.TypeInt,
+				Description:  "OSPFv2 routing metric offset",
+				Computed:     true,
+				Optional:     true,
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"rhi_protocols": {
 				Type:         schema.TypeString,
 				Description:  "List of protocols ro be used for RHI",
-				Computed:    true,
+				Computed:     true,
 				Optional:     true,
 				ValidateFunc: validateRHIProtocols,
 			},
@@ -363,7 +363,6 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 	name := d.Id()
 	var trafficIPGroup trafficIpGroups.TrafficIPGroup
 	hasChanges := false
-
 
 	if d.HasChange("enabled") {
 		enabled := d.Get("enabled").(bool)
