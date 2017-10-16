@@ -29,13 +29,13 @@ type IPMapping struct {
 
 // Basic : Stored within Properties, contains attributes of an TrafficIPGroup
 type Basic struct {
-	Enabled                      *bool       `json:"enabled,omitempty"`
-	HashSourcePort               *bool       `json:"hash_source_port,omitempty"`
+	Enabled                      bool        `json:"enabled,omitempty"`
+	HashSourcePort               bool        `json:"hash_source_port,omitempty"`
 	IPAssignmentMode             string      `json:"ip_assignment_mode,omitempty"`
 	IPMapping                    []IPMapping `json:"ip_mapping,omitempty"`
 	IPAddresses                  []string    `json:"ipaddresses,omitempty"`
-	KeepTogether                 *bool       `json:"keeptogether,omitempty"`
-	Location                     int         `json:"location,omitempty"`
+	KeepTogether                 bool        `json:"keeptogether,omitempty"`
+	Location                     *int        `json:"location,omitempty"`
 	Machines                     []string    `json:"machines,omitempty"`
 	Mode                         string      `json:"mode,omitempty"`
 	Multicast                    string      `json:"multicast,omitempty"`

@@ -6,6 +6,7 @@ import (
 	"github.com/sky-uk/go-brocade-vtm/api/traffic_ip_group"
 	"github.com/sky-uk/go-brocade-vtm/api/traffic_ip_group_manager"
 	"github.com/sky-uk/go-rest-api"
+	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"net/http"
 	"regexp"
 )
@@ -27,44 +28,130 @@ func resourceTrafficIPGroup() *schema.Resource {
 			"enabled": {
 				Type:        schema.TypeBool,
 				Description: "Whether the traffic IP group should be enabled",
+				Default:     false,
 				Optional:    true,
-				Computed:    true,
 			},
 			"hashsourceport": {
 				Type:        schema.TypeBool,
 				Description: "Whether or not the source port should be taken into account when deciding which traffic manager should handle a request.",
+				Default:     false,
 				Optional:    true,
-				Computed:    true,
 			},
-
+			"ip_assignment_mode": {
+				Type:        schema.TypeString,
+				Description: "Configure how traffic IPs are assigned to traffic managers in single hosted mode",
+				Default:     "balanced",
+				Optional:    true,
+			},
+			"ip_mapping": {
+				Type:        schema.TypeSet,
+				Description: "Table matching traffic IPs to machines which should host the IPs",
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"ip": {
+							Type:         schema.TypeString,
+							Description:  "Traffic IP address",
+							Optional:     true,
+							ValidateFunc: util.ValidateIP,
+						},
+						"traffic_manager": {
+							Type:        schema.TypeString,
+							Description: "The name of the traffic manager which should host the IP",
+							Optional:    true,
+						},
+					},
+				},
+			},
 			"ipaddresses": {
 				Type:        schema.TypeList,
 				Description: "List of IP addresses to raise on the traffic managers",
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"trafficmanagers": {
+			"keeptogether": {
+				Type:        schema.TypeBool,
+				Description: "Whether or not all traffic IPs are raised on a single traffic manager",
+				Optional:    true,
+				Default:     false,
+			},
+			"location": {
+				Type:        schema.TypeInt,
+				Description: "The location where the traffic IP group is based",
+				Optional:    true,
+			},
+			"machines": {
 				Type:        schema.TypeList,
 				Description: "List of traffic managers on which to raise this traffic IP - automatically retrieved from vTM",
 				Optional:    true,
-				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"mode": {
 				Type:         schema.TypeString,
 				Description:  "The method used to distribute traffic IPs across machines in the cluster",
 				Optional:     true,
-				Computed:     true,
+				Default:      "singlehosted",
 				ValidateFunc: validateTrafficIPGroupMode,
 			},
-			"multicastip": {
+			"multicast": {
 				Type:         schema.TypeString,
 				Description:  "Multicast IP address",
 				Optional:     true,
 				ValidateFunc: validateTrafficIPGroupMulticastIP,
 			},
+			"note": {
+				Type:        schema.TypeString,
+				Description: "A note to attach to this traffic IP group",
+				Optional:    true,
+			},
+			"rhi_bgp_metric_base": {
+				Type:        schema.TypeInt,
+				Description: "Base BGP routing metric",
+				Default:     10,
+				Optional:    true,
+			},
+			"rhi_bgp_passive_metric_offset": {
+				Type:        schema.TypeInt,
+				Description: "BGP routing metric offset",
+				Default:     10,
+				Optional:    true,
+			},
+			"rhi_ospfv2_metric_base": {
+				Type:        schema.TypeInt,
+				Description: "OSPFv2 routing metric",
+				Default:     10,
+				Optional:    true,
+			},
+			"rhi_ospfv2_passive_metric_offset": {
+				Type:        schema.TypeInt,
+				Description: "OSPFv2 routing metric offset",
+				Default:     10,
+				Optional:    true,
+			},
+			"rhi_protocols": {
+				Type:         schema.TypeString,
+				Description:  "List of protocols ro be used for RHI",
+				Default:      "ospf",
+				Optional:     true,
+				ValidateFunc: validateRHIProtocols,
+			},
+			"slaves": {
+				Type:        schema.TypeSet,
+				Description: "List of passive traffic managers",
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
+}
+
+func validateRHIProtocols(v interface{}, k string) (ws []string, errors []error) {
+	protocol := v.(string)
+	protocolOption := regexp.MustCompile(`^(ospf|bgp)$`)
+	if !protocolOption.MatchString(protocol) {
+		errors = append(errors, fmt.Errorf("%q must be one of ospf or bgp", k))
+	}
+	return
 }
 
 func validateTrafficIPGroupMode(v interface{}, k string) (ws []string, errors []error) {
@@ -110,77 +197,121 @@ func buildIPAddresses(ipAddresses interface{}) []string {
 	return ipAddressList
 }
 
-func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
-	vtmClient := m.(*rest.Client)
-	var createTrafficIPGroup trafficIpGroups.TrafficIPGroup
-	var tipgName string
+func buildIPMapping(ipMappingBlock *schema.Set) []trafficIpGroups.IPMapping {
 
+	ipMappingObjectList := make([]trafficIpGroups.IPMapping, 0)
+
+	for _, ipMappingItem := range ipMappingBlock.List() {
+
+		ipMapping := ipMappingItem.(map[string]interface{})
+		ipMappingObject := trafficIpGroups.IPMapping{}
+
+		if ip, ok := ipMapping["ip"].(string); ok {
+			ipMappingObject.IP = ip
+		}
+		if trafficManager, ok := ipMapping["traffic_manager"].(string); ok {
+			ipMappingObject.TrafficManager = trafficManager
+		}
+		ipMappingObjectList = append(ipMappingObjectList, ipMappingObject)
+	}
+	return ipMappingObjectList
+}
+
+func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
+
+	vtmClient := m.(*rest.Client)
+	var trafficIPGroup trafficIpGroups.TrafficIPGroup
+	var name string
+
+	if v, ok := d.GetOk("name"); ok && v != "" {
+		name = v.(string)
+	}
+	trafficIPGroup.Properties.Basic.Enabled = d.Get("enabled").(bool)
+	trafficIPGroup.Properties.Basic.HashSourcePort = d.Get("hashsourceport").(bool)
+	if v, ok := d.GetOk("ip_assignment_mode"); ok && v != "" {
+		trafficIPGroup.Properties.Basic.IPAssignmentMode = v.(string)
+	}
+	if v, ok := d.GetOk("ip_mapping"); ok {
+		trafficIPGroup.Properties.Basic.IPMapping = buildIPMapping(v.(*schema.Set))
+	}
+	if v, ok := d.GetOk("ipaddresses"); ok && v != "" {
+		trafficIPGroup.Properties.Basic.IPAddresses = buildIPAddresses(v)
+	}
+	trafficIPGroup.Properties.Basic.KeepTogether = d.Get("keeptogether").(bool)
+	if v, ok := d.GetOk("location"); ok {
+		location := v.(int)
+		trafficIPGroup.Properties.Basic.Location = &location
+	}
 	// Retrieve the list of Brocade vTM traffic managers and assign it to Machines
 	trafficManagers, err := getTrafficManagers(m)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst creating %s: %v", tipgName, err)
+		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst creating %s: %v", name, err)
 	}
-	createTrafficIPGroup.Properties.Basic.Machines = trafficManagers
-
-	if v, ok := d.GetOk("name"); ok && v != "" {
-		tipgName = v.(string)
+	trafficIPGroup.Properties.Basic.Machines = trafficManagers
+	if v, ok := d.GetOk("mode"); ok {
+		trafficIPGroup.Properties.Basic.Mode = v.(string)
 	}
-	if v, _ := d.GetOk("enabled"); v != nil {
-		enableTrafficIPGroup := v.(bool)
-		createTrafficIPGroup.Properties.Basic.Enabled = &enableTrafficIPGroup
+	if v, ok := d.GetOk("multicast"); ok && v != "" {
+		trafficIPGroup.Properties.Basic.Multicast = v.(string)
 	}
-	if v, ok := d.GetOk("hashsourceport"); ok {
-		hashSourcePort := v.(bool)
-		createTrafficIPGroup.Properties.Basic.HashSourcePort = &hashSourcePort
+	if v, ok := d.GetOk("note"); ok && v != "" {
+		trafficIPGroup.Properties.Basic.Note = v.(string)
 	}
-	if v, ok := d.GetOk("ipaddresses"); ok && v != "" {
-		createTrafficIPGroup.Properties.Basic.IPAddresses = buildIPAddresses(v)
+	trafficIPGroup.Properties.Basic.RhiBgpMetricBase = uint(d.Get("rhi_bgp_passive_metric_offset").(int))
+	trafficIPGroup.Properties.Basic.RhiBgpPassiveMetricOffset = uint(d.Get("rhi_bgp_passive_metric_offset").(int))
+	trafficIPGroup.Properties.Basic.RhiOspfv2MetricBase = uint(d.Get("rhi_ospfv2_metric_base").(int))
+	trafficIPGroup.Properties.Basic.RhiOspfv2PassiveMetricOffset = uint(d.Get("rhi_ospfv2_passive_metric_offset").(int))
+	if v, ok := d.GetOk("rhi_protocols"); ok && v != "" {
+		trafficIPGroup.Properties.Basic.RhiProtocols = v.(string)
 	}
-	if v, ok := d.GetOk("mode"); ok && v != "" {
-		createTrafficIPGroup.Properties.Basic.Mode = v.(string)
-	}
-	if v, ok := d.GetOk("multicastip"); ok && v != "" {
-		createTrafficIPGroup.Properties.Basic.Multicast = v.(string)
+	if v, ok := d.GetOk("slaves"); ok {
+		trafficIPGroup.Properties.Basic.Slaves = util.BuildStringListFromSet(v.(*schema.Set))
 	}
 
-	createAPI := trafficIpGroups.NewCreate(tipgName, createTrafficIPGroup)
+	createAPI := trafficIpGroups.NewCreate(name, trafficIPGroup)
 	err = vtmClient.Do(createAPI)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst creating %s: %v", tipgName, err)
+		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst creating %s: %v", name, err)
 	}
-
-	d.SetId(tipgName)
+	d.SetId(name)
 	return resourceTrafficIPGroupRead(d, m)
 }
 
 func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 
 	vtmClient := m.(*rest.Client)
-	var readTrafficIPGroup trafficIpGroups.TrafficIPGroup
-	var tipgName string
+	var trafficIPGroup trafficIpGroups.TrafficIPGroup
+	name := d.Id()
 
-	if v, ok := d.GetOk("name"); ok {
-		tipgName = v.(string)
-	}
-
-	getSingleAPI := trafficIpGroups.NewGet(tipgName)
-	err := vtmClient.Do(getSingleAPI)
+	getAPI := trafficIpGroups.NewGet(name)
+	err := vtmClient.Do(getAPI)
 	if err != nil {
-		if getSingleAPI.StatusCode() == http.StatusNotFound {
+		if getAPI.StatusCode() == http.StatusNotFound {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst retrieving %s: %v", tipgName, err)
+		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst retrieving %s: %v", name, err)
 	}
 
-	readTrafficIPGroup = *getSingleAPI.ResponseObject().(*trafficIpGroups.TrafficIPGroup)
-	d.Set("name", tipgName)
-	d.Set("enabled", *readTrafficIPGroup.Properties.Basic.Enabled)
-	d.Set("hashsourceport", *readTrafficIPGroup.Properties.Basic.HashSourcePort)
-	d.Set("ipaddresses", readTrafficIPGroup.Properties.Basic.IPAddresses)
-	d.Set("trafficmanagers", readTrafficIPGroup.Properties.Basic.Machines)
-	d.Set("mode", readTrafficIPGroup.Properties.Basic.Mode)
-	d.Set("multicastip", readTrafficIPGroup.Properties.Basic.Multicast)
+	trafficIPGroup = *getAPI.ResponseObject().(*trafficIpGroups.TrafficIPGroup)
+	d.Set("name", name)
+	d.Set("enabled", trafficIPGroup.Properties.Basic.Enabled)
+	d.Set("hashsourceport", trafficIPGroup.Properties.Basic.HashSourcePort)
+	d.Set("ip_assignment_mode", trafficIPGroup.Properties.Basic.IPAssignmentMode)
+	d.Set("ip_mapping", trafficIPGroup.Properties.Basic.IPMapping)
+	d.Set("ipaddresses", trafficIPGroup.Properties.Basic.IPAddresses)
+	d.Set("keeptogether", trafficIPGroup.Properties.Basic.KeepTogether)
+	d.Set("location", *trafficIPGroup.Properties.Basic.Location)
+	d.Set("machines", trafficIPGroup.Properties.Basic.Machines)
+	d.Set("mode", trafficIPGroup.Properties.Basic.Mode)
+	d.Set("multicast", trafficIPGroup.Properties.Basic.Multicast)
+	d.Set("note", trafficIPGroup.Properties.Basic.Note)
+	d.Set("rhi_bgp_metric_base", trafficIPGroup.Properties.Basic.RhiBgpMetricBase)
+	d.Set("rhi_bgp_passive_metric_offset", trafficIPGroup.Properties.Basic.RhiBgpPassiveMetricOffset)
+	d.Set("rhi_ospfv2_metric_base", trafficIPGroup.Properties.Basic.RhiOspfv2MetricBase)
+	d.Set("rhi_ospfv2_passive_metric_offset", trafficIPGroup.Properties.Basic.RhiOspfv2PassiveMetricOffset)
+	d.Set("rhi_protocols", trafficIPGroup.Properties.Basic.RhiProtocols)
+	d.Set("slaves", trafficIPGroup.Properties.Basic.Slaves)
 
 	return nil
 }
@@ -188,64 +319,106 @@ func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 
 	vtmClient := m.(*rest.Client)
-	var trafficIPGroupName string
-	var updateTrafficIPGroup trafficIpGroups.TrafficIPGroup
+	name := d.Id()
+	var trafficIPGroup trafficIpGroups.TrafficIPGroup
 	hasChanges := false
 
-	if v, ok := d.GetOk("name"); ok && v != "" {
-		trafficIPGroupName = v.(string)
-	}
+	trafficIPGroup.Properties.Basic.Enabled = d.Get("enabled").(bool)
 	if d.HasChange("enabled") {
-		enableTrafficIPGroup := d.Get("enabled").(bool)
-		updateTrafficIPGroup.Properties.Basic.Enabled = &enableTrafficIPGroup
 		hasChanges = true
 	}
+	trafficIPGroup.Properties.Basic.HashSourcePort = d.Get("hashsourceport").(bool)
 	if d.HasChange("hashsourceport") {
-		hashSourcePort := d.Get("hashsourceport").(bool)
-		updateTrafficIPGroup.Properties.Basic.HashSourcePort = &hashSourcePort
+		hasChanges = true
+	}
+	if d.HasChange("ip_assignment_mode") {
+		if v, ok := d.GetOk("ip_assignment_mode"); ok && v != "" {
+			trafficIPGroup.Properties.Basic.IPAssignmentMode = v.(string)
+		}
+		hasChanges = true
+	}
+	if d.HasChange("ip_mapping") {
+		if v, ok := d.GetOk("ip_mapping"); ok {
+			trafficIPGroup.Properties.Basic.IPMapping = buildIPMapping(v.(*schema.Set))
+		}
 		hasChanges = true
 	}
 	if d.HasChange("ipaddresses") {
 		if v, ok := d.GetOk("ipaddresses"); ok && v != "" {
-			updateTrafficIPGroup.Properties.Basic.IPAddresses = buildIPAddresses(v)
+			trafficIPGroup.Properties.Basic.IPAddresses = buildIPAddresses(v)
+		}
+		hasChanges = true
+	}
+	trafficIPGroup.Properties.Basic.KeepTogether = d.Get("keeptogether").(bool)
+	if d.HasChange("keeptogether") {
+		hasChanges = true
+	}
+	if d.HasChange("location") {
+		if v, ok := d.GetOk("location"); ok {
+			location := v.(int)
+			trafficIPGroup.Properties.Basic.Location = &location
 		}
 		hasChanges = true
 	}
 	if d.HasChange("mode") {
 		if v, ok := d.GetOk("mode"); ok && v != "" {
-			updateTrafficIPGroup.Properties.Basic.Mode = v.(string)
+			trafficIPGroup.Properties.Basic.Mode = v.(string)
 		}
 		hasChanges = true
 	}
-	if d.HasChange("multicastip") {
-		if v, ok := d.GetOk("multicastip"); ok && v != "" {
-			updateTrafficIPGroup.Properties.Basic.Multicast = v.(string)
+	if d.HasChange("multicast") {
+		if v, ok := d.GetOk("multicast"); ok && v != "" {
+			trafficIPGroup.Properties.Basic.Multicast = v.(string)
 		}
 		hasChanges = true
+	}
+	if d.HasChange("note") {
+		if v, ok := d.GetOk("note"); ok && v != "" {
+			trafficIPGroup.Properties.Basic.Note = v.(string)
+		}
+		hasChanges = true
+	}
+	trafficIPGroup.Properties.Basic.RhiBgpMetricBase = uint(d.Get("rhi_bgp_passive_metric_offset").(int))
+	if d.HasChange("rhi_bgp_passive_metric_offset") {
+		hasChanges = true
+	}
+	trafficIPGroup.Properties.Basic.RhiBgpPassiveMetricOffset = uint(d.Get("rhi_bgp_passive_metric_offset").(int))
+	if d.HasChange("rhi_bgp_passive_metric_offset") {
+		hasChanges = true
+	}
+	trafficIPGroup.Properties.Basic.RhiOspfv2MetricBase = uint(d.Get("rhi_ospfv2_metric_base").(int))
+	if d.HasChange("rhi_ospfv2_metric_base") {
+		hasChanges = true
+	}
+	trafficIPGroup.Properties.Basic.RhiOspfv2PassiveMetricOffset = uint(d.Get("rhi_ospfv2_passive_metric_offset").(int))
+	if d.HasChange("rhi_ospfv2_passive_metric_offset") {
+		hasChanges = true
+	}
+	if d.HasChange("rhi_protocols") {
+		if v, ok := d.GetOk("rhi_protocols"); ok && v != "" {
+			trafficIPGroup.Properties.Basic.RhiProtocols = v.(string)
+		}
+	}
+	if d.HasChange("slaves") {
+		if v, ok := d.GetOk("slaves"); ok {
+			trafficIPGroup.Properties.Basic.Slaves = util.BuildStringListFromSet(v.(*schema.Set))
+		}
 	}
 
 	if hasChanges {
 		// On all updates refresh the list of traffic managers
 		trafficManagers, err := getTrafficManagers(m)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst updating %s: %v", trafficIPGroupName, err)
+			return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst updating %s: %v", name, err)
 		}
-		updateTrafficIPGroup.Properties.Basic.Machines = trafficManagers
+		trafficIPGroup.Properties.Basic.Machines = trafficManagers
 
-		updateAPI := trafficIpGroups.NewUpdate(trafficIPGroupName, updateTrafficIPGroup)
+		updateAPI := trafficIpGroups.NewUpdate(name, trafficIPGroup)
 		err = vtmClient.Do(updateAPI)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst updating %s: %v", trafficIPGroupName, err)
+			return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst updating %s: %v", name, err)
 		}
-
-		updateResponse := updateAPI.ResponseObject().(*trafficIpGroups.TrafficIPGroup)
-		d.SetId(trafficIPGroupName)
-		d.Set("enabled", *updateResponse.Properties.Basic.Enabled)
-		d.Set("hashsourceport", *updateResponse.Properties.Basic.HashSourcePort)
-		d.Set("ipaddresses", updateResponse.Properties.Basic.IPAddresses)
-		d.Set("trafficmanagers", updateResponse.Properties.Basic.Machines)
-		d.Set("mode", updateResponse.Properties.Basic.Mode)
-		d.Set("multicastip", updateResponse.Properties.Basic.Multicast)
+		d.SetId(name)
 	}
 	return resourceTrafficIPGroupRead(d, m)
 }
@@ -253,20 +426,13 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceTrafficIPGroupDelete(d *schema.ResourceData, m interface{}) error {
 
 	vtmClient := m.(*rest.Client)
-	var name string
-
-	if v, ok := d.GetOk("name"); ok {
-		name = v.(string)
-	} else {
-		return fmt.Errorf("Traffic IP Group delete error: name argument required")
-	}
+	name := d.Id()
 
 	deleteAPI := trafficIpGroups.NewDelete(name)
 	err := vtmClient.Do(deleteAPI)
 	if err != nil && deleteAPI.StatusCode() != http.StatusNotFound {
 		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst deleting %s: %v", name, err)
 	}
-
 	d.SetId("")
 	return nil
 }
