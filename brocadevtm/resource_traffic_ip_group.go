@@ -28,13 +28,13 @@ func resourceTrafficIPGroup() *schema.Resource {
 			"enabled": {
 				Type:        schema.TypeBool,
 				Description: "Whether the traffic IP group should be enabled",
-				Computed:    true,
+				Default:     false,
 				Optional:    true,
 			},
 			"hash_source_port": {
 				Type:        schema.TypeBool,
 				Description: "Whether or not the source port should be taken into account when deciding which traffic manager should handle a request.",
-				Computed:    true,
+				Default:     false,
 				Optional:    true,
 			},
 			"ip_assignment_mode": {
@@ -73,12 +73,13 @@ func resourceTrafficIPGroup() *schema.Resource {
 			"keeptogether": {
 				Type:        schema.TypeBool,
 				Description: "Whether or not all traffic IPs are raised on a single traffic manager",
-				Computed:    true,
+				Default:     false,
 				Optional:    true,
 			},
 			"location": {
 				Type:         schema.TypeInt,
 				Description:  "The location where the traffic IP group is based",
+				Default:      0,
 				Optional:     true,
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
@@ -110,36 +111,36 @@ func resourceTrafficIPGroup() *schema.Resource {
 			"rhi_bgp_metric_base": {
 				Type:         schema.TypeInt,
 				Description:  "Base BGP routing metric",
-				Computed:     true,
+				Default:      10,
 				Optional:     true,
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"rhi_bgp_passive_metric_offset": {
 				Type:         schema.TypeInt,
 				Description:  "BGP routing metric offset",
-				Computed:     true,
+				Default:      10,
 				Optional:     true,
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"rhi_ospfv2_metric_base": {
 				Type:         schema.TypeInt,
 				Description:  "OSPFv2 routing metric",
-				Computed:     true,
+				Default:      10,
 				Optional:     true,
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"rhi_ospfv2_passive_metric_offset": {
 				Type:         schema.TypeInt,
 				Description:  "OSPFv2 routing metric offset",
-				Computed:     true,
+				Default:      10,
 				Optional:     true,
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"rhi_protocols": {
 				Type:         schema.TypeString,
 				Description:  "List of protocols ro be used for RHI",
-				Computed:     true,
 				Optional:     true,
+				Computed:     true,
 				ValidateFunc: validateRHIProtocols,
 			},
 			"slaves": {
@@ -205,14 +206,6 @@ func getTrafficManagers(m interface{}) ([]string, error) {
 	return trafficManagers, nil
 }
 
-func buildIPAddresses(ipAddresses interface{}) []string {
-	ipAddressList := make([]string, len(ipAddresses.([]interface{})))
-	for idx, ipAddress := range ipAddresses.([]interface{}) {
-		ipAddressList[idx] = ipAddress.(string)
-	}
-	return ipAddressList
-}
-
 func buildIPMapping(ipMappingBlock *schema.Set) []trafficIpGroups.IPMapping {
 
 	ipMappingObjectList := make([]trafficIpGroups.IPMapping, 0)
@@ -242,14 +235,13 @@ func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("name"); ok && v != "" {
 		name = v.(string)
 	}
-	if v, ok := d.GetOk("enabled"); ok {
-		enabled := v.(bool)
-		trafficIPGroup.Properties.Basic.Enabled = &enabled
-	}
-	if v, ok := d.GetOk("hash_source_port"); ok {
-		hashSourcePort := v.(bool)
-		trafficIPGroup.Properties.Basic.HashSourcePort = &hashSourcePort
-	}
+
+	enabled := d.Get("enabled").(bool)
+	trafficIPGroup.Properties.Basic.Enabled = &enabled
+
+	hashSourcePort := d.Get("hash_source_port").(bool)
+	trafficIPGroup.Properties.Basic.HashSourcePort = &hashSourcePort
+
 	if v, ok := d.GetOk("ip_assignment_mode"); ok && v != "" {
 		trafficIPGroup.Properties.Basic.IPAssignmentMode = v.(string)
 	}
@@ -259,14 +251,13 @@ func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("ipaddresses"); ok && v != "" {
 		trafficIPGroup.Properties.Basic.IPAddresses = util.BuildStringListFromSet(v.(*schema.Set))
 	}
-	if v, ok := d.GetOk("keeptogether"); ok {
-		keepTogether := v.(bool)
-		trafficIPGroup.Properties.Basic.KeepTogether = &keepTogether
-	}
-	if v, ok := d.GetOk("location"); ok {
-		location := v.(int)
-		trafficIPGroup.Properties.Basic.Location = &location
-	}
+
+	keepTogether := d.Get("keeptogether").(bool)
+	trafficIPGroup.Properties.Basic.KeepTogether = &keepTogether
+
+	location := d.Get("location").(int)
+	trafficIPGroup.Properties.Basic.Location = &location
+
 	// Allow the user to override the list of traffic managers. If not specified by the user retrieving them from the traffic manager.
 	if v, ok := d.GetOk("machines"); ok {
 		trafficIPGroup.Properties.Basic.Machines = util.BuildStringListFromSet(v.(*schema.Set))
@@ -286,22 +277,19 @@ func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("note"); ok && v != "" {
 		trafficIPGroup.Properties.Basic.Note = v.(string)
 	}
-	if v, ok := d.GetOk("rhi_bgp_metric_base"); ok {
-		rhiBgpMetricBase := uint(v.(int))
-		trafficIPGroup.Properties.Basic.RhiBgpMetricBase = &rhiBgpMetricBase
-	}
-	if v, ok := d.GetOk("rhi_bgp_passive_metric_offset"); ok {
-		rhiBgpPassiveMetricOffset := uint(v.(int))
-		trafficIPGroup.Properties.Basic.RhiBgpPassiveMetricOffset = &rhiBgpPassiveMetricOffset
-	}
-	if v, ok := d.GetOk("rhi_ospfv2_metric_base"); ok {
-		rhiOspfv2MetricBase := uint(v.(int))
-		trafficIPGroup.Properties.Basic.RhiOspfv2MetricBase = &rhiOspfv2MetricBase
-	}
-	if v, ok := d.GetOk("rhi_ospfv2_passive_metric_offset"); ok {
-		rhiOspfv2PassiveMetricOffset := uint(v.(int))
-		trafficIPGroup.Properties.Basic.RhiOspfv2PassiveMetricOffset = &rhiOspfv2PassiveMetricOffset
-	}
+
+	rhiBgpMetricBase := uint(d.Get("rhi_bgp_metric_base").(int))
+	trafficIPGroup.Properties.Basic.RhiBgpMetricBase = &rhiBgpMetricBase
+
+	rhiBgpPassiveMetricOffset := uint(d.Get("rhi_bgp_passive_metric_offset").(int))
+	trafficIPGroup.Properties.Basic.RhiBgpPassiveMetricOffset = &rhiBgpPassiveMetricOffset
+
+	rhiOspfv2MetricBase := uint(d.Get("rhi_ospfv2_metric_base").(int))
+	trafficIPGroup.Properties.Basic.RhiOspfv2MetricBase = &rhiOspfv2MetricBase
+
+	rhiOspfv2PassiveMetricOffset := uint(d.Get("rhi_ospfv2_passive_metric_offset").(int))
+	trafficIPGroup.Properties.Basic.RhiOspfv2PassiveMetricOffset = &rhiOspfv2PassiveMetricOffset
+
 	if v, ok := d.GetOk("rhi_protocols"); ok && v != "" {
 		trafficIPGroup.Properties.Basic.RhiProtocols = v.(string)
 	}
@@ -435,8 +423,8 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 		hasChanges = true
 	}
-	if d.HasChange("rhi_bgp_passive_metric_offset") {
-		rhiBgpPassiveMetricOffset := uint(d.Get("rhi_bgp_passive_metric_offset").(int))
+	if d.HasChange("rhi_bgp_metric_base") {
+		rhiBgpPassiveMetricOffset := uint(d.Get("rhi_bgp_metric_base").(int))
 		trafficIPGroup.Properties.Basic.RhiBgpMetricBase = &rhiBgpPassiveMetricOffset
 		hasChanges = true
 	}
