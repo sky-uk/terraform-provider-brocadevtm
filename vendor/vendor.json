@@ -533,14 +533,6 @@
 			"versionExact": "0.4.5"
 		},
 		{
-			"checksumSHA1": "FGo+MGaPRXSWniIueZIuYhvorxQ=",
-			"path": "github.com/sky-uk/go-brocade-vtm/api/model/3.8/ssl_server_key",
-			"revision": "fb08077ce5baf0bbc27ee0b8355afcd5157f99ac",
-			"revisionTime": "2017-10-12T15:36:17Z",
-			"version": "0.4.5",
-			"versionExact": "0.4.5"
-		},
-		{
 			"checksumSHA1": "mWM3fePp1JvNf8YeU7LutSYa+Fg=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_authenticator",
 			"revision": "4f1d79b662d72f6306b8a9019e85c525f8bad616",
