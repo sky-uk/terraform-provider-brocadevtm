@@ -541,6 +541,22 @@
 			"versionExact": "0.4.5"
 		},
 		{
+			"checksumSHA1": "GJ/V1Nrr1IRuroJaGwlmBiMO+TY=",
+			"path": "github.com/sky-uk/go-brocade-vtm/api/model/3.8/traffic_ip_group",
+			"revision": "11686dc1a578d3eee5fbe259e6a2b61cd6ace81f",
+			"revisionTime": "2017-10-16T15:39:29Z",
+			"version": "0.4.7",
+			"versionExact": "0.4.7"
+		},
+		{
+			"checksumSHA1": "I0JOGeNZE7VmH+L1z8+8mSaPaII=",
+			"path": "github.com/sky-uk/go-brocade-vtm/api/model/3.8/traffic_manager",
+			"revision": "11686dc1a578d3eee5fbe259e6a2b61cd6ace81f",
+			"revisionTime": "2017-10-16T15:39:29Z",
+			"version": "0.4.7",
+			"versionExact": "0.4.7"
+		},
+		{
 			"checksumSHA1": "mWM3fePp1JvNf8YeU7LutSYa+Fg=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_authenticator",
 			"revision": "4f1d79b662d72f6306b8a9019e85c525f8bad616",
