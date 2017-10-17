@@ -77,11 +77,10 @@ func resourceTrafficIPGroup() *schema.Resource {
 				Optional:    true,
 			},
 			"location": {
-				Type:         schema.TypeInt,
-				Description:  "The location where the traffic IP group is based",
-				Default:      0,
-				Optional:     true,
-				ValidateFunc: util.ValidateUnsignedInteger,
+				Type:        schema.TypeInt,
+				Description: "The location where the traffic IP group is based",
+				Default:     0,
+				Optional:    true,
 			},
 			"machines": {
 				Type:        schema.TypeSet,
