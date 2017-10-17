@@ -3,8 +3,8 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm/api/virtualserver"
-	"github.com/sky-uk/go-rest-api"
+	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/virtual_server"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"log"
 	"net/http"
@@ -1807,7 +1807,9 @@ func assignWebCacheValues(webCacheMap map[string]interface{}) (webCacheStruct vi
 
 func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+
 	var virtualServer virtualserver.VirtualServer
 
 	virtualServerName := d.Get("name").(string)
@@ -1933,10 +1935,9 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 		virtualServer.Properties.WebCache = assignWebCacheValues(webCacheList[0].(map[string]interface{}))
 	}
 
-	createAPI := virtualserver.NewCreate(virtualServerName, virtualServer)
-	err := vtmClient.Do(createAPI)
+	err := client.Set("virtual_servers", virtualServerName, virtualServer, nil)
 	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("BrocadeVTM Virtual Server error whilst creating %s: %v", virtualServerName, err))
+		return fmt.Errorf("BrocadeVTM Virtual Server error whilst creating %s: %s", virtualServerName, err)
 	}
 	d.SetId(virtualServerName)
 
@@ -1945,414 +1946,353 @@ func resourceVirtualServerCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
-	getSingleAPI := virtualserver.NewGet(d.Id())
-	err := vtmClient.Do(getSingleAPI)
+	var vs virtualserver.VirtualServer
+
+	client.WorkWithConfigurationResources()
+	err := client.GetByName("virtual_servers", d.Id(), &vs)
 	if err != nil {
-		if getSingleAPI.StatusCode() == http.StatusNotFound {
+		if client.StatusCode == http.StatusNotFound {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf(fmt.Sprintf("BrocadeVTM Virtual Server error whilst retrieving %s: %v", d.Id(), err))
+		return fmt.Errorf("BrocadeVTM Virtual Server error whilst retrieving %s: %v", d.Id(), err)
 	}
 
-	returnedVirtualServer := *getSingleAPI.ResponseObject().(*virtualserver.VirtualServer)
-
-	d.Set("add_cluster_ip", returnedVirtualServer.Properties.Basic.AddClusterIP)
-	d.Set("add_x_forwarded_for", returnedVirtualServer.Properties.Basic.AddXForwarded)
-	d.Set("add_x_forwarded_proto", returnedVirtualServer.Properties.Basic.AddXForwardedProto)
-	d.Set("autodetect_upgrade_headers", returnedVirtualServer.Properties.Basic.AutoDetectUpgradeHeaders)
-	d.Set("bandwidth_class", returnedVirtualServer.Properties.Basic.BandwidthClass)
-	d.Set("close_with_rst", returnedVirtualServer.Properties.Basic.CloseWithRst)
-	d.Set("completionrules", returnedVirtualServer.Properties.Basic.CompletionRules)
-	d.Set("connect_timeout", returnedVirtualServer.Properties.Basic.ConnectTimeout)
-	d.Set("enabled", returnedVirtualServer.Properties.Basic.Enabled)
-	d.Set("ftp_force_server_secure", returnedVirtualServer.Properties.Basic.FtpForceServerSecure)
-	d.Set("glb_services", returnedVirtualServer.Properties.Basic.GlbServices)
-	d.Set("listen_on_any", returnedVirtualServer.Properties.Basic.ListenOnAny)
-	d.Set("listen_on_hosts", returnedVirtualServer.Properties.Basic.ListenOnHosts)
-	d.Set("listen_on_traffic_ips", returnedVirtualServer.Properties.Basic.ListenOnTrafficIps)
-	d.Set("note", returnedVirtualServer.Properties.Basic.Note)
-	d.Set("pool", returnedVirtualServer.Properties.Basic.Pool)
-	d.Set("port", returnedVirtualServer.Properties.Basic.Port)
-	d.Set("protection_class", returnedVirtualServer.Properties.Basic.ProtectionClass)
-	d.Set("protocol", returnedVirtualServer.Properties.Basic.Protocol)
-	d.Set("request_rules", returnedVirtualServer.Properties.Basic.RequestRules)
-	d.Set("response_rules", returnedVirtualServer.Properties.Basic.ResponseRules)
-	d.Set("slm_class", returnedVirtualServer.Properties.Basic.SlmClass)
-	d.Set("so_nagle", returnedVirtualServer.Properties.Basic.SoNagle)
-	d.Set("ssl_client_cert_headers", returnedVirtualServer.Properties.Basic.SslClientCertHeaders)
-	d.Set("ssl_decrypt", returnedVirtualServer.Properties.Basic.SslDecrypt)
-	d.Set("ssl_honor_fallback_scsv", returnedVirtualServer.Properties.Basic.SslHonorFallbackScsv)
-	d.Set("transparent", returnedVirtualServer.Properties.Basic.Transparent)
-	d.Set("error_file", returnedVirtualServer.Properties.ConnectionErrors.ErrorFile)
-	d.Set("expect_starttls", returnedVirtualServer.Properties.SMTP.ExpectSTARTTLS)
-	d.Set("proxy_close", returnedVirtualServer.Properties.TCP.ProxyClose)
-
-	d.Set("aptimizer", []virtualserver.Aptimizer{returnedVirtualServer.Properties.Aptimizer})
-	log.Print(fmt.Sprintf("[DEBUG] Connections are %+v", []virtualserver.Connection{returnedVirtualServer.Properties.Connection}))
-	d.Set("vs_connection", []virtualserver.Connection{returnedVirtualServer.Properties.Connection})
-	d.Set("cookie", []virtualserver.Cookie{returnedVirtualServer.Properties.Cookie})
-	d.Set("dns", []virtualserver.DNS{returnedVirtualServer.Properties.DNS})
-	d.Set("ftp", []virtualserver.Ftp{returnedVirtualServer.Properties.Ftp})
-	d.Set("gzip", []virtualserver.Gzip{returnedVirtualServer.Properties.Gzip})
-	d.Set("http", []virtualserver.HTTP{returnedVirtualServer.Properties.HTTP})
-	d.Set("http2", []virtualserver.HTTP2{returnedVirtualServer.Properties.HTTP2})
-	d.Set("kerberos_protocol_transition", []virtualserver.KerberosProtocolTransition{returnedVirtualServer.Properties.KerberosProtocolTransition})
-	d.Set("log", []virtualserver.Log{returnedVirtualServer.Properties.Log})
-	d.Set("recent_connections", []virtualserver.RecentConnections{returnedVirtualServer.Properties.RecentConnections})
-	d.Set("request_tracing", []virtualserver.RequestTracing{returnedVirtualServer.Properties.RequestTracing})
-	d.Set("rtsp", []virtualserver.RTSP{returnedVirtualServer.Properties.RTSP})
-	d.Set("sip", []virtualserver.SIP{returnedVirtualServer.Properties.SIP})
-	d.Set("ssl", []virtualserver.Ssl{returnedVirtualServer.Properties.Ssl})
-	d.Set("syslog", []virtualserver.SysLog{returnedVirtualServer.Properties.SysLog})
-	d.Set("udp", []virtualserver.UDP{returnedVirtualServer.Properties.UDP})
-	d.Set("web_cache", []virtualserver.WebCache{returnedVirtualServer.Properties.WebCache})
+	d.Set("add_cluster_ip", vs.Properties.Basic.AddClusterIP)
+	d.Set("add_x_forwarded_for", vs.Properties.Basic.AddXForwarded)
+	d.Set("add_x_forwarded_proto", vs.Properties.Basic.AddXForwardedProto)
+	d.Set("autodetect_upgrade_headers", vs.Properties.Basic.AutoDetectUpgradeHeaders)
+	d.Set("bandwidth_class", vs.Properties.Basic.BandwidthClass)
+	d.Set("close_with_rst", vs.Properties.Basic.CloseWithRst)
+	d.Set("completionrules", vs.Properties.Basic.CompletionRules)
+	d.Set("connect_timeout", vs.Properties.Basic.ConnectTimeout)
+	d.Set("enabled", vs.Properties.Basic.Enabled)
+	d.Set("ftp_force_server_secure", vs.Properties.Basic.FtpForceServerSecure)
+	d.Set("glb_services", vs.Properties.Basic.GlbServices)
+	d.Set("listen_on_any", vs.Properties.Basic.ListenOnAny)
+	d.Set("listen_on_hosts", vs.Properties.Basic.ListenOnHosts)
+	d.Set("listen_on_traffic_ips", vs.Properties.Basic.ListenOnTrafficIps)
+	d.Set("note", vs.Properties.Basic.Note)
+	d.Set("pool", vs.Properties.Basic.Pool)
+	d.Set("port", vs.Properties.Basic.Port)
+	d.Set("protection_class", vs.Properties.Basic.ProtectionClass)
+	d.Set("protocol", vs.Properties.Basic.Protocol)
+	d.Set("request_rules", vs.Properties.Basic.RequestRules)
+	d.Set("response_rules", vs.Properties.Basic.ResponseRules)
+	d.Set("slm_class", vs.Properties.Basic.SlmClass)
+	d.Set("so_nagle", vs.Properties.Basic.SoNagle)
+	d.Set("ssl_client_cert_headers", vs.Properties.Basic.SslClientCertHeaders)
+	d.Set("ssl_decrypt", vs.Properties.Basic.SslDecrypt)
+	d.Set("ssl_honor_fallback_scsv", vs.Properties.Basic.SslHonorFallbackScsv)
+	d.Set("transparent", vs.Properties.Basic.Transparent)
+	d.Set("error_file", vs.Properties.ConnectionErrors.ErrorFile)
+	d.Set("expect_starttls", vs.Properties.SMTP.ExpectSTARTTLS)
+	d.Set("proxy_close", vs.Properties.TCP.ProxyClose)
+	d.Set("aptimizer", []virtualserver.Aptimizer{vs.Properties.Aptimizer})
+	d.Set("vs_connection", []virtualserver.Connection{vs.Properties.Connection})
+	d.Set("cookie", []virtualserver.Cookie{vs.Properties.Cookie})
+	d.Set("dns", []virtualserver.DNS{vs.Properties.DNS})
+	d.Set("ftp", []virtualserver.Ftp{vs.Properties.Ftp})
+	d.Set("gzip", []virtualserver.Gzip{vs.Properties.Gzip})
+	d.Set("http", []virtualserver.HTTP{vs.Properties.HTTP})
+	d.Set("http2", []virtualserver.HTTP2{vs.Properties.HTTP2})
+	d.Set("kerberos_protocol_transition", []virtualserver.KerberosProtocolTransition{vs.Properties.KerberosProtocolTransition})
+	d.Set("log", []virtualserver.Log{vs.Properties.Log})
+	d.Set("recent_connections", []virtualserver.RecentConnections{vs.Properties.RecentConnections})
+	d.Set("request_tracing", []virtualserver.RequestTracing{vs.Properties.RequestTracing})
+	d.Set("rtsp", []virtualserver.RTSP{vs.Properties.RTSP})
+	d.Set("sip", []virtualserver.SIP{vs.Properties.SIP})
+	d.Set("ssl", []virtualserver.Ssl{vs.Properties.Ssl})
+	d.Set("syslog", []virtualserver.SysLog{vs.Properties.SysLog})
+	d.Set("udp", []virtualserver.UDP{vs.Properties.UDP})
+	d.Set("web_cache", []virtualserver.WebCache{vs.Properties.WebCache})
 
 	return nil
 }
 
 func resourceVirtualServerUpdate(d *schema.ResourceData, m interface{}) error {
-	var updatedVirtualServer virtualserver.VirtualServer
-	var hasChanges bool
 
-	updatedVirtualServer.Properties.Basic.Pool = d.Get("pool").(string)
-	updatedVirtualServer.Properties.Basic.Port = uint(d.Get("port").(int))
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+
+	var uvs virtualserver.VirtualServer
+
+	uvs.Properties.Basic.Pool = d.Get("pool").(string)
+	uvs.Properties.Basic.Port = uint(d.Get("port").(int))
 
 	oldAddClusterIP, newAddClusterIP := d.GetChange("add_cluster_ip")
 	if oldAddClusterIP.(bool) != newAddClusterIP.(bool) {
-		updatedVirtualServer.Properties.Basic.AddClusterIP = newAddClusterIP.(bool)
-		hasChanges = true
+		uvs.Properties.Basic.AddClusterIP = newAddClusterIP.(bool)
 	} else {
-		updatedVirtualServer.Properties.Basic.AddClusterIP = oldAddClusterIP.(bool)
+		uvs.Properties.Basic.AddClusterIP = oldAddClusterIP.(bool)
 	}
 
 	oldAddXForwardedFor, newAddForwardedFor := d.GetChange("add_x_forwarded_for")
 	if oldAddXForwardedFor.(bool) != newAddForwardedFor.(bool) {
-		updatedVirtualServer.Properties.Basic.AddXForwarded = newAddForwardedFor.(bool)
-		hasChanges = true
+		uvs.Properties.Basic.AddXForwarded = newAddForwardedFor.(bool)
 	} else {
-		updatedVirtualServer.Properties.Basic.AddXForwarded = oldAddXForwardedFor.(bool)
+		uvs.Properties.Basic.AddXForwarded = oldAddXForwardedFor.(bool)
 	}
 
 	oldAddXForwardedProto, newAddXForwardedProto := d.GetChange("add_x_forwarded_proto")
 	if oldAddXForwardedProto.(bool) != newAddXForwardedProto.(bool) {
-		updatedVirtualServer.Properties.Basic.AddXForwardedProto = newAddXForwardedProto.(bool)
-		hasChanges = true
+		uvs.Properties.Basic.AddXForwardedProto = newAddXForwardedProto.(bool)
 	} else {
-		updatedVirtualServer.Properties.Basic.AddXForwardedProto = oldAddXForwardedProto.(bool)
+		uvs.Properties.Basic.AddXForwardedProto = oldAddXForwardedProto.(bool)
 	}
 
 	oldAutodetectUpgradeHeaders, newAutodetectUpgradeHeaders := d.GetChange("autodetect_upgrade_headers")
 	if oldAutodetectUpgradeHeaders.(bool) != newAutodetectUpgradeHeaders.(bool) {
-		updatedVirtualServer.Properties.Basic.AutoDetectUpgradeHeaders = newAutodetectUpgradeHeaders.(bool)
-		hasChanges = true
+		uvs.Properties.Basic.AutoDetectUpgradeHeaders = newAutodetectUpgradeHeaders.(bool)
 	} else {
-		updatedVirtualServer.Properties.Basic.AutoDetectUpgradeHeaders = oldAutodetectUpgradeHeaders.(bool)
+		uvs.Properties.Basic.AutoDetectUpgradeHeaders = oldAutodetectUpgradeHeaders.(bool)
 	}
 
 	if d.HasChange("bandwidth_class") {
-		updatedVirtualServer.Properties.Basic.BandwidthClass = d.Get("bandwidth_class").(string)
-		hasChanges = true
+		uvs.Properties.Basic.BandwidthClass = d.Get("bandwidth_class").(string)
 	}
 
 	oldCloseWithRST, newCloseWithRST := d.GetChange("close_with_rst")
 	if oldCloseWithRST.(bool) != newCloseWithRST.(bool) {
-		updatedVirtualServer.Properties.Basic.CloseWithRst = newCloseWithRST.(bool)
-		hasChanges = true
+		uvs.Properties.Basic.CloseWithRst = newCloseWithRST.(bool)
 	} else {
-		updatedVirtualServer.Properties.Basic.CloseWithRst = oldCloseWithRST.(bool)
+		uvs.Properties.Basic.CloseWithRst = oldCloseWithRST.(bool)
 	}
 
 	if d.HasChange("completionrules") {
-		updatedVirtualServer.Properties.Basic.CompletionRules = util.BuildStringArrayFromInterface(d.Get("completionrules"))
-		hasChanges = true
+		uvs.Properties.Basic.CompletionRules = util.BuildStringArrayFromInterface(d.Get("completionrules"))
 	}
 
 	oldConnectTimeout, newConnectTimeout := d.GetChange("connect_timeout")
 	if uint(oldConnectTimeout.(int)) != uint(newConnectTimeout.(int)) {
-		updatedVirtualServer.Properties.Basic.ConnectTimeout = uint(newConnectTimeout.(int))
-		hasChanges = true
+		uvs.Properties.Basic.ConnectTimeout = uint(newConnectTimeout.(int))
 	} else {
-		updatedVirtualServer.Properties.Basic.ConnectTimeout = uint(oldConnectTimeout.(int))
+		uvs.Properties.Basic.ConnectTimeout = uint(oldConnectTimeout.(int))
 	}
 
 	oldEnable, newEnable := d.GetChange("enabled")
 	if oldEnable.(bool) != newEnable.(bool) {
-		updatedVirtualServer.Properties.Basic.Enabled = newEnable.(bool)
-		hasChanges = true
+		uvs.Properties.Basic.Enabled = newEnable.(bool)
 	} else {
-		updatedVirtualServer.Properties.Basic.Enabled = oldEnable.(bool)
+		uvs.Properties.Basic.Enabled = oldEnable.(bool)
 	}
 
 	oldForceServerSecure, newForceServerSecure := d.GetChange("ftp_force_server_secure")
 	if oldForceServerSecure.(bool) != newForceServerSecure.(bool) {
-		updatedVirtualServer.Properties.Basic.FtpForceServerSecure = newForceServerSecure.(bool)
-		hasChanges = true
+		uvs.Properties.Basic.FtpForceServerSecure = newForceServerSecure.(bool)
 	} else {
-		updatedVirtualServer.Properties.Basic.FtpForceServerSecure = oldForceServerSecure.(bool)
+		uvs.Properties.Basic.FtpForceServerSecure = oldForceServerSecure.(bool)
 	}
 
 	if d.HasChange("glb_services") {
-		updatedVirtualServer.Properties.Basic.GlbServices = util.BuildStringArrayFromInterface(d.Get("glb_services"))
-		hasChanges = true
+		uvs.Properties.Basic.GlbServices = util.BuildStringArrayFromInterface(d.Get("glb_services"))
 	}
 
 	oldListenOnAny, newListenOnAny := d.GetChange("listen_on_any")
 	if oldListenOnAny.(bool) != newListenOnAny.(bool) {
-		updatedVirtualServer.Properties.Basic.ListenOnAny = newListenOnAny.(bool)
-		hasChanges = true
+		uvs.Properties.Basic.ListenOnAny = newListenOnAny.(bool)
 	} else {
-		updatedVirtualServer.Properties.Basic.ListenOnAny = oldListenOnAny.(bool)
+		uvs.Properties.Basic.ListenOnAny = oldListenOnAny.(bool)
 	}
 
 	if d.HasChange("listen_on_hosts") {
-		updatedVirtualServer.Properties.Basic.ListenOnHosts = util.BuildStringArrayFromInterface(d.Get("listen_on_hosts"))
-		hasChanges = true
+		uvs.Properties.Basic.ListenOnHosts = util.BuildStringArrayFromInterface(d.Get("listen_on_hosts"))
 	}
 
 	if d.HasChange("listen_on_traffic_ips") {
-		updatedVirtualServer.Properties.Basic.ListenOnTrafficIps = util.BuildStringArrayFromInterface(d.Get("listen_on_traffic_ips"))
-		hasChanges = true
+		uvs.Properties.Basic.ListenOnTrafficIps = util.BuildStringArrayFromInterface(d.Get("listen_on_traffic_ips"))
 	}
 
 	if d.HasChange("note") {
-		updatedVirtualServer.Properties.Basic.Note = d.Get("note").(string)
-		hasChanges = true
+		uvs.Properties.Basic.Note = d.Get("note").(string)
 	}
 
 	if d.HasChange("protection_class") {
-		updatedVirtualServer.Properties.Basic.ProtectionClass = d.Get("protection_class").(string)
-		hasChanges = true
+		uvs.Properties.Basic.ProtectionClass = d.Get("protection_class").(string)
 	}
 
 	if d.HasChange("protection_class") {
-		updatedVirtualServer.Properties.Basic.Protocol = d.Get("protocol").(string)
-		hasChanges = true
+		uvs.Properties.Basic.Protocol = d.Get("protocol").(string)
 	}
 
 	if d.HasChange("request_rules") {
-		updatedVirtualServer.Properties.Basic.RequestRules = util.BuildStringArrayFromInterface(d.Get("request_rules"))
-		hasChanges = true
+		uvs.Properties.Basic.RequestRules = util.BuildStringArrayFromInterface(d.Get("request_rules"))
 	}
 
 	if d.HasChange("response_rules") {
-		updatedVirtualServer.Properties.Basic.ResponseRules = util.BuildStringArrayFromInterface(d.Get("response_rules"))
-		hasChanges = true
+		uvs.Properties.Basic.ResponseRules = util.BuildStringArrayFromInterface(d.Get("response_rules"))
 	}
 
 	if d.HasChange("slm_class") {
-		updatedVirtualServer.Properties.Basic.SlmClass = d.Get("slm_class").(string)
-		hasChanges = true
+		uvs.Properties.Basic.SlmClass = d.Get("slm_class").(string)
 	}
 
 	oldSoNagle, newSoNagle := d.GetChange("so_nagle")
 	if oldSoNagle.(bool) != newSoNagle.(bool) {
-		updatedVirtualServer.Properties.Basic.SoNagle = newSoNagle.(bool)
-		hasChanges = true
+		uvs.Properties.Basic.SoNagle = newSoNagle.(bool)
 	} else {
-		updatedVirtualServer.Properties.Basic.SoNagle = oldSoNagle.(bool)
+		uvs.Properties.Basic.SoNagle = oldSoNagle.(bool)
 	}
 
 	if d.HasChange("ssl_client_cert_headers") {
-		updatedVirtualServer.Properties.Basic.SslClientCertHeaders = d.Get("ssl_client_cert_headers").(string)
-		hasChanges = true
+		uvs.Properties.Basic.SslClientCertHeaders = d.Get("ssl_client_cert_headers").(string)
 	}
 
 	oldSSLDecrypt, newSSLDecrypt := d.GetChange("ssl_decrypt")
 	if oldSSLDecrypt.(bool) != newSSLDecrypt.(bool) {
-		updatedVirtualServer.Properties.Basic.SslDecrypt = newSSLDecrypt.(bool)
-		hasChanges = true
+		uvs.Properties.Basic.SslDecrypt = newSSLDecrypt.(bool)
 	} else {
-		updatedVirtualServer.Properties.Basic.SslDecrypt = oldSSLDecrypt.(bool)
+		uvs.Properties.Basic.SslDecrypt = oldSSLDecrypt.(bool)
 	}
 
 	if d.HasChange("ssl_honor_fallback_scsv") {
-		updatedVirtualServer.Properties.Basic.SslHonorFallbackScsv = d.Get("ssl_honor_fallback_scsv").(string)
-		hasChanges = true
+		uvs.Properties.Basic.SslHonorFallbackScsv = d.Get("ssl_honor_fallback_scsv").(string)
 	}
 
 	oldTransparent, newTransparent := d.GetChange("transparent")
 	if oldTransparent.(bool) != newTransparent.(bool) {
-		updatedVirtualServer.Properties.Basic.Transparent = newTransparent.(bool)
-		hasChanges = true
+		uvs.Properties.Basic.Transparent = newTransparent.(bool)
 	} else {
-		updatedVirtualServer.Properties.Basic.Transparent = oldTransparent.(bool)
+		uvs.Properties.Basic.Transparent = oldTransparent.(bool)
 	}
 
 	if d.HasChange("error_file") {
-		updatedVirtualServer.Properties.ConnectionErrors.ErrorFile = d.Get("error_file").(string)
-		hasChanges = true
+		uvs.Properties.ConnectionErrors.ErrorFile = d.Get("error_file").(string)
 	}
 
 	if d.HasChange("expect_starttls") {
 		starTTL := d.Get("expect_starttls").(bool)
-		updatedVirtualServer.Properties.SMTP.ExpectSTARTTLS = &starTTL
-		hasChanges = true
+		uvs.Properties.SMTP.ExpectSTARTTLS = &starTTL
 	}
 
 	if d.HasChange("proxy_close") {
 		proxyClose := d.Get("proxy_close").(bool)
-		updatedVirtualServer.Properties.TCP.ProxyClose = &proxyClose
-		hasChanges = true
+		uvs.Properties.TCP.ProxyClose = &proxyClose
 	}
 
 	if d.HasChange("aptimizer") {
 		aptimizerList := d.Get("aptimizer").([]interface{})
 		if len(aptimizerList) != 0 {
-			updatedVirtualServer.Properties.Aptimizer = assignAptimizerValues(aptimizerList[0].(map[string]interface{}))
+			uvs.Properties.Aptimizer = assignAptimizerValues(aptimizerList[0].(map[string]interface{}))
 		} else {
-			updatedVirtualServer.Properties.Aptimizer = virtualserver.Aptimizer{}
+			uvs.Properties.Aptimizer = virtualserver.Aptimizer{}
 		}
-		hasChanges = true
 	}
 
 	if d.HasChange("vs_connection") {
 		log.Println("CONNECTIONS CHANGE DETECTED")
 		connectionList := d.Get("vs_connection").([]interface{})
 		if len(connectionList) != 0 {
-			updatedVirtualServer.Properties.Connection = assignConnectionValues(connectionList[0].(map[string]interface{}))
+			uvs.Properties.Connection = assignConnectionValues(connectionList[0].(map[string]interface{}))
 		} else {
-			updatedVirtualServer.Properties.Connection = virtualserver.Connection{}
+			uvs.Properties.Connection = virtualserver.Connection{}
 		}
-		hasChanges = true
 	}
 
 	if d.HasChange("cookie") {
 		cookieList := d.Get("cookie").([]interface{})
 		if len(cookieList) != 0 {
-			updatedVirtualServer.Properties.Cookie = assignCookieValues(cookieList[0].(map[string]interface{}))
+			uvs.Properties.Cookie = assignCookieValues(cookieList[0].(map[string]interface{}))
 		} else {
 			for _, value := range cookieList {
-				updatedVirtualServer.Properties.Cookie = assignCookieValues(value.(map[string]interface{}))
+				uvs.Properties.Cookie = assignCookieValues(value.(map[string]interface{}))
 			}
 		}
-		hasChanges = true
 	}
 
 	if d.HasChange("dns") {
 		dnsList := d.Get("dns").([]interface{})
-		updatedVirtualServer.Properties.DNS = assignDNSValues(dnsList[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.DNS = assignDNSValues(dnsList[0].(map[string]interface{}))
 	}
 
 	if d.HasChange("ftp") {
 		ftpList := d.Get("ftp").([]interface{})
-		updatedVirtualServer.Properties.Ftp = assignFTPValues(ftpList[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.Ftp = assignFTPValues(ftpList[0].(map[string]interface{}))
 	}
 
 	if d.HasChange("gzip") {
 		gzipList := d.Get("gzip").([]interface{})
-		updatedVirtualServer.Properties.Gzip = assignGZIPValues(gzipList[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.Gzip = assignGZIPValues(gzipList[0].(map[string]interface{}))
 	}
 
 	if d.HasChange("http") {
 		httpList := d.Get("http").([]interface{})
-		updatedVirtualServer.Properties.HTTP = assignHTTPValues(httpList[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.HTTP = assignHTTPValues(httpList[0].(map[string]interface{}))
 	}
 
 	if d.HasChange("http2") {
 		http2List := d.Get("http2").([]interface{})
-		updatedVirtualServer.Properties.HTTP2 = assignHTTP2Values(http2List[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.HTTP2 = assignHTTP2Values(http2List[0].(map[string]interface{}))
 	}
 
 	if d.HasChange("kerberos_protocol_transition") {
 		kptList := d.Get("kerberos_protocol_transition").([]interface{})
-		updatedVirtualServer.Properties.KerberosProtocolTransition = assignKerberosProtocolTransitionValues(kptList[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.KerberosProtocolTransition = assignKerberosProtocolTransitionValues(kptList[0].(map[string]interface{}))
 	}
 
 	if d.HasChange("log") {
 		logList := d.Get("log").([]interface{})
-		updatedVirtualServer.Properties.Log = assignLogValues(logList[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.Log = assignLogValues(logList[0].(map[string]interface{}))
 	}
 
 	if d.HasChange("recent_connections") {
 		recentConnectionsList := d.Get("recent_connections").([]interface{})
-		updatedVirtualServer.Properties.RecentConnections = assignRecentConnectionsValues(recentConnectionsList[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.RecentConnections = assignRecentConnectionsValues(recentConnectionsList[0].(map[string]interface{}))
 	}
 
 	if d.HasChange("request_tracing") {
 		requestTracingList := d.Get("request_tracing").([]interface{})
-		updatedVirtualServer.Properties.RequestTracing = assignRequestTracingValues(requestTracingList[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.RequestTracing = assignRequestTracingValues(requestTracingList[0].(map[string]interface{}))
 	}
 
 	if d.HasChange("rtsp") {
 		rtspList := d.Get("rtsp").([]interface{})
-		updatedVirtualServer.Properties.RTSP = assignRTSPValues(rtspList[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.RTSP = assignRTSPValues(rtspList[0].(map[string]interface{}))
 	}
 
 	if d.HasChange("sip") {
 		sipList := d.Get("sip").([]interface{})
-		updatedVirtualServer.Properties.SIP = assignSIPValues(sipList[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.SIP = assignSIPValues(sipList[0].(map[string]interface{}))
 	}
 
 	if d.HasChange("ssl") {
 		sslList := d.Get("ssl").([]interface{})
-		updatedVirtualServer.Properties.Ssl = assignSSLValues(sslList[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.Ssl = assignSSLValues(sslList[0].(map[string]interface{}))
 	}
 
 	if d.HasChange("syslog") {
 		sysLogList := d.Get("syslog").([]interface{})
-		updatedVirtualServer.Properties.SysLog = assignSysLogValues(sysLogList[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.SysLog = assignSysLogValues(sysLogList[0].(map[string]interface{}))
 	}
 
 	if d.HasChange("udp") {
 		udpList := d.Get("udp").([]interface{})
-		updatedVirtualServer.Properties.UDP = assignUDPValues(udpList[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.UDP = assignUDPValues(udpList[0].(map[string]interface{}))
 	}
 
 	if d.HasChange("web_cache") {
 		webCacheList := d.Get("web_cache").([]interface{})
-		updatedVirtualServer.Properties.WebCache = assignWebCacheValues(webCacheList[0].(map[string]interface{}))
-		hasChanges = true
+		uvs.Properties.WebCache = assignWebCacheValues(webCacheList[0].(map[string]interface{}))
 	}
 
-	if hasChanges {
-		headers := make(map[string]string)
-		client := m.(*rest.Client)
-		vtmClient := *client
-		headers["Content-Type"] = "application/json"
-		vtmClient.Headers = headers
-
-		updateAPI := virtualserver.NewUpdate(d.Id(), updatedVirtualServer)
-		err := vtmClient.Do(updateAPI)
-
-		if err != nil {
-			return fmt.Errorf("BrocadeVTM error whilst updating virtual server %s: %vv", d.Id(), err)
-		}
-		return resourceVirtualServerRead(d, m)
+	err := client.Set("virtual_servers", d.Id(), uvs, nil)
+	if err != nil {
+		return fmt.Errorf("BrocadeVTM error whilst updating virtual server %s: %vv", d.Id(), err)
 	}
-
 	return resourceVirtualServerRead(d, m)
 }
 
 func resourceVirtualServerDelete(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
-	var virtualServerName string
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
-	if v, ok := d.GetOk("name"); ok && v != "" {
-		virtualServerName = v.(string)
-	}
-
-	deleteAPI := virtualserver.NewDelete(virtualServerName)
-	err := vtmClient.Do(deleteAPI)
-	if err != nil && deleteAPI.StatusCode() != http.StatusNotFound {
-		return fmt.Errorf(fmt.Sprintf("BrocadeVTM Virtual Server error whilst deleting %s: %v", virtualServerName, err))
+	err := client.Delete("virtual_servers", d.Id())
+	if err != nil && client.StatusCode != http.StatusNotFound {
+		return fmt.Errorf("BrocadeVTM Virtual Server error whilst deleting %s: %s", d.Id(), err)
 	}
 
 	d.SetId("")
