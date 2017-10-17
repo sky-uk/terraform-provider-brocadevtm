@@ -154,6 +154,7 @@ func resourceTrafficIPGroup() *schema.Resource {
 }
 
 func validateIPAssignmentMode(v interface{}, k string) (ws []string, errors []error) {
+
 	assignmentMode := v.(string)
 	assignmentModeOptions := regexp.MustCompile(`^(alphabetic|balanced)$`)
 	if !assignmentModeOptions.MatchString(assignmentMode) {
@@ -163,6 +164,7 @@ func validateIPAssignmentMode(v interface{}, k string) (ws []string, errors []er
 }
 
 func validateRHIProtocols(v interface{}, k string) (ws []string, errors []error) {
+
 	protocol := v.(string)
 	protocolOption := regexp.MustCompile(`^(ospf|bgp)$`)
 	if !protocolOption.MatchString(protocol) {
@@ -172,6 +174,7 @@ func validateRHIProtocols(v interface{}, k string) (ws []string, errors []error)
 }
 
 func validateTrafficIPGroupMode(v interface{}, k string) (ws []string, errors []error) {
+
 	mode := v.(string)
 	modeOptions := regexp.MustCompile(`^(singlehosted|ec2elastic|ec2vpcelastic|ec2vpcprivate|multihosted|rhi)$`)
 	if !modeOptions.MatchString(mode) {
@@ -181,6 +184,7 @@ func validateTrafficIPGroupMode(v interface{}, k string) (ws []string, errors []
 }
 
 func validateTrafficIPGroupMulticastIP(v interface{}, k string) (ws []string, errors []error) {
+
 	multicastIP := v.(string)
 	validMulticastIPs := regexp.MustCompile(`^2[2-3][0-9]\.[0-9]+\.[0-9]+\.[0-9]+$`)
 	if !validMulticastIPs.MatchString(multicastIP) {
@@ -190,6 +194,7 @@ func validateTrafficIPGroupMulticastIP(v interface{}, k string) (ws []string, er
 }
 
 func getTrafficManagers(m interface{}) ([]string, error) {
+
 	vtmClient := m.(*rest.Client)
 	getTrafficManagersAPI := trafficIpGroupManager.NewGetAll()
 	var trafficManagers []string
@@ -248,7 +253,7 @@ func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("ip_mapping"); ok {
 		trafficIPGroup.Properties.Basic.IPMapping = buildIPMapping(v.(*schema.Set))
 	}
-	if v, ok := d.GetOk("ipaddresses"); ok && v != "" {
+	if v, ok := d.GetOk("ipaddresses"); ok {
 		trafficIPGroup.Properties.Basic.IPAddresses = util.BuildStringListFromSet(v.(*schema.Set))
 	}
 
@@ -375,7 +380,7 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 		hasChanges = true
 	}
 	if d.HasChange("ipaddresses") {
-		if v, ok := d.GetOk("ipaddresses"); ok && v != "" {
+		if v, ok := d.GetOk("ipaddresses"); ok {
 			trafficIPGroup.Properties.Basic.IPAddresses = util.BuildStringListFromSet(v.(*schema.Set))
 		}
 		hasChanges = true
@@ -394,7 +399,7 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 		hasChanges = true
 	}
 	if d.HasChange("machines") {
-		// Allow the user to override the list of traffic managers. If not specified by the user retrieving them from the traffic manager.
+		// Allow the user to override the list of traffic managers. If not specified by the user retrieve them from the traffic manager.
 		if v, ok := d.GetOk("machines"); ok {
 			trafficIPGroup.Properties.Basic.Machines = util.BuildStringListFromSet(v.(*schema.Set))
 		} else {
