@@ -1,13 +1,11 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm/api/location"
-	"github.com/sky-uk/go-rest-api"
+	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/location"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
-	"net/http"
 )
 
 func resourceLocation() *schema.Resource {
@@ -87,9 +85,10 @@ func checkLongitudeWithinRange(v interface{}, k string) (ws []string, errors []e
 
 func resourceLocationCreate(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
 	var createLocation location.Location
 	var name string
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
 	if v, ok := d.GetOk("name"); ok && v != "" {
 		name = v.(string)
@@ -111,10 +110,9 @@ func resourceLocationCreate(d *schema.ResourceData, m interface{}) error {
 		createLocation.Properties.Basic.Type = v.(string)
 	}
 
-	createLocationAPI := location.NewCreate(name, createLocation)
-	err := vtmClient.Do(createLocationAPI)
+	err := client.Set("locations", name, createLocation, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Location error whilst creating %s: %v", name, createLocationAPI.ErrorObject())
+		return fmt.Errorf("BrocadeVTM Location error whilst creating %s: %v", name, err)
 	}
 
 	d.SetId(name)
@@ -123,35 +121,44 @@ func resourceLocationCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceLocationRead(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
-	locationName := d.Id()
+	var readLocation location.Location
+	var name string
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 
-	getLocationAPI := location.NewGet(locationName)
-	err := vtmClient.Do(getLocationAPI)
-	if getLocationAPI.StatusCode() == http.StatusNotFound {
-		d.SetId("")
-		return nil
+	if v, ok := d.GetOk("name"); ok {
+		name = v.(string)
 	}
+
+	client.WorkWithConfigurationResources()
+	err := client.GetByName("locations", name, &readLocation)
+
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Location error whilst retrieving %s: %v", locationName, getLocationAPI.ErrorObject())
+		d.SetId("")
+		return fmt.Errorf("BrocadeVTM location error whilst retrieving %s: %v", name, err)
 	}
 
-	getLocationProperties := getLocationAPI.ResponseObject().(*location.Location)
-	d.Set("name", locationName)
-	d.Set("location_id", getLocationProperties.Properties.Basic.ID)
-	d.Set("latitude", getLocationProperties.Properties.Basic.Latitude)
-	d.Set("longitude", getLocationProperties.Properties.Basic.Longitude)
-	d.Set("note", getLocationProperties.Properties.Basic.Note)
-	d.Set("type", getLocationProperties.Properties.Basic.Type)
+	d.Set("name", name)
+	d.Set("location_id", readLocation.Properties.Basic.ID)
+	d.Set("latitude", readLocation.Properties.Basic.Latitude)
+	d.Set("longitude", readLocation.Properties.Basic.Longitude)
+	d.Set("note", readLocation.Properties.Basic.Note)
+	d.Set("type", readLocation.Properties.Basic.Type)
 
 	return nil
 }
 
 func resourceLocationUpdate(d *schema.ResourceData, m interface{}) error {
 
-	hasChanges := false
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 	var updateLocation location.Location
-	name := d.Id()
+	var name string
+	hasChanges := false
+
+	if v, ok := d.GetOk("name"); ok {
+		name = v.(string)
+	}
 
 	if d.HasChange("location_id") {
 		if v, ok := d.GetOk("location_id"); ok {
@@ -186,34 +193,35 @@ func resourceLocationUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if hasChanges {
-		vtmClient := m.(*rest.Client)
-		updateLocationAPI := location.NewUpdate(name, updateLocation)
-		err := vtmClient.Do(updateLocationAPI)
+
+		err := client.Set("locations", name, updateLocation, nil)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM Location error whilst updating %s: %v", name, updateLocationAPI.ErrorObject())
+			return fmt.Errorf("BrocadeVTM locations error whilst updating %s: %v", name, err)
 		}
 	}
-
-	d.SetId(name)
 	return resourceLocationRead(d, m)
+
 }
 
 func resourceLocationDelete(d *schema.ResourceData, m interface{}) error {
 
-	vtmClient := m.(*rest.Client)
-	locationName := d.Id()
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+	var name string
 
-	deleteLocationAPI := location.NewDelete(locationName)
-	err := vtmClient.Do(deleteLocationAPI)
-	if deleteLocationAPI.StatusCode() == http.StatusNotFound {
-		d.SetId("")
-		return nil
+	if v, ok := d.GetOk("name"); ok {
+		name = v.(string)
 	}
+
+	client.WorkWithConfigurationResources()
+	err := client.Delete("locations", name)
+
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Location error whilst deleting %s: %v", locationName, deleteLocationAPI.ErrorObject())
+		d.SetId("")
+		return fmt.Errorf("BrocadeVTM Locations error whilst deleting %s: %v", name, err)
 	}
 
 	d.SetId("")
 	return nil
+
 }
-*/

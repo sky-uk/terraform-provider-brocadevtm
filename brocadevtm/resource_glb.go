@@ -2,12 +2,12 @@ package brocadevtm
 
 import (
 	"fmt"
-	"regexp"
-
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/glb"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
+	"net/http"
+	"regexp"
 )
 
 func resourceGLB() *schema.Resource {
@@ -312,7 +312,7 @@ func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 		createGLB.Properties.Log.Format = v.(string)
 	}
 
-	err := client.Set("glb_services", name, &createGLB, nil)
+	err := client.Set("glb_services", name, createGLB, nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM GLB error whilst creating %s: %v", name, err)
 	}
@@ -467,7 +467,7 @@ func resourceGLBUpdate(d *schema.ResourceData, m interface{}) error {
 	if hasChanges {
 		config := m.(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
-		err := client.Set("glb_services", name, &updateGLB, nil)
+		err := client.Set("glb_services", name, updateGLB, nil)
 		if err != nil {
 			return fmt.Errorf("BrocadeVTM GLB error whilst updating %s: %v", name, err)
 		}
@@ -484,7 +484,7 @@ func resourceGLBDelete(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Delete("glb_services", d.Id())
 
-	if err != nil {
+	if err != nil && client.StatusCode != http.StatusNotFound {
 		return fmt.Errorf("BrocadeVTM GLB error whilst deleting %s: %v", d.Id(), err)
 	}
 
