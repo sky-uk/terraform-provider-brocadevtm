@@ -35,7 +35,6 @@ func resourceRuleCreate(d *schema.ResourceData, m interface{}) error {
 	var vtmRule rule.TrafficScriptRule
 	config := m.(map[string]interface{})
 
-	// We need to copy the client as we want to specify different headers for rule which will conflict with other resources.
 	client := config["octetClient"].(*api.Client)
 
 	if v, ok := d.GetOk("name"); ok && v != "" {
@@ -60,7 +59,7 @@ func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 	var vtmRule rule.TrafficScriptRule
 	config := m.(map[string]interface{})
 
-	// We need to copy the client as we want to specify different headers for rule which will conflict with other resources.
+
 	client := config["octetClient"].(*api.Client)
 	vtmRule.Name = d.Id()
 	client.WorkWithConfigurationResources()
@@ -95,7 +94,7 @@ func resourceRuleUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if hasChanges {
-		// We need to copy the client as we want to specify different headers for rule which will conflict with other resources.
+
 		client := config["octetClient"].(*api.Client)
 		err := client.Set("rules", vtmRule.Name, []byte(vtmRule.Script), nil)
 
