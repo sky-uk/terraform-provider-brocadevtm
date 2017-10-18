@@ -131,9 +131,6 @@ DNS_ZONE_CONFIG
 `, name)
 }
 
-
-
-
 func testAccBrocadeVTMDNSZoneNoNameTemplate() string {
 	return fmt.Sprintf(`
 resource "brocadevtm_dns_zone" "acctest" {
