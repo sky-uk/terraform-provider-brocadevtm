@@ -1,10 +1,11 @@
 package brocadevtm
 
+/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/ssl_server_key"
+	"github.com/sky-uk/go-brocade-vtm/api/ssl_server_key"
+	"github.com/sky-uk/go-rest-api"
 	"net/http"
 )
 
@@ -16,31 +17,31 @@ func resourceSSLServerKey() *schema.Resource {
 		Delete: resourceSSLServerKeyDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"note": {
+			"note": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
-			"private": {
+			"private": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
-			"public": {
+			"public": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
-			"request": {
+			"request": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -50,6 +51,7 @@ func resourceSSLServerKey() *schema.Resource {
 }
 
 func resourceSSLServerKeyCreate(d *schema.ResourceData, meta interface{}) error {
+	vtmClient := meta.(*rest.Client)
 	var name string
 	var payloadObject sslServerKey.SSLServerKey
 
@@ -69,33 +71,36 @@ func resourceSSLServerKeyCreate(d *schema.ResourceData, meta interface{}) error 
 		payloadObject.Properties.Basic.Request = v.(string)
 	}
 
-	config := meta.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	err := client.Set("ssl/server_keys", name, &payloadObject, nil)
-
-	if err != nil {
+	createSSLServerKey := sslServerKey.NewCreate(name, payloadObject)
+	err := vtmClient.Do(createSSLServerKey)
+	if err != nil && createSSLServerKey.StatusCode() != 201 {
+		d.SetId("")
 		return fmt.Errorf("BrocadeVTM SSL Server Key error whilst creating %s: %v", name, err)
 	}
+
 	d.SetId(name)
 	return resourceSSLServerKeyRead(d, meta)
 }
 
 func resourceSSLServerKeyRead(d *schema.ResourceData, meta interface{}) error {
 
-	config := meta.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	client.WorkWithConfigurationResources()
-	name := d.Id()
-	var sslServerKey sslServerKey.SSLServerKey
-	err := client.GetByName("ssl/server_keys", name, &sslServerKey)
-	if client.StatusCode == http.StatusNotFound {
-		d.SetId("")
-		return nil
+	vtmClient := meta.(*rest.Client)
+	var name string
+
+	if v, ok := d.GetOk("name"); ok {
+		name = v.(string)
 	}
+	getSSLServerKey := sslServerKey.NewGet(name)
+	err := vtmClient.Do(getSSLServerKey)
 	if err != nil {
+		if getSSLServerKey.StatusCode() == http.StatusNotFound {
+			d.SetId("")
+			return nil
+		}
 		return fmt.Errorf("BrocadeVTM SSL Server Key error whilst retrieving %s: %v", name, err)
 	}
 
+	sslServerKey := getSSLServerKey.ResponseObject().(*sslServerKey.SSLServerKey)
 	d.Set("note", sslServerKey.Properties.Basic.Note)
 	// TODO: API doesn't return the private key back, so we ignore it,
 	// otherwise plan is always changing it.
@@ -107,9 +112,14 @@ func resourceSSLServerKeyRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error {
+	vtmClient := meta.(*rest.Client)
+	var name string
 	var payloadObject sslServerKey.SSLServerKey
 	hasChanges := false
 
+	if v, ok := d.GetOk("name"); ok {
+		name = v.(string)
+	}
 	if d.HasChange("note") {
 		if v, ok := d.GetOk("note"); ok {
 			payloadObject.Properties.Basic.Note = v.(string)
@@ -136,25 +146,32 @@ func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	if hasChanges {
-		config := meta.(map[string]interface{})
-		client := config["jsonClient"].(*api.Client)
-		err := client.Set("ssl/server_keys", d.Id(), &payloadObject, nil)
-
+		updateSSLServerKey := sslServerKey.NewUpdate(name, payloadObject)
+		err := vtmClient.Do(updateSSLServerKey)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM SSL Server Key error whilst updating %s: %v", d.Id(), err)
+			return fmt.Errorf("BrocadeVTM SSL Server Key error whilst updating %s: %v", name, err)
 		}
+		d.SetId(name)
 	}
 	return resourceSSLServerKeyRead(d, meta)
 }
 
 func resourceSSLServerKeyDelete(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	name := d.Id()
 
-	err := client.Delete("ssl/server_keys", name)
-	if client.StatusCode == http.StatusNoContent || client.StatusCode == http.StatusNotFound {
-		return nil
+	vtmClient := meta.(*rest.Client)
+	var name string
+
+	if v, ok := d.GetOk("name"); ok {
+		name = v.(string)
 	}
-	return fmt.Errorf("BrocadeVTM SSL Server Key error whilst deleting %s: %v", name, err)
+
+	deleteAPI := sslServerKey.NewDelete(name)
+	err := vtmClient.Do(deleteAPI)
+	if err != nil && deleteAPI.StatusCode() != http.StatusNotFound {
+		return fmt.Errorf("BrocadeVTM SSL Server Key error whilst deleting %s: %v", name, err)
+	}
+
+	d.SetId("")
+	return nil
 }
+*/

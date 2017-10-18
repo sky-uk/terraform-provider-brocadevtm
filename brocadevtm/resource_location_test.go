@@ -1,11 +1,13 @@
 package brocadevtm
 
+/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/go-brocade-vtm/api/location"
+	"github.com/sky-uk/go-rest-api"
 	"regexp"
 	"testing"
 )
@@ -83,8 +85,7 @@ func TestAccBrocadeVTMLocationBasic(t *testing.T) {
 
 func testAccBrocadeVTMLocationCheckDestroy(state *terraform.State, name string) error {
 
-	config := testAccProvider.Meta().(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
+	vtmClient := testAccProvider.Meta().(*rest.Client)
 
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "brocadevtm_location" {
@@ -93,14 +94,13 @@ func testAccBrocadeVTMLocationCheckDestroy(state *terraform.State, name string) 
 		if id, ok := rs.Primary.Attributes["id"]; ok && id != "" {
 			return nil
 		}
-
-		locations, err := client.GetAllResources("locations")
-
+		api := location.NewGetAll()
+		err := vtmClient.Do(api)
 		if err != nil {
-			return fmt.Errorf("Brocade vTM Location - error occurred whilst retrieving a list of all locations: %+v", err)
+			return fmt.Errorf("Brocade vTM Location - error occurred whilst retrieving a list of all locations")
 		}
-		for _, locationChild := range locations {
-			if locationChild["name"] == name {
+		for _, location := range api.ResponseObject().(*location.Locations).Children {
+			if location.Name == name {
 				return fmt.Errorf("Brocade vTM Location %s still exists", name)
 			}
 		}
@@ -119,16 +119,14 @@ func testAccBrocadeVTMLocationExists(locationName, locationResourceName string) 
 			return fmt.Errorf("\nBrocade vTM Location ID not set for %s in resources", locationName)
 		}
 
-		config := testAccProvider.Meta().(map[string]interface{})
-		client := config["jsonClient"].(*api.Client)
-		locations, err := client.GetAllResources("locations")
-
+		vtmClient := testAccProvider.Meta().(*rest.Client)
+		api := location.NewGetAll()
+		err := vtmClient.Do(api)
 		if err != nil {
-			return fmt.Errorf("Error getting all locations: %+v", err)
+			return fmt.Errorf("Error: %+v", err)
 		}
-
-		for _, locationChild := range locations {
-			if locationChild["name"] == locationName {
+		for _, location := range api.ResponseObject().(*location.Locations).Children {
+			if location.Name == locationName {
 				return nil
 			}
 		}
@@ -250,3 +248,4 @@ resource "brocadevtm_location" "acctest" {
 }
 `, locationName)
 }
+*/
