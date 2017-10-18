@@ -7,6 +7,7 @@ import (
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/monitor"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
+    "net/http"
 )
 
 func resourceMonitor() *schema.Resource {
@@ -349,7 +350,10 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 
 	client.WorkWithConfigurationResources()
 	err := client.GetByName("monitors", name, &readMonitor)
-
+    if client.StatusCode == http.StatusNotFound {
+		d.SetId("")
+        return nil
+    }
 	if err != nil {
 		d.SetId("")
 		return fmt.Errorf("BrocadeVTM Monitor error whilst retrieving %s: %v", name, err)
@@ -573,13 +577,12 @@ func resourceMonitorDelete(d *schema.ResourceData, m interface{}) error {
 		name = v.(string)
 	}
 
-	client.WorkWithConfigurationResources()
 	err := client.Delete("monitors", name)
-
-	if err != nil {
+    if client.StatusCode == http.StatusNoContent || client.StatusCode == http.StatusNotFound {
 		d.SetId("")
+    }
+	if err != nil {
 		return fmt.Errorf("BrocadeVTM Monitor error whilst deleting %s: %v", name, err)
 	}
-	d.SetId("")
 	return nil
 }
