@@ -59,7 +59,6 @@ func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 	var vtmRule rule.TrafficScriptRule
 	config := m.(map[string]interface{})
 
-
 	client := config["octetClient"].(*api.Client)
 	vtmRule.Name = d.Id()
 	client.WorkWithConfigurationResources()
