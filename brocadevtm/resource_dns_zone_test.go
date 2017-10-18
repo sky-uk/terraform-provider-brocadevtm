@@ -14,6 +14,8 @@ func TestAccBrocadeVTMDNSZoneBasic(t *testing.T) {
 
 	randomInt := acctest.RandInt()
 	dnsZoneName := fmt.Sprintf("acctest_brocadevtm_dns_zone-%d", randomInt)
+	dnsZoneFileName := fmt.Sprintf("acctest_brocadevtm_dns_zone_file-%d", randomInt)
+	dnsZoneFileNameUpdate := fmt.Sprintf("acctest_brocadevtm_dns_zone_file-%d", randomInt)
 	dnsZoneResourceName := "brocadevtm_dns_zone.acctest"
 	fmt.Printf("\n\nDNS zone is %s.\n\n", dnsZoneName)
 
@@ -31,21 +33,21 @@ func TestAccBrocadeVTMDNSZoneBasic(t *testing.T) {
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
-				Config: testAccBrocadeDNSZoneCreateTemplate(dnsZoneName),
+				Config: testAccBrocadeDNSZoneCreateTemplate(dnsZoneName, dnsZoneFileName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMDNSZoneExists(dnsZoneName, dnsZoneResourceName),
 					resource.TestCheckResourceAttr(dnsZoneResourceName, "name", dnsZoneName),
 					resource.TestCheckResourceAttr(dnsZoneResourceName, "origin", "example.com"),
-					resource.TestCheckResourceAttr(dnsZoneResourceName, "zone_file", "example.com.db"),
+					resource.TestCheckResourceAttr(dnsZoneResourceName, "zone_file", dnsZoneFileName),
 				),
 			},
 			{
-				Config: testAccBrocadeDNSZoneUpdateTemplate(dnsZoneName),
+				Config: testAccBrocadeDNSZoneUpdateTemplate(dnsZoneName, dnsZoneFileNameUpdate),
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMDNSZoneExists(dnsZoneName, dnsZoneResourceName),
 					resource.TestCheckResourceAttr(dnsZoneResourceName, "name", dnsZoneName),
 					resource.TestCheckResourceAttr(dnsZoneResourceName, "origin", "updated-example.com"),
-					resource.TestCheckResourceAttr(dnsZoneResourceName, "zone_file", "updated-example.com.db"),
+					resource.TestCheckResourceAttr(dnsZoneResourceName, "zone_file", dnsZoneFileNameUpdate),
 				),
 			},
 		},
@@ -103,6 +105,32 @@ func testAccBrocadeVTMDNSZoneExists(dnsZoneName, dnsZoneResourceName string) res
 	}
 }
 
+func testAccBrocadeVTMDNSZonePrepare(name string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_dns_zone_file" "acctest" {
+  name = "%s"
+  dns_zone_config = <<DNS_ZONE_CONFIG
+$TTL 3600
+@                       30  IN  SOA example.com. hostmaster.isp.example.com. (
+                                    2017092901 ; serial
+                                    3600       ; refresh after 1 hour
+                                    300        ; retry after 5 minutes
+                                    1209600    ; expire after 2 weeks
+                                    30 )       ; minimum TTL of 30 seconds
+                                    IN  NS  ns1.example.com.
+ns1				60  IN  A   10.0.0.1
+;
+; Services - Each service in a location has a unique IP address. Two locations = two IPs.
+;
+example-service         	60  IN  A   10.100.10.5
+                        	60  IN  A   10.100.20.5
+another-example-service         60  IN  A   10.100.10.6
+                        	60  IN  A   10.100.20.6
+DNS_ZONE_CONFIG
+}
+`, name)
+}
+
 func testAccBrocadeVTMDNSZoneNoNameTemplate() string {
 	return fmt.Sprintf(`
 resource "brocadevtm_dns_zone" "acctest" {
@@ -112,22 +140,24 @@ resource "brocadevtm_dns_zone" "acctest" {
 `)
 }
 
-func testAccBrocadeDNSZoneCreateTemplate(name string) string {
+func testAccBrocadeDNSZoneCreateTemplate(name, dnsZoneFileName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_dns_zone" "acctest" {
   name = "%s"
   origin = "example.com"
-  zone_file = "example.com.db"
+  zone_file = "${brocadevtm_dns_zone_file.acctest.name}"
 }
-`, name)
+%s
+`, name, testAccBrocadeVTMDNSZonePrepare(dnsZoneFileName))
 }
 
-func testAccBrocadeDNSZoneUpdateTemplate(name string) string {
+func testAccBrocadeDNSZoneUpdateTemplate(name, dnsZoneFileName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_dns_zone" "acctest" {
   name = "%s"
   origin = "updated-example.com"
-  zone_file = "updated-example.com.db"
+  zone_file = "${brocadevtm_dns_zone_file.acctest.name}"
 }
-`, name)
+%s
+`, name, testAccBrocadeVTMDNSZonePrepare(dnsZoneFileName))
 }
