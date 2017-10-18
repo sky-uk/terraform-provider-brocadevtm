@@ -100,6 +100,7 @@ func resourcePool() *schema.Resource {
 						"priority": {
 							Type:         schema.TypeInt,
 							Optional:     true,
+							Default:      1,
 							ValidateFunc: util.ValidateUnsignedInteger,
 							Description:  "Priority assigned to a node. Defaults to 1",
 						},
@@ -112,6 +113,7 @@ func resourcePool() *schema.Resource {
 						"weight": {
 							Type:         schema.TypeInt,
 							Optional:     true,
+							Default:      1,
 							ValidateFunc: validateWeight,
 							Description:  "Weight assigned to the node. Valid values are between 1 and 100",
 						},
