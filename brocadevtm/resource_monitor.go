@@ -74,9 +74,11 @@ func resourceMonitor() *schema.Resource {
 				Optional: true,
 				Default:  "ping",
 				ValidateFunc: validation.StringInSlice([]string{
-					"connect",         // TCP Connect monitor "http": HTTP monitor
+					"connect",         // TCP Connect monitor 
+                    "http",             // HTTP monitor
 					"ping",            // Ping monitor
-					"program",         //  External program monitor "rtsp": RTSP monitor
+					"program",         //  External program monitor 
+                    "rtsp",             // RTSP monitor
 					"sip",             // SIP monitor
 					"tcp_transaction", // TCP transaction monitor
 				}, false),
