@@ -78,7 +78,7 @@ func testAccBrocadeVTMCloudCredentialsCheckDestroy(state *terraform.State, name 
 		if client.StatusCode == http.StatusNotFound {
 			return nil
 		}
-		return fmt.Errorf("Brocade vTM Check Destroy Error: Cloud Credential &+v ", err)
+		return fmt.Errorf("Brocade vTM Check Destroy Error: Cloud Credential %+v ", err)
 	}
 	return nil
 }
