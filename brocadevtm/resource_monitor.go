@@ -2,10 +2,11 @@ package brocadevtm
 
 import (
 	"fmt"
-
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/monitor"
+	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 )
 
 func resourceMonitor() *schema.Resource {
@@ -21,33 +22,77 @@ func resourceMonitor() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"back_off": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     true,
+				Description: "Should the monitor slowly increase the delay after it has failed?",
+			},
 			"delay": {
 				Type:         schema.TypeInt,
 				Optional:     true,
-				Computed:     true,
-				ValidateFunc: validateMonitorUnsignedInteger,
-			},
-			"timeout": {
-				Type:         schema.TypeInt,
-				Optional:     true,
-				Computed:     true,
-				ValidateFunc: validateMonitorUnsignedInteger,
+				Default:      3,
+				ValidateFunc: util.ValidateUnsignedInteger,
+				Description:  "The minimum time between calls to a monitor.",
 			},
 			"failures": {
 				Type:         schema.TypeInt,
 				Optional:     true,
-				Computed:     true,
-				ValidateFunc: validateMonitorUnsignedInteger,
+				Default:      3,
+				ValidateFunc: util.ValidateUnsignedInteger,
+				Description:  "The number of times in a row that a node must fail execution of the monitor before it is classed as unavailable.",
 			},
-			"verbose": {
-				Type:     schema.TypeBool,
+			"machine": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The machine to monitor, where relevant this should be in the form <hostname>:<port>, for \"ping\" monitors the <port> part must not be specified.",
+			},
+			"note": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "A description of the montitor.",
+			},
+			"scope": {
+				Type:     schema.TypeString,
 				Optional: true,
-				Computed: true,
+				Default:  "pernode",
+				ValidateFunc: validation.StringInSlice([]string{
+					"pernode",  // Node: Monitor each node in the pool separately
+					"poolwide", // Pool/GLB: Monitor a specified machine
+				}, false),
+				Description: "A monitor can either monitor each node in the pool separately and disable an individual node if it fails, or it can monitor a specific machine and disable the entire pool if that machine fails. GLB location monitors must monitor a specific machine.",
+			},
+			"timeout": {
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Default:      3,
+				ValidateFunc: util.ValidateUnsignedInteger,
+				Description:  "The maximum runtime for an individual instance of the monitor.",
+			},
+			"type": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "ping",
+				ValidateFunc: validation.StringInSlice([]string{
+					"connect",         // TCP Connect monitor "http": HTTP monitor
+					"ping",            // Ping monitor
+					"program",         //  External program monitor "rtsp": RTSP monitor
+					"sip",             // SIP monitor
+					"tcp_transaction", // TCP transaction monitor
+				}, false),
+				Description: "The internal monitor implementation of this monitor.",
 			},
 			"use_ssl": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Whether or not the monitor should connect using SSL.",
+			},
+			"verbose": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Whether or not the monitor should emit verbose logging. This is useful for diagnosing problems",
 			},
 			"http_host_header": {
 				Type:     schema.TypeString,
@@ -162,43 +207,49 @@ func resourceMonitor() *schema.Resource {
 	}
 }
 
-func validateMonitorUnsignedInteger(v interface{}, k string) (ws []string, errors []error) {
-	ttl := v.(int)
-	if ttl < 0 {
-		errors = append(errors, fmt.Errorf("%q can't be negative", k))
-	}
-	return
-}
-
 func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 
 	var createMonitor monitor.Monitor
-	var name string
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 
-	if v, ok := d.GetOk("name"); ok {
-		name = v.(string)
+	name := d.Get("name").(string)
+
+	if v, ok := d.GetOk("back_off"); ok {
+		backOffFlag := v.(bool)
+		createMonitor.Properties.Basic.BackOff = &backOffFlag
 	}
 	if v, ok := d.GetOk("delay"); ok {
 		delay := v.(int)
 		createMonitor.Properties.Basic.Delay = uint(delay)
 	}
-	if v, ok := d.GetOk("timeout"); ok {
-		timeout := v.(int)
-		createMonitor.Properties.Basic.Timeout = uint(timeout)
-	}
 	if v, ok := d.GetOk("failures"); ok {
 		failures := v.(int)
 		createMonitor.Properties.Basic.Failures = uint(failures)
 	}
-	if v, ok := d.GetOk("verbose"); ok {
-		monitorVerbosity := v.(bool)
-		createMonitor.Properties.Basic.Verbose = &monitorVerbosity
+	if v, ok := d.GetOk("machine"); ok {
+		createMonitor.Properties.Basic.Machine = v.(string)
+	}
+	if v, ok := d.GetOk("note"); ok {
+		createMonitor.Properties.Basic.Note = v.(string)
+	}
+	if v, ok := d.GetOk("scope"); ok {
+		createMonitor.Properties.Basic.Scope = v.(string)
+	}
+	if v, ok := d.GetOk("timeout"); ok {
+		timeout := v.(int)
+		createMonitor.Properties.Basic.Timeout = uint(timeout)
+	}
+	if v, ok := d.GetOk("type"); ok {
+		createMonitor.Properties.Basic.Type = v.(string)
 	}
 	if v, ok := d.GetOk("use_ssl"); ok {
 		monitorSSL := v.(bool)
 		createMonitor.Properties.Basic.UseSSL = &monitorSSL
+	}
+	if v, ok := d.GetOk("verbose"); ok {
+		monitorVerbosity := v.(bool)
+		createMonitor.Properties.Basic.Verbose = &monitorVerbosity
 	}
 	if v, ok := d.GetOk("http_host_header"); ok {
 		createMonitor.Properties.HTTP.HostHeader = v.(string)
@@ -289,13 +340,10 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 
 	var readMonitor monitor.Monitor
-	var name string
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 
-	if v, ok := d.GetOk("name"); ok {
-		name = v.(string)
-	}
+	name := d.Get("name").(string)
 
 	client.WorkWithConfigurationResources()
 	err := client.GetByName("monitors", name, &readMonitor)
@@ -306,11 +354,16 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	d.Set("name", name)
+	d.Set("back_off", *readMonitor.Properties.Basic.BackOff)
 	d.Set("delay", readMonitor.Properties.Basic.Delay)
-	d.Set("timeout", readMonitor.Properties.Basic.Timeout)
 	d.Set("failures", readMonitor.Properties.Basic.Failures)
-	d.Set("verbose", readMonitor.Properties.Basic.Verbose)
-	d.Set("use_ssl", readMonitor.Properties.Basic.UseSSL)
+	d.Set("machine", readMonitor.Properties.Basic.Machine)
+	d.Set("note", readMonitor.Properties.Basic.Note)
+	d.Set("scope", readMonitor.Properties.Basic.Scope)
+	d.Set("timeout", readMonitor.Properties.Basic.Timeout)
+	d.Set("type", readMonitor.Properties.Basic.Type)
+	d.Set("use_ssl", *readMonitor.Properties.Basic.UseSSL)
+	d.Set("verbose", *readMonitor.Properties.Basic.Verbose)
 	d.Set("http_host_header", readMonitor.Properties.HTTP.HostHeader)
 	d.Set("http_path", readMonitor.Properties.HTTP.URIPath)
 	d.Set("http_authentication", readMonitor.Properties.HTTP.Authentication)
@@ -337,90 +390,98 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 	var updateMonitor monitor.Monitor
-	var name string
-	hasChanges := false
 
-	if v, ok := d.GetOk("name"); ok {
-		name = v.(string)
+	name := d.Get("name").(string)
+
+	if d.HasChange("back_off") {
+		backOffFlag := d.Get("back_off").(bool)
+		updateMonitor.Properties.Basic.BackOff = &backOffFlag
 	}
 	if d.HasChange("delay") {
 		if v, ok := d.GetOk("delay"); ok {
 			delay := v.(int)
 			updateMonitor.Properties.Basic.Delay = uint(delay)
 		}
-		hasChanges = true
-	}
-	if d.HasChange("timeout") {
-		if v, ok := d.GetOk("timeout"); ok {
-			timeout := v.(int)
-			updateMonitor.Properties.Basic.Timeout = uint(timeout)
-		}
-		hasChanges = true
 	}
 	if d.HasChange("failures") {
 		if v, ok := d.GetOk("failures"); ok {
 			failures := v.(int)
 			updateMonitor.Properties.Basic.Failures = uint(failures)
 		}
-		hasChanges = true
+	}
+	if d.HasChange("machine") {
+		if v, ok := d.GetOk("machine"); ok {
+			updateMonitor.Properties.Basic.Machine = v.(string)
+		}
+	}
+	if d.HasChange("note") {
+		if v, ok := d.GetOk("note"); ok {
+			updateMonitor.Properties.Basic.Note = v.(string)
+		}
+	}
+	if d.HasChange("scope") {
+		if v, ok := d.GetOk("scope"); ok {
+			updateMonitor.Properties.Basic.Scope = v.(string)
+		}
+	}
+	if d.HasChange("timeout") {
+		if v, ok := d.GetOk("timeout"); ok {
+			timeout := v.(int)
+			updateMonitor.Properties.Basic.Timeout = uint(timeout)
+		}
+	}
+	if d.HasChange("type") {
+		if v, ok := d.GetOk("type"); ok {
+			updateMonitor.Properties.Basic.Type = v.(string)
+		}
 	}
 	if d.HasChange("verbose") {
 		monitorVerbosity := d.Get("verbose").(bool)
 		updateMonitor.Properties.Basic.Verbose = &monitorVerbosity
-		hasChanges = true
 	}
 	if d.HasChange("use_ssl") {
 		monitorSSL := d.Get("use_ssl").(bool)
 		updateMonitor.Properties.Basic.UseSSL = &monitorSSL
-		hasChanges = true
 	}
 	if d.HasChange("http_host_header") {
 		if v, ok := d.GetOk("http_host_header"); ok {
 			updateMonitor.Properties.HTTP.HostHeader = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("http_path") {
 		if v, ok := d.GetOk("http_path"); ok {
 			updateMonitor.Properties.HTTP.URIPath = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("http_authentication") {
 		if v, ok := d.GetOk("http_authentication"); ok {
 			updateMonitor.Properties.HTTP.Authentication = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("http_body_regex") {
 		if v, ok := d.GetOk("http_body_regex"); ok {
 			updateMonitor.Properties.HTTP.BodyRegex = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("http_status_regex") {
 		if v, ok := d.GetOk("http_status_regex"); ok {
 			updateMonitor.Properties.HTTP.StatusRegex = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("rtsp_status_regex") {
 		if v, ok := d.GetOk("rtsp_status_regex"); ok {
 			updateMonitor.Properties.RTSP.StatusRegex = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("rtsp_body_regex") {
 		if v, ok := d.GetOk("rtsp_body_regex"); ok {
 			updateMonitor.Properties.RTSP.BodyRegex = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("rtsp_path") {
 		if v, ok := d.GetOk("rtsp_path"); ok {
 			updateMonitor.Properties.RTSP.URIPath = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("script_arguments") {
 		if v, ok := d.GetOk("script_arguments"); ok {
@@ -443,71 +504,60 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 				}
 				updateMonitor.Properties.SCRIPT.Arguments = argumentsList
 			}
-			hasChanges = true
 		}
 	}
 	if d.HasChange("script_program") {
 		if v, ok := d.GetOk("script_program"); ok {
 			updateMonitor.Properties.SCRIPT.Program = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("sip_body_regex") {
 		if v, ok := d.GetOk("sip_body_regex"); ok {
 			updateMonitor.Properties.SIP.BodyRegex = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("sip_status_regex") {
 		if v, ok := d.GetOk("sip_status_regex"); ok {
 			updateMonitor.Properties.SIP.StatusRegex = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("sip_transport") {
 		if v, ok := d.GetOk("sip_transport"); ok {
 			updateMonitor.Properties.SIP.StatusRegex = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("tcp_close_string") {
 		if v, ok := d.GetOk("tcp_close_string"); ok {
 			updateMonitor.Properties.TCP.CloseString = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("tcp_max_response_len") {
 		if v, ok := d.GetOk("tcp_max_response_len"); ok {
 			updateMonitor.Properties.TCP.MaxResponseLen = uint(v.(int))
 		}
-		hasChanges = true
 	}
 	if d.HasChange("tcp_response_regex") {
 		if v, ok := d.GetOk("tcp_response_regex"); ok {
 			updateMonitor.Properties.TCP.ResponseRegex = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("tcp_write_string") {
 		if v, ok := d.GetOk("tcp_write_string"); ok {
 			updateMonitor.Properties.TCP.WriteString = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("udp_accept_all") {
 		if v, ok := d.GetOk("udp_accept_all"); ok {
 			monitorAcceptAll := v.(bool)
 			updateMonitor.Properties.UDP.AcceptAll = &monitorAcceptAll
 		}
-		hasChanges = true
 	}
-	if hasChanges {
 
-		err := client.Set("monitors", name, updateMonitor, nil)
-		if err != nil {
-			return fmt.Errorf("BrocadeVTM Monitor error whilst updating %s: %v", name, err)
-		}
+	err := client.Set("monitors", name, updateMonitor, nil)
+	if err != nil {
+		return fmt.Errorf("BrocadeVTM Monitor error whilst updating %s: %s", name, err)
 	}
+
 	return resourceMonitorRead(d, m)
 }
 
