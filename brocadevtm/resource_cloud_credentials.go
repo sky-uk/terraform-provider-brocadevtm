@@ -187,7 +187,6 @@ func resourceCloudCredentialsDelete(d *schema.ResourceData, m interface{}) error
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 	err := client.Delete("cloud_api_credentials", name)
-	log.Println("DEBUG DEBUG STATUS CODE IS: %v", client.StatusCode)
 	if client.StatusCode == http.StatusNotFound {
 		d.SetId("")
 		return nil
