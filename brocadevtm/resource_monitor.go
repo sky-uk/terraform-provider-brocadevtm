@@ -355,7 +355,6 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 	if err != nil {
-		d.SetId("")
 		return fmt.Errorf("BrocadeVTM Monitor error whilst retrieving %s: %v", name, err)
 	}
 
