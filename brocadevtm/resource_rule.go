@@ -1,11 +1,10 @@
 package brocadevtm
 
-/*
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm/api/rule"
-	"github.com/sky-uk/go-rest-api"
+	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/rule"
 	"net/http"
 )
 
@@ -34,14 +33,10 @@ func resourceRule() *schema.Resource {
 func resourceRuleCreate(d *schema.ResourceData, m interface{}) error {
 
 	var vtmRule rule.TrafficScriptRule
-	headers := make(map[string]string)
+	config := m.(map[string]interface{})
 
 	// We need to copy the client as we want to specify different headers for rule which will conflict with other resources.
-	client := m.(*rest.Client)
-	vtmClient := *client
-	headers["Content-Type"] = "application/octet-stream"
-	headers["Content-Transfer-Encoding"] = "text"
-	vtmClient.Headers = headers
+	client := config["octetClient"].(*api.Client)
 
 	if v, ok := d.GetOk("name"); ok && v != "" {
 		vtmRule.Name = v.(string)
@@ -50,8 +45,7 @@ func resourceRuleCreate(d *schema.ResourceData, m interface{}) error {
 		vtmRule.Script = v.(string)
 	}
 
-	createAPI := rule.NewCreate(vtmRule.Name, []byte(fmt.Sprintf(vtmRule.Script)))
-	err := vtmClient.Do(createAPI)
+	err := client.Set("rules", vtmRule.Name, []byte(vtmRule.Script), nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Rule error whilst creating %s: %v", vtmRule.Name, err)
 	}
@@ -64,39 +58,32 @@ func resourceRuleCreate(d *schema.ResourceData, m interface{}) error {
 func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 
 	var vtmRule rule.TrafficScriptRule
-	headers := make(map[string]string)
+	config := m.(map[string]interface{})
 
 	// We need to copy the client as we want to specify different headers for rule which will conflict with other resources.
-	client := m.(*rest.Client)
-	vtmClient := *client
-	headers["Content-Type"] = "application/octet-stream"
-	headers["Content-Transfer-Encoding"] = "text"
-	vtmClient.Headers = headers
-
+	client := config["octetClient"].(*api.Client)
 	vtmRule.Name = d.Id()
-	readAPI := rule.NewGet(vtmRule.Name)
-	err := vtmClient.Do(readAPI)
+	client.WorkWithConfigurationResources()
+	ruleText := new([]byte)
+	err := client.GetByName("rules", vtmRule.Name, ruleText)
+
+	if client.StatusCode == http.StatusNotFound {
+		d.SetId("")
+	}
+
 	if err != nil {
-		if readAPI.StatusCode() == http.StatusNotFound {
-			d.SetId("")
-			return nil
-		}
 		return fmt.Errorf("BrocadeVTM Rule error whilst retrieving %s: %v", vtmRule.Name, err)
 	}
 
-	response := readAPI.ResponseObject().(*[]byte)
-	vtmRule.Script = string(*response)
-
 	d.SetId(vtmRule.Name)
-	d.Set("rule", vtmRule.Script)
-
+	d.Set("rule", string(*ruleText))
 	return nil
 }
 
 func resourceRuleUpdate(d *schema.ResourceData, m interface{}) error {
 
 	var vtmRule rule.TrafficScriptRule
-	headers := make(map[string]string)
+	config := m.(map[string]interface{})
 	hasChanges := false
 	vtmRule.Name = d.Id()
 
@@ -109,14 +96,8 @@ func resourceRuleUpdate(d *schema.ResourceData, m interface{}) error {
 
 	if hasChanges {
 		// We need to copy the client as we want to specify different headers for rule which will conflict with other resources.
-		client := m.(*rest.Client)
-		vtmClient := *client
-		headers["Content-Type"] = "application/octet-stream"
-		headers["Content-Transfer-Encoding"] = "text"
-		vtmClient.Headers = headers
-
-		updateAPI := rule.NewUpdate(vtmRule.Name, []byte(fmt.Sprintf(vtmRule.Script)))
-		err := vtmClient.Do(updateAPI)
+		client := config["octetClient"].(*api.Client)
+		err := client.Set("rules", vtmRule.Name, []byte(vtmRule.Script), nil)
 
 		if err != nil {
 			return fmt.Errorf("BrocadeVTM Rule error whilst updating %s: %vv", vtmRule.Name, err)
@@ -131,16 +112,19 @@ func resourceRuleUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceRuleDelete(d *schema.ResourceData, m interface{}) error {
 
 	var vtmRule rule.TrafficScriptRule
-	vtmClient := m.(*rest.Client)
-
+	config := m.(map[string]interface{})
+	client := config["octetClient"].(*api.Client)
 	vtmRule.Name = d.Id()
-	deleteAPI := rule.NewDelete(vtmRule.Name)
-	err := vtmClient.Do(deleteAPI)
-	if err != nil && deleteAPI.StatusCode() != http.StatusNotFound {
+
+	err := client.Delete("rules", vtmRule.Name)
+	if err != nil {
 		return fmt.Errorf("BrocadeVTM Rule error whilst deleting %s: %v", vtmRule.Name, err)
+	}
+
+	if client.StatusCode == http.StatusNoContent || client.StatusCode == http.StatusNotFound {
+		return nil
 	}
 
 	d.SetId("")
 	return nil
 }
-*/
