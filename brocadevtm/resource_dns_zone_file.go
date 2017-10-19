@@ -63,7 +63,7 @@ func resourceDNSZoneFileRead(d *schema.ResourceData, m interface{}) error {
 	zoneConfig := new([]byte)
 	client.WorkWithConfigurationResources()
 	err := client.GetByName("dns_server/zone_files", name, zoneConfig)
-	if client.StatusCode == http.StatusNoContent {
+	if client.StatusCode == http.StatusNotFound {
 		d.SetId("")
 		log.Printf("BrocadeVTM DNS zone file %s not found", name)
 		return nil
