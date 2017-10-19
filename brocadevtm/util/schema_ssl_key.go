@@ -39,6 +39,7 @@ func SchemaSSLKey() map[string]*schema.Schema {
 	}
 }
 
+//SSLKeyCreate : Creates an SSL Key
 func SSLKeyCreate(d *schema.ResourceData, meta interface{}, keyType string) error {
 
 	name := d.Get("name").(string)
@@ -73,6 +74,7 @@ func SSLKeyCreate(d *schema.ResourceData, meta interface{}, keyType string) erro
 	return nil
 }
 
+//SSLKeyRead : Reads an SSL Key
 func SSLKeyRead(d *schema.ResourceData, meta interface{}, keyType string) error {
 	config := meta.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
@@ -97,6 +99,7 @@ func SSLKeyRead(d *schema.ResourceData, meta interface{}, keyType string) error 
 	return nil
 }
 
+//SSLKeyUpdate : Updates an SSL Key
 func SSLKeyUpdate(d *schema.ResourceData, meta interface{}, keyType string) error {
 
 	sslKeyPropertiesConfig := make(map[string]interface{})
@@ -128,6 +131,7 @@ func SSLKeyUpdate(d *schema.ResourceData, meta interface{}, keyType string) erro
 	return nil
 }
 
+//SSLKeyDelete : Deletes an SSL Key
 func SSLKeyDelete(d *schema.ResourceData, meta interface{}, keyType string) error {
 	config := meta.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
