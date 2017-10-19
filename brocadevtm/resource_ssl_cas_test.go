@@ -17,7 +17,7 @@ func TestAccBrocadeVTMSSLCasBasic(t *testing.T) {
 	sslCasConfigResourceName := "brocadevtm_ssl_cas_file.acctest"
 	sslServerKeyName := fmt.Sprintf("acctest_brocadevtm_ssl_cas_file-%d", randomInt)
 
-	fmt.Printf("\n\nSSL Cas Config file is %s.\n\n", sslCasConfigName)
+	fmt.Printf("\n\nSSL cas config file is %s.\n\n", sslCasConfigName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
@@ -60,6 +60,7 @@ func testAccBrocadeVTMSSLCasConfigCheckDestroy(state *terraform.State, name stri
 	client.WorkWithConfigurationResources()
 
 	for _, rs := range state.RootModule().Resources {
+
 		if rs.Type != "brocadevtm_ssl_cas_file" {
 			continue
 		}
@@ -68,11 +69,11 @@ func testAccBrocadeVTMSSLCasConfigCheckDestroy(state *terraform.State, name stri
 		}
 		sslCasList, err := client.GetAllResources("ssl/cas")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM error occurred while retrieving list of SSL Cas Configs: %v", err)
+			return fmt.Errorf("Brocade vTM error occurred while retrieving list of SSL cas configs: %v", err)
 		}
 		for _, childSSLCasConfig := range sslCasList {
 			if childSSLCasConfig["name"] == name {
-				return fmt.Errorf("Error: Brocade vTM SSL Cas Config %s still exists", name)
+				return fmt.Errorf("Error: Brocade vTM SSL cas config %s still exists", name)
 			}
 		}
 	}
@@ -89,22 +90,22 @@ func testAccBrocadeVTMSSLCasConfigExists(name, resourceName string) resource.Tes
 
 		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM SSL Cas Config %s wasn't found in resources", name)
+			return fmt.Errorf("\nBrocade vTM SSL cas config %s wasn't found in resources", name)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM SSL Cas Config ID not set for %s in resources", name)
+			return fmt.Errorf("\nBrocade vTM SSL cas config ID not set for %s in resources", name)
 		}
 
 		sslCasConfigList, err := client.GetAllResources("ssl/cas")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM error occurred while retrieving list of SSL Cas Configs: %v", err)
+			return fmt.Errorf("Brocade vTM error occurred while retrieving list of SSL cas configs: %v", err)
 		}
 		for _, sslCasConfig := range sslCasConfigList {
 			if sslCasConfig["name"] == name {
 				return nil
 			}
 		}
-		return fmt.Errorf("Brocade vTM SSL Cas Config %s not found on remote vTM", name)
+		return fmt.Errorf("Brocade vTM SSL cas config %s not found on remote vTM", name)
 	}
 }
 
@@ -236,7 +237,7 @@ REQUEST
 `, sslServerKeyName)
 }
 
-func testAccBrocadeSSLCasConfigCreateTemplate(name, sslServerKeyName string) string {
+func testAccBrocadeSSLCasConfigCreateTemplate(sslCasConfigName, sslServerKeyName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_ssl_cas_file" "acctest" {
   name = "%s"
@@ -313,10 +314,10 @@ SSL_CAS_CONFIG
   depends_on = ["brocadevtm_ssl_server_key.acctest"]
 }
 %s
-`, name, testAccBrocadeVTMSSLCasConfigPrepare(sslServerKeyName))
+`, sslCasConfigName, testAccBrocadeVTMSSLCasConfigPrepare(sslServerKeyName))
 }
 
-func testAccBrocadeSSLCasConfigUpdateTemplate(name, sslServerKeyName string) string {
+func testAccBrocadeSSLCasConfigUpdateTemplate(sslCasConfigName, sslServerKeyName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_ssl_cas_file" "acctest" {
   name = "%s"
@@ -411,5 +412,5 @@ SSL_CAS_CONFIG
   depends_on = ["brocadevtm_ssl_server_key.acctest"]
 }
 %s
-`, name, testAccBrocadeVTMSSLCasConfigPrepare(sslServerKeyName))
+`, sslCasConfigName, testAccBrocadeVTMSSLCasConfigPrepare(sslServerKeyName))
 }
