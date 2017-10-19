@@ -183,9 +183,14 @@ func testAccBrocadeVTMMonitorUpdateTemplate(monitorName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_monitor" "acctest" {
   name = "%s"
+  back_off = false
   delay = 5
-  timeout = 5
   failures = 9
+  machine = "10.93.59.24:9090"
+  note = "a description of this monitor..."
+  scope = "poolwide"
+  timeout = 5
+  type = "tcp_transaction"
   verbose = false
   use_ssl = false
   http_host_header = "some_header"
