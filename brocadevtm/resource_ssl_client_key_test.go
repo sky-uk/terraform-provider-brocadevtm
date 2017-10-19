@@ -2,15 +2,14 @@ package brocadevtm
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/acctest"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"net/http"
 	"regexp"
 	"testing"
 
-	"errors"
+	"github.com/hashicorp/terraform/helper/acctest"
+	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"net/http"
 )
 
 func TestAccBrocadeVTMSSLClientKeyBasic(t *testing.T) {
@@ -87,11 +86,11 @@ func testAccBrocadeVTMSSLClientKeyExists(keyName, keyResourceName string) resour
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[keyResourceName]
 		if !ok {
-			return fmt.Errorf("Not found: %s", keyResourceName)
+			return fmt.Errorf("Not found: %s", keyName)
 		}
 
 		if rs.Primary.ID == "" {
-			return errors.New("No ID is set")
+			return fmt.Errorf("\nBrocade vTM SSL Client Key ID not set for %s in resources", keyName)
 		}
 
 		config := testAccProvider.Meta().(map[string]interface{})
