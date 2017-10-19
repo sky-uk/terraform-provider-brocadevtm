@@ -26,14 +26,14 @@ RUN mv /terraform /usr/local/
 ENV PATH $PATH:/usr/local/terraform:/usr/local/go/bin
 
 # Setup golang deps
-#RUN mkdir -p /gows
-#ENV GOPATH /gows
-#RUN go get github.com/tools/godep
-#RUN go get github.com/tools/golint
-#RUN go get github.com/axw/gocov
-#RUN go get github.com/AlekSi/gocov-xml
-#RUN go get github.com/matm/gocov-html
-#RUN go get github.com/go-playground/overalls
+RUN mkdir -p /gows
+ENV GOPATH /gows
+RUN go get -u github.com/tools/godep
+RUN go get -u github.com/golang/lint
+RUN go get -u github.com/axw/gocov
+RUN go get -u github.com/AlekSi/gocov-xml
+RUN go get -u github.com/matm/gocov-html
+RUN go get -u github.com/go-playground/overalls
 
 RUN apt-get -y install make binutils
 
