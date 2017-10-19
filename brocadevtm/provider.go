@@ -56,6 +56,7 @@ func Provider() terraform.ResourceProvider {
 		ResourcesMap: map[string]*schema.Resource{
 			"brocadevtm_bandwidth":          resourceBandwidth(),
 			"brocadevtm_dns_zone":           resourceDNSZone(),
+			"brocadevtm_cloud_credentials":  resourceCloudCredentials(),
 			"brocadevtm_global_settings":    resourceGlobalSettings(),
 			"brocadevtm_dns_zone_file":      resourceDNSZoneFile(),
 			"brocadevtm_glb":                resourceGLB(),
@@ -64,12 +65,12 @@ func Provider() terraform.ResourceProvider {
 			"brocadevtm_persistence":        resourcePersistence(),
 			"brocadevtm_pool":               resourcePool(),
 			"brocadevtm_rule":               resourceRule(),
+			"brocadevtm_ssl_client_key":     resourceSSLClientKey(),
 			"brocadevtm_ssl_server_key":     resourceSSLServerKey(),
 			"brocadevtm_traffic_ip_group":   resourceTrafficIPGroup(),
 			"brocadevtm_user_authenticator": resourceUserAuthenticator(),
 			"brocadevtm_user_group":         resourceUserGroup(),
 			"brocadevtm_virtual_server":     resourceVirtualServer(),
-			"brocadevtm_cloud_credentials":  resourceCloudCredentials(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
