@@ -20,25 +20,21 @@ func SchemaSSLKey() map[string]*schema.Schema {
 		"note": {
 			Type:     schema.TypeString,
 			Optional: true,
-			Computed: true,
 		},
 
 		"private": {
 			Type:     schema.TypeString,
 			Optional: true,
-			Computed: true,
 		},
 
 		"public": {
 			Type:     schema.TypeString,
 			Optional: true,
-			Computed: true,
 		},
 
 		"request": {
 			Type:     schema.TypeString,
 			Optional: true,
-			Computed: true,
 		},
 	}
 }
