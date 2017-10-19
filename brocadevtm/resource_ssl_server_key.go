@@ -33,7 +33,7 @@ func resourceSSLServerKeyRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error {
-	err := util.SSLKeyUpdate(d, meta, "ssl/client_keys")
+	err := util.SSLKeyUpdate(d, meta, "ssl/server_keys")
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceSSLServerKeyDelete(d *schema.ResourceData, meta interface{}) error {
-	err := util.SSLKeyDelete(d, meta, "ssl/client_keys")
+	err := util.SSLKeyDelete(d, meta, "ssl/server_keys")
 	if err != nil {
 		return err
 	}

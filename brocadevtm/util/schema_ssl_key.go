@@ -119,9 +119,6 @@ func SSLKeyUpdate(d *schema.ResourceData, meta interface{}, keyType string) erro
 	if d.HasChange("request") {
 		sslKeyBasicConfig["request"] = d.Get("request").(string)
 	}
-	if v, ok := d.GetOk("public"); ok {
-		sslKeyBasicConfig["public"] = v.(string)
-	}
 
 	sslKeyPropertiesConfig["basic"] = sslKeyBasicConfig
 	sslKeyConfig["properties"] = sslKeyPropertiesConfig
