@@ -26,15 +26,20 @@ RUN mv /terraform /usr/local/
 ENV PATH $PATH:/usr/local/terraform:/usr/local/go/bin
 
 # Setup golang deps
-RUN mkdir -p /gows
-ENV GOPATH /gows
-RUN go get github.com/tools/godep
+#RUN mkdir -p /gows
+#ENV GOPATH /gows
+#RUN go get github.com/tools/godep
+#RUN go get github.com/tools/golint
+#RUN go get github.com/axw/gocov
+#RUN go get github.com/AlekSi/gocov-xml
+#RUN go get github.com/matm/gocov-html
+#RUN go get github.com/go-playground/overalls
 
 RUN apt-get -y install make binutils
 
-# Build the Infoblox provider
-ADD . /gows/src/github.com/sky-uk/terraform-provider-brocadevtm
-RUN cd /gows/src/github.com/sky-uk/terraform-provider-brocadevtm; make fmt; make ; cp /gows/bin/terraform-provider-brocadevtm /usr/local/terraform/
+# Build the Brocade vTM provider
+#ADD . /gows/src/github.com/sky-uk/terraform-provider-brocadevtm
+#RUN cd /gows/src/github.com/sky-uk/terraform-provider-brocadevtm; make fmt; make ; cp /gows/bin/terraform-provider-brocadevtm /usr/local/terraform/
 
 # Clean up APT when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/.ssh/id_rsa*
