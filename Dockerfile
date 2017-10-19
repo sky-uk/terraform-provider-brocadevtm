@@ -23,17 +23,19 @@ RUN unzip terraform_0.10.7_linux_amd64.zip
 WORKDIR /
 RUN mv /terraform /usr/local/
 
-ENV PATH $PATH:/usr/local/terraform:/usr/local/go/bin
-
-# Setup golang deps
+# Set up environment
 RUN mkdir -p /gows
 ENV GOPATH /gows
-RUN go get -u github.com/tools/godep
-RUN go get -u github.com/golang/lint
-RUN go get -u github.com/axw/gocov
-RUN go get -u github.com/AlekSi/gocov-xml
-RUN go get -u github.com/matm/gocov-html
-RUN go get -u github.com/go-playground/overalls
+ENV GOBIN $GOPATH/bin
+ENV PATH $PATH:/usr/local/terraform:/usr/local/go/bin:$GOBIN
+
+# Setup golang deps
+RUN go get -v github.com/tools/godep
+RUN go get -v github.com/golang/lint/golint
+RUN go get -v github.com/axw/gocov
+RUN go get -v github.com/AlekSi/gocov-xml
+RUN go get -v github.com/matm/gocov-html
+RUN go get -v github.com/go-playground/overalls
 
 RUN apt-get -y install make binutils
 
