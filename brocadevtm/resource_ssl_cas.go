@@ -63,7 +63,7 @@ func resourceSSLCasRead(d *schema.ResourceData, m interface{}) error {
 	client.WorkWithConfigurationResources()
 
 	err := client.GetByName("ssl/cas", name, sslCasConfig)
-	if client.StatusCode == http.StatusNoContent {
+	if client.StatusCode == http.StatusNotFound {
 		d.SetId("")
 		return nil
 	}
