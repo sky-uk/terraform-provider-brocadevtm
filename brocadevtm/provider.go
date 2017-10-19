@@ -57,7 +57,6 @@ func Provider() terraform.ResourceProvider {
 			"brocadevtm_bandwidth":          resourceBandwidth(),
 			"brocadevtm_cloud_credentials":  resourceCloudCredentials(),
 			"brocadevtm_dns_zone":           resourceDNSZone(),
-			"brocadevtm_cloud_credentials":  resourceCloudCredentials(),
 			"brocadevtm_global_settings":    resourceGlobalSettings(),
 			"brocadevtm_dns_zone_file":      resourceDNSZoneFile(),
 			"brocadevtm_glb":                resourceGLB(),
