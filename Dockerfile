@@ -12,14 +12,14 @@ CMD ["/sbin/my_init"]
 RUN apt-get update; apt-get -y install aptitude wget unzip git
 
 # Install Golang binaries
-RUN wget https://storage.googleapis.com/golang/go1.8.linux-amd64.tar.gz
-RUN tar -xvf go1.8.linux-amd64.tar.gz; mv go /usr/local/
+RUN wget https://storage.googleapis.com/golang/go1.9.1.linux-amd64.tar.gz
+RUN tar -xvf go1.9.1.linux-amd64.tar.gz; mv go /usr/local/
 
 # Install Terraform.
 RUN mkdir /terraform;
 WORKDIR /terraform
-RUN wget https://releases.hashicorp.com/terraform/0.9.8/terraform_0.9.8_linux_amd64.zip
-RUN unzip terraform_0.9.8_linux_amd64.zip
+RUN wget https://releases.hashicorp.com/terraform/0.10.7/terraform_0.10.7_linux_amd64.zip
+RUN unzip terraform_0.10.7_linux_amd64.zip
 WORKDIR /
 RUN mv /terraform /usr/local/
 
