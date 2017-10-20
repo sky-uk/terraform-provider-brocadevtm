@@ -567,21 +567,5 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceMonitorDelete(d *schema.ResourceData, m interface{}) error {
-
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	var name string
-
-	if v, ok := d.GetOk("name"); ok {
-		name = v.(string)
-	}
-
-	err := client.Delete("monitors", name)
-	if client.StatusCode == http.StatusNoContent || client.StatusCode == http.StatusNotFound {
-		d.SetId("")
-	}
-	if err != nil {
-		return fmt.Errorf("BrocadeVTM Monitor error whilst deleting %s: %v", name, err)
-	}
-	return nil
+	return DeleteResource("monitors", d, m)
 }

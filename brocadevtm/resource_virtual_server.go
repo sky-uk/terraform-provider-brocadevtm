@@ -2286,15 +2286,5 @@ func resourceVirtualServerUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceVirtualServerDelete(d *schema.ResourceData, m interface{}) error {
-
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-
-	err := client.Delete("virtual_servers", d.Id())
-	if err != nil && client.StatusCode != http.StatusNotFound {
-		return fmt.Errorf("BrocadeVTM Virtual Server error whilst deleting %s: %s", d.Id(), err)
-	}
-
-	d.SetId("")
-	return nil
+	return DeleteResource("virtual_servers", d, m)
 }

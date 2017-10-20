@@ -182,16 +182,5 @@ func resourceCloudCredentialsRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceCloudCredentialsDelete(d *schema.ResourceData, m interface{}) error {
-	name := d.Id()
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	err := client.Delete("cloud_api_credentials", name)
-	if client.StatusCode == http.StatusNotFound {
-		d.SetId("")
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst deleting Cloud API Credentials %s: %v", name, err)
-	}
-	return nil
+	return DeleteResource("cloud_api_credentials", d, m)
 }

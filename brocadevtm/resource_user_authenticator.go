@@ -407,16 +407,7 @@ func resourceUserAuthenticatorRead(d *schema.ResourceData, m interface{}) error 
 }
 
 func resourceUserAuthenticatorDelete(d *schema.ResourceData, m interface{}) error {
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	client.WorkWithConfigurationResources()
-	err := client.Delete("user_authenticators", d.Id())
-
-	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst deleting user authenticator %s: %v", d.Id(), err)
-	}
-	d.SetId("")
-	return nil
+	return DeleteResource("user_authenticators", d, m)
 }
 
 func assignLDAPValues(ldapList []map[string]interface{}) (ldapStruct userAuthenticator.LDAP) {

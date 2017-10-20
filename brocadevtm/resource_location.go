@@ -204,24 +204,5 @@ func resourceLocationUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceLocationDelete(d *schema.ResourceData, m interface{}) error {
-
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	var name string
-
-	if v, ok := d.GetOk("name"); ok {
-		name = v.(string)
-	}
-
-	client.WorkWithConfigurationResources()
-	err := client.Delete("locations", name)
-
-	if err != nil {
-		d.SetId("")
-		return fmt.Errorf("BrocadeVTM Locations error whilst deleting %s: %v", name, err)
-	}
-
-	d.SetId("")
-	return nil
-
+	return DeleteResource("locations", d, m)
 }

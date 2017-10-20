@@ -155,20 +155,5 @@ func resourceBandwidthUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceBandwidthDelete(d *schema.ResourceData, m interface{}) error {
-
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	client.WorkWithConfigurationResources()
-	name := d.Id()
-
-	err := client.Delete("bandwidth", name)
-	if client.StatusCode == http.StatusNotFound {
-		d.SetId("")
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("BrocadeVTM Bandwidth error whilst deleting %s: %v", name, err)
-	}
-	d.SetId("")
-	return nil
+	return DeleteResource("bandwidth", d, m)
 }

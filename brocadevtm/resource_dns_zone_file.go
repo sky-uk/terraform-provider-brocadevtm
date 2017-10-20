@@ -102,18 +102,5 @@ func resourceDNSZoneFileUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceDNSZoneFileDelete(d *schema.ResourceData, m interface{}) error {
-
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-
-	name := d.Id()
-	err := client.Delete("dns_server/zone_files", name)
-	if client.StatusCode == http.StatusNoContent || client.StatusCode == http.StatusNotFound {
-		d.SetId("")
-		return nil
-	}
-	if err != nil {
-		return fmt.Errorf("BrocadeVTM DNS zone file error whilst deleting %s: %v", name, err)
-	}
-	return nil
+	return DeleteResource("dns_server/zone_files", d, m)
 }
