@@ -6,7 +6,6 @@ import (
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/glb"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
-	"net/http"
 	"regexp"
 )
 
