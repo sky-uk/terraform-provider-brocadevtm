@@ -113,17 +113,9 @@ func resourceDNSZoneUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceDNSZoneDelete(d *schema.ResourceData, m interface{}) error {
-
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	dnsZoneName := d.Id()
-
-	client.WorkWithConfigurationResources()
-	err := client.Delete("dns_server/zones", dnsZoneName)
+	err := DeleteResource("dns_server/zones", d, m)
 	if err != nil {
-		d.SetId("")
-		return fmt.Errorf("BrocadeVTM DNS zone error whilst deleting %s: %v", dnsZoneName, err)
+		return err
 	}
-	d.SetId("")
 	return nil
 }

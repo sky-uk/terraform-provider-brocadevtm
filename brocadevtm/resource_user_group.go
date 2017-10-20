@@ -172,15 +172,9 @@ func resourceUserGroupUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceUserGroupDelete(d *schema.ResourceData, m interface{}) error {
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	client.WorkWithConfigurationResources()
-	err := client.Delete("user_groups", d.Id())
+	err := DeleteResource("user_groups", d, m)
 	if err != nil {
-		d.SetId("")
-		return fmt.Errorf("BrocadeVTM User Group error whilst deleting %s: %v", d.Id(), err)
+		return err
 	}
-
-	d.SetId("")
 	return nil
 }

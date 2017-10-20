@@ -1417,15 +1417,10 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 
 // resourcePoolDelete - Deletes a pool resource
 func resourcePoolDelete(d *schema.ResourceData, m interface{}) error {
-
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	poolName := d.Id()
-
-	err := client.Delete("pools", poolName)
-	if err != nil && client.StatusCode != http.StatusNotFound {
-		return fmt.Errorf("BrocadeVTM Pool error whilst deleting %s: %s", poolName, err)
+	err := DeleteResource("pools", d, m)
+	if err != nil {
+		return err
 	}
-	d.SetId("")
 	return nil
 }
+

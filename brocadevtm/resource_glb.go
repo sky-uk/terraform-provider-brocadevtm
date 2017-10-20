@@ -477,17 +477,9 @@ func resourceGLBUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceGLBDelete(d *schema.ResourceData, m interface{}) error {
-
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	client.WorkWithConfigurationResources()
-
-	err := client.Delete("glb_services", d.Id())
-
-	if err != nil && client.StatusCode != http.StatusNotFound {
-		return fmt.Errorf("BrocadeVTM GLB error whilst deleting %s: %v", d.Id(), err)
+	err := DeleteResource("glb_services", d, m)
+	if err != nil {
+		return err
 	}
-
-	d.SetId("")
 	return nil
 }

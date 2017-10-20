@@ -206,20 +206,9 @@ func resourcePersistenceUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourcePersistenceDelete(d *schema.ResourceData, m interface{}) error {
-
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	client.WorkWithConfigurationResources()
-	name := d.Id()
-
-	err := client.Delete("persistence", name)
-	if client.StatusCode == http.StatusNotFound {
-		d.SetId("")
-		return nil
-	}
+	err := DeleteResource("persistence", d, m)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Persistence error whilst deleting %s: %v", name, err)
+		return err
 	}
-	d.SetId("")
 	return nil
 }

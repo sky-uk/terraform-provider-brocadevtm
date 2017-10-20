@@ -130,15 +130,3 @@ func SSLKeyUpdate(d *schema.ResourceData, meta interface{}, keyType string) erro
 	}
 	return nil
 }
-
-//SSLKeyDelete : Deletes an SSL Key
-func SSLKeyDelete(d *schema.ResourceData, meta interface{}, keyType string) error {
-	config := meta.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-
-	err := client.Delete(keyType, d.Id())
-	if client.StatusCode == http.StatusNoContent || client.StatusCode == http.StatusNotFound {
-		return nil
-	}
-	return fmt.Errorf("BrocadeVTM %s error whilst deleting %s: %v", keyType, d.Id(), err)
-}

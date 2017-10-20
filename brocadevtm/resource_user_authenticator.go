@@ -407,15 +407,10 @@ func resourceUserAuthenticatorRead(d *schema.ResourceData, m interface{}) error 
 }
 
 func resourceUserAuthenticatorDelete(d *schema.ResourceData, m interface{}) error {
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	client.WorkWithConfigurationResources()
-	err := client.Delete("user_authenticators", d.Id())
-
+	err := DeleteResource("user_authenticators", d, m)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst deleting user authenticator %s: %v", d.Id(), err)
+		return err
 	}
-	d.SetId("")
 	return nil
 }
 

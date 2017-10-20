@@ -16,32 +16,32 @@ func resourceSSLServerKey() *schema.Resource {
 	}
 }
 
-func resourceSSLServerKeyCreate(d *schema.ResourceData, meta interface{}) error {
-	err := util.SSLKeyCreate(d, meta, "ssl/server_keys")
+func resourceSSLServerKeyCreate(d *schema.ResourceData, m interface{}) error {
+	err := util.SSLKeyCreate(d, m, "ssl/server_keys")
 	if err != nil {
 		return err
 	}
-	return resourceSSLServerKeyRead(d, meta)
+	return resourceSSLServerKeyRead(d, m)
 }
 
-func resourceSSLServerKeyRead(d *schema.ResourceData, meta interface{}) error {
-	err := util.SSLKeyRead(d, meta, "ssl/server_keys")
+func resourceSSLServerKeyRead(d *schema.ResourceData, m interface{}) error {
+	err := util.SSLKeyRead(d, m, "ssl/server_keys")
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func resourceSSLServerKeyUpdate(d *schema.ResourceData, meta interface{}) error {
-	err := util.SSLKeyUpdate(d, meta, "ssl/server_keys")
+func resourceSSLServerKeyUpdate(d *schema.ResourceData, m interface{}) error {
+	err := util.SSLKeyUpdate(d, m, "ssl/server_keys")
 	if err != nil {
 		return err
 	}
-	return resourceSSLServerKeyRead(d, meta)
+	return resourceSSLServerKeyRead(d, m)
 }
 
-func resourceSSLServerKeyDelete(d *schema.ResourceData, meta interface{}) error {
-	err := util.SSLKeyDelete(d, meta, "ssl/server_keys")
+func resourceSSLServerKeyDelete(d *schema.ResourceData, m interface{}) error {
+	err := DeleteResource("ssl/server_keys", d, m)
 	if err != nil {
 		return err
 	}
