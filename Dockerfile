@@ -39,6 +39,15 @@ RUN go get -v github.com/AlekSi/gocov-xml
 RUN go get -v github.com/matm/gocov-html
 RUN go get -v github.com/go-playground/overalls
 
+# Install Terraform linter.
+RUN mkdir /terraform-linter
+WORKDIR /terraform-linter
+RUN wget https://github.com/wata727/tflint/releases/download/v0.4.2/tflint_linux_amd64.zip
+RUN unzip tflint_linux_amd64.zip
+WORKDIR /
+RUN mv /terraform-linter/tflint /usr/bin/
+ENV PATH $PATH:/usr/local/terraform:/usr/local/go/bin
+
 RUN apt-get -y install make binutils
 
 # Build the Brocade vTM provider
