@@ -98,19 +98,9 @@ func resourceSSLCasUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceSSLCasDelete(d *schema.ResourceData, m interface{}) error {
-
-	config := m.(map[string]interface{})
-	client := config["octetClient"].(*api.Client)
-
-	name := d.Id()
-	err := client.Delete("ssl/cas", name)
-	if client.StatusCode == http.StatusNotFound {
-		d.SetId("")
-		return nil
-	}
+	err := DeleteResource("ssl/cas", d, m)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM SSL cas config file error whilst deleting %s: %v", name, err)
+		return err
 	}
-	d.SetId("")
 	return nil
 }

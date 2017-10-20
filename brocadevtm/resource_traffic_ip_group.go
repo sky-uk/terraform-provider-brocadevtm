@@ -454,16 +454,9 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceTrafficIPGroupDelete(d *schema.ResourceData, m interface{}) error {
-
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	client.WorkWithConfigurationResources()
-	name := d.Id()
-
-	err := client.Delete("traffic_ip_groups", name)
-	if err != nil && client.StatusCode != http.StatusNotFound {
-		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst deleting %s: %v", name, err)
+	err := DeleteResource("traffic_ip_groups", d, m)
+	if err != nil {
+		return err
 	}
-	d.SetId("")
 	return nil
 }

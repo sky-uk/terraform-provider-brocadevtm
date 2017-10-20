@@ -108,19 +108,9 @@ func resourceRuleUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceRuleDelete(d *schema.ResourceData, m interface{}) error {
-
-	var vtmRule rule.TrafficScriptRule
-	config := m.(map[string]interface{})
-	client := config["octetClient"].(*api.Client)
-	vtmRule.Name = d.Id()
-
-	err := client.Delete("rules", vtmRule.Name)
-	if client.StatusCode == http.StatusNoContent || client.StatusCode == http.StatusNotFound {
-		return nil
-	}
+	err := DeleteResource("rules", d, m)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Rule error whilst deleting %s: %v", vtmRule.Name, err)
+		return err
 	}
-	d.SetId("")
 	return nil
 }
