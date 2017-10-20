@@ -107,7 +107,6 @@ resource "brocadevtm_aptimizer_profile" "acctest" {
 `
 }
 
-
 func testAccBrocadeVTMAptimizerProfilesInvalidModeTemplate() string {
 	return `
 resource "brocadevtm_aptimizer_profile" "acctest" {
