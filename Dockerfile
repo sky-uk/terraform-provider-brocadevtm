@@ -42,8 +42,8 @@ RUN go get -v github.com/go-playground/overalls
 RUN apt-get -y install make binutils
 
 # Build the Brocade vTM provider
-#ADD . /gows/src/github.com/sky-uk/terraform-provider-brocadevtm
-#RUN cd /gows/src/github.com/sky-uk/terraform-provider-brocadevtm; make fmt; make ; cp /gows/bin/terraform-provider-brocadevtm /usr/local/terraform/
+ADD . /gows/src/github.com/sky-uk/terraform-provider-brocadevtm
+RUN cd /gows/src/github.com/sky-uk/terraform-provider-brocadevtm; make fmt; make ; cp /gows/bin/terraform-provider-brocadevtm /usr/local/terraform/
 
 # Clean up APT when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/.ssh/id_rsa*
