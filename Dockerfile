@@ -36,6 +36,8 @@ RUN go get -v github.com/axw/gocov
 RUN go get -v github.com/AlekSi/gocov-xml
 RUN go get -v github.com/matm/gocov-html
 RUN go get -v github.com/go-playground/overalls
+RUN go get -d -v github.com/hashicorp/terraform
+RUN cd ${GOPATH}/src/github.com/hashicorp/terraform && git checkout v0.10.7
 
 RUN apt-get -y install make binutils
 
