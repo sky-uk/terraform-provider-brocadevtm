@@ -29,7 +29,8 @@ $ make build
 
 Using the provider
 ----------------------
-## Fill in for each provider
+
+See the [BrocadeVTM Provider wiki](http://github.com/sky-uk/terraform-provider-brocadevtm/wiki) to get started using the BrocadeVTM provider.
 
 Developing the Provider
 ---------------------------
@@ -59,47 +60,3 @@ In order to run the full suite of Acceptance tests, run `make testacc`.
 $ make testacc
 ```
 
-
-
-Example Templates
-------------------
-
-To help people understand how resources can be created we have put together a collection of examples that will allow you to do so.
-
-Pool Resource
---------------
-
-
-
-```
-resource "brocadevtm_pool" "pool_demo" {
-       name = "pool_demo"
-       monitorlist = ["ping"]
-       node {
-             node="127.0.0.1:80"
-             priority=1
-             state="active"
-             weight=1
-      }
-      node {
-            node="127.0.0.1:81"
-            priority=1
-            state="active"
-            weight=1
-     }
-     node {
-           node="127.0.0.1:82"
-           priority=1
-           state="active"
-           weight=1
-    }
-    node {
-          node="127.0.0.1:83"
-          priority=1
-          state="active"
-          weight=1
-   }
-      max_connection_attempts = 5
-}
-
-```
