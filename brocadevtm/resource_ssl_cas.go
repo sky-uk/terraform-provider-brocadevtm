@@ -98,9 +98,5 @@ func resourceSSLCasUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceSSLCasDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("ssl/cas", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("ssl/cas", d, m)
 }

@@ -41,9 +41,5 @@ func resourceSSLServerKeyUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceSSLServerKeyDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("ssl/server_keys", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("ssl/server_keys", d, m)
 }

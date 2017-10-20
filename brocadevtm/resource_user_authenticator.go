@@ -407,11 +407,7 @@ func resourceUserAuthenticatorRead(d *schema.ResourceData, m interface{}) error 
 }
 
 func resourceUserAuthenticatorDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("user_authenticators", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("user_authenticators", d, m)
 }
 
 func assignLDAPValues(ldapList []map[string]interface{}) (ldapStruct userAuthenticator.LDAP) {

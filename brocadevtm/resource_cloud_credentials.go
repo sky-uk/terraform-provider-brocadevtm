@@ -182,9 +182,5 @@ func resourceCloudCredentialsRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceCloudCredentialsDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("cloud_api_credentials", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("cloud_api_credentials", d, m)
 }

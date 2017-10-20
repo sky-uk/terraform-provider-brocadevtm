@@ -1417,9 +1417,5 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 
 // resourcePoolDelete - Deletes a pool resource
 func resourcePoolDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("pools", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("pools", d, m)
 }

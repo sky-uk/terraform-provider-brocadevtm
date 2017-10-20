@@ -102,9 +102,5 @@ func resourceDNSZoneFileUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceDNSZoneFileDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("dns_server/zone_files", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("dns_server/zone_files", d, m)
 }

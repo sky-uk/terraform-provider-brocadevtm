@@ -2286,9 +2286,5 @@ func resourceVirtualServerUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceVirtualServerDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("virtual_servers", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("virtual_servers", d, m)
 }

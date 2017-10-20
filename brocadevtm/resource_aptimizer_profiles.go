@@ -150,9 +150,5 @@ func resourceAptimizerProfileUpdate(d *schema.ResourceData, m interface{}) error
 }
 
 func resourceAptimizerProfileDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("aptimizer/profiles", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("aptimizer/profiles", d, m)
 }

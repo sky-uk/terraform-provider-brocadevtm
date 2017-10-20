@@ -108,9 +108,5 @@ func resourceRuleUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceRuleDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("rules", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("rules", d, m)
 }

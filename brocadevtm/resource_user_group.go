@@ -172,9 +172,5 @@ func resourceUserGroupUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceUserGroupDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("user_groups", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("user_groups", d, m)
 }

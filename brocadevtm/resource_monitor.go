@@ -567,9 +567,5 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceMonitorDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("monitors", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("monitors", d, m)
 }

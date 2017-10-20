@@ -155,9 +155,5 @@ func resourceBandwidthUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceBandwidthDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("bandwidth", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("bandwidth", d, m)
 }

@@ -206,9 +206,5 @@ func resourcePersistenceUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourcePersistenceDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("persistence", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("persistence", d, m)
 }

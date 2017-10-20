@@ -476,9 +476,5 @@ func resourceGLBUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceGLBDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("glb_services", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("glb_services", d, m)
 }

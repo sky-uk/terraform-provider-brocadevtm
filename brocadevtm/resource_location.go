@@ -204,10 +204,5 @@ func resourceLocationUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceLocationDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("locations", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
-
+	return DeleteResource("locations", d, m)
 }

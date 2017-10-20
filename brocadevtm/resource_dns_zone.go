@@ -113,9 +113,5 @@ func resourceDNSZoneUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceDNSZoneDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("dns_server/zones", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("dns_server/zones", d, m)
 }

@@ -454,9 +454,5 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceTrafficIPGroupDelete(d *schema.ResourceData, m interface{}) error {
-	err := DeleteResource("traffic_ip_groups", d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteResource("traffic_ip_groups", d, m)
 }
