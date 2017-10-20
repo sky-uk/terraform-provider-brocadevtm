@@ -33,7 +33,7 @@ ENV PATH $PATH:/usr/local/terraform:/usr/local/go/bin:$GOBIN
 RUN go get -v github.com/tools/godep
 RUN go get -v github.com/golang/lint/golint
 RUN go get -v github.com/axw/gocov
-# gocov is automatically building and placing binary in $GOBIN
+# gocov isn't automatically building and placing binary in $GOBIN
 RUN cd ${GOPATH}/src/github.com/axw/gocov/gocov && go build -o ${GOBIN}/gocov
 RUN go get -v github.com/AlekSi/gocov-xml
 RUN go get -v github.com/matm/gocov-html
