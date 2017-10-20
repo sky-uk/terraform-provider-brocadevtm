@@ -154,7 +154,7 @@ def setVersion(major, minor, patch) {
 }
 
 def inContainer(Closure body) {
-    docker.image(this.docker_image).inside("-v ${pwd()}:/paas/go/src/${project_src_path} -v ${System.getProperty('java.io.tmpdir')}:${System.getProperty('java.io.tmpdir')}") {
+    docker.image(this.docker_image).inside("-v ${pwd()}:/gows/src/${project_src_path} -v ${System.getProperty('java.io.tmpdir')}:${System.getProperty('java.io.tmpdir')}") {
         body()
     }
 }
