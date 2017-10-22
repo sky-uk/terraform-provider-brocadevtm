@@ -73,6 +73,8 @@ func Provider() terraform.ResourceProvider {
 			"brocadevtm_user_authenticator": resourceUserAuthenticator(),
 			"brocadevtm_user_group":         resourceUserGroup(),
 			"brocadevtm_virtual_server":     resourceVirtualServer(),
+			"brocadevtm_cloud_credentials":  resourceCloudCredentials(),
+			"brocadevtm_appliance_nat":      resourceApplianceNat(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
