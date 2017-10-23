@@ -2,8 +2,6 @@ package brocadevtm
 
 import (
 	"fmt"
-	"log"
-	"net/http"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
@@ -157,7 +155,6 @@ func resourceApplianceNatCreate(d *schema.ResourceData, m interface{}) error {
 	keys := []string{"many_to_one_all_ports", "many_to_one_port_locked", "one_to_one", "port_mapping"}
 	for _, key := range keys {
 		if v, ok := d.GetOk(key); ok {
-			log.Printf("KEY: %s, VALUE: %+v\n", key, v.(*schema.Set).List())
 			basic[key] = v.(*schema.Set).List()
 		}
 	}
@@ -180,20 +177,13 @@ func resourceApplianceNatRead(d *schema.ResourceData, m interface{}) error {
 
 	natResource := make(map[string]map[string]interface{})
 	err := client.GetByName("appliance/nat", "", &natResource)
-	log.Printf("NAT RESOURCE:\n%+v\n", natResource)
 	basic := natResource["properties"]["basic"].(map[string]interface{})
-	log.Printf("NAT RESOURCE BASIC:\n%+v\n", basic)
-	if client.StatusCode == http.StatusNotFound {
-		d.SetId("")
-		return nil
-	}
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Appliance/Nat error whilst retrieving: %s", err)
 	}
 
 	resource := resourceApplianceNat()
 	for key := range resource.Schema {
-		log.Println("Setting attribute: ", key)
 		d.Set(key, basic[key])
 	}
 	return nil
