@@ -54,16 +54,16 @@ func TestAccPool_Basic(t *testing.T) {
 			},
 			{
 				Config:      testAccPoolInvalidNode(poolName),
-				ExpectError: regexp.MustCompile(`must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
+				ExpectError: regexp.MustCompile(`must be a valid IP/Hostname and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 
 			{
 				Config:      testAccPoolInvalidNodeNoIP(poolName),
-				ExpectError: regexp.MustCompile(`must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
+				ExpectError: regexp.MustCompile(`must be a valid IP/Hostname and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 			{
 				Config:      testAccPoolInvalidNodeNoPort(poolName),
-				ExpectError: regexp.MustCompile(`must be a valid IP and port seperated by a colon. i.e 127.0.0.1:80`),
+				ExpectError: regexp.MustCompile(`must be a valid IP/Hostname and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 			{
 				Config:      testAccPoolInvalidNodeDeleteBehaviour(poolName),
