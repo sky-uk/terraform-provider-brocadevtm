@@ -678,7 +678,7 @@ func validatePoolLBAlgo(v interface{}, k string) (ws []string, errors []error) {
 // validateNode : check a node is given in the correct format
 func validateNode(v interface{}, k string) (ws []string, errors []error) {
 	node := v.(string)
-	validateNode := regexp.MustCompile(`^[^\\:]+:[0-9]+$`)
+	validateNode := regexp.MustCompile(`.*:(\d){1,5}`)
 	if !validateNode.MatchString(node) {
 		errors = append(errors, fmt.Errorf("%q must be a valid IP/Hostname and port seperated by a colon. i.e 127.0.0.1:80", k))
 	}
