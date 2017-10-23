@@ -54,6 +54,7 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
+			"brocadevtm_appliance_nat":      resourceApplianceNat(),
 			"brocadevtm_aptimizer_profile":  resourceAptimizerProfile(),
 			"brocadevtm_bandwidth":          resourceBandwidth(),
 			"brocadevtm_cloud_credentials":  resourceCloudCredentials(),
