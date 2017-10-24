@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
+	"os"
 	"testing"
 )
 
@@ -69,7 +70,12 @@ func testAccBrocadeVTMGlobalSettingsCheckDestroy(state *terraform.State) error {
 			return nil
 		}
 		gs := make(map[string]interface{})
-		err := client.GetByURL("/api/tm/3.8/config/active/global_settings", &gs)
+
+		var usedVersion = "3.8"
+		if os.Getenv("BROCADEVTM_API_VERSION") != "" {
+			usedVersion = os.Getenv("BROCADEVTM_API_VERSION")
+		}
+		err := client.GetByURL("/api/tm/"+usedVersion+"/config/active/global_settings", &gs)
 		if err != nil {
 			return nil
 		}
@@ -90,8 +96,12 @@ func testAccBrocadeVTMGlobalSettingsExists() resource.TestCheckFunc {
 
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
+		var usedVersion = "3.8"
+		if os.Getenv("BROCADEVTM_API_VERSION") != "" {
+			usedVersion = os.Getenv("BROCADEVTM_API_VERSION")
+		}
 		gs := make(map[string]interface{})
-		err := client.GetByURL("/api/tm/3.8/config/active/global_settings", &gs)
+		err := client.GetByURL("/api/tm/"+usedVersion+"/config/active/global_settings", &gs)
 		if err != nil {
 			return fmt.Errorf("Error getting global settings: %+v", err)
 		}

@@ -2,13 +2,13 @@ package brocadevtm
 
 import (
 	"fmt"
-	"regexp"
-	"testing"
-
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
+	"os"
+	"regexp"
+	"testing"
 )
 
 func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
@@ -16,8 +16,11 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 	randomInt := acctest.RandInt()
 	monitorName := fmt.Sprintf("acctest_brocadevtm_monitor-%d", randomInt)
 	monitorResourceName := "brocadevtm_monitor.acctest"
-
 	fmt.Printf("\n\nMonitor Name is %s.\n\n", monitorName)
+	var usedVersion = "3.8"
+	if os.Getenv("BROCADEVTM_API_VERSION") != "" {
+		usedVersion = os.Getenv("BROCADEVTM_API_VERSION")
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -28,7 +31,7 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccBrocadeVTMMonitorInvalidName(),
-				ExpectError: regexp.MustCompile(`BrocadeVTM Monitor error whilst creating ../virtual_servers/some_random_virtual_server: The path '/api/tm/3.8/config/active/monitors/../virtual_servers/some_random_virtual_server' is invalid`),
+				ExpectError: regexp.MustCompile(`BrocadeVTM Monitor error whilst creating ../virtual_servers/some_random_virtual_server: The path '/api/tm/` + usedVersion + `/config/active/monitors/../virtual_servers/some_random_virtual_server' is invalid`),
 			},
 			{
 				Config: testAccBrocadeVTMMonitorCreateTemplate(monitorName),
