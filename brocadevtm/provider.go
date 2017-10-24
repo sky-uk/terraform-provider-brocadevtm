@@ -48,7 +48,7 @@ func Provider() terraform.ResourceProvider {
 			"api_version": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "3.8",
+				DefaultFunc: schema.EnvDefaultFunc("BROCADEVTM_API_VERSION", "3.8"),
 				Description: "BrocadevTM REST API Server version",
 			},
 		},
