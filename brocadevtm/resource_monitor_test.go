@@ -6,9 +6,9 @@ import (
 	"testing"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
+	"os"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"sort"
 )
 
 func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
@@ -16,13 +16,12 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 	randomInt := acctest.RandInt()
 	monitorName := fmt.Sprintf("acctest_brocadevtm_monitor-%d", randomInt)
 	monitorResourceName := "brocadevtm_monitor.acctest"
-
 	fmt.Printf("\n\nMonitor Name is %s.\n\n", monitorName)
-	config := testAccProvider.Meta().(map[string]interface{})
+	var usedVersion = "3.8"
+	if os.Getenv("BROCADEVTM_API_VERSION") != "" {
+		usedVersion = os.Getenv("BROCADEVTM_API_VERSION")
+	}
 
-	apiVersions := config["jsonClient"].(*api.Client).VersionsSupported
-	sort.Sort(sort.Reverse(sort.StringSlice(apiVersions)))
-	usedVersion := apiVersions[0]
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
