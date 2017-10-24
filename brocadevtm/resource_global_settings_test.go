@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"testing"
-	"sort"
+	"os"
 )
 
 func TestAccBrocadeVTMResourceGlobalSettings(t *testing.T) {
@@ -71,10 +71,11 @@ func testAccBrocadeVTMGlobalSettingsCheckDestroy(state *terraform.State) error {
 		}
 		gs := make(map[string]interface{})
 
-		apiVersions := client.VersionsSupported
-		sort.Sort(sort.Reverse(sort.StringSlice(apiVersions)))
-		latestVersion := apiVersions[0]
-		err := client.GetByURL("/api/tm/"+latestVersion+"/config/active/global_settings", &gs)
+		var usedVersion = "3.8"
+		if os.Getenv("BROCADEVTM_API_VERSION") != "" {
+			usedVersion = os.Getenv("BROCADEVTM_API_VERSION")
+		}
+		err := client.GetByURL("/api/tm/"+usedVersion+"/config/active/global_settings", &gs)
 		if err != nil {
 			return nil
 		}
@@ -95,11 +96,12 @@ func testAccBrocadeVTMGlobalSettingsExists() resource.TestCheckFunc {
 
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
-		apiVersions := client.VersionsSupported
-		sort.Sort(sort.Reverse(sort.StringSlice(apiVersions)))
-		latestVersion := apiVersions[0]
+		var usedVersion = "3.8"
+		if os.Getenv("BROCADEVTM_API_VERSION") != "" {
+			usedVersion = os.Getenv("BROCADEVTM_API_VERSION")
+		}
 		gs := make(map[string]interface{})
-		err := client.GetByURL("/api/tm/"+latestVersion+"/config/active/global_settings", &gs)
+		err := client.GetByURL("/api/tm/"+usedVersion+"/config/active/global_settings", &gs)
 		if err != nil {
 			return fmt.Errorf("Error getting global settings: %+v", err)
 		}
