@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
-
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
+	"sort"
 )
 
 func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
@@ -18,6 +18,11 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 	monitorResourceName := "brocadevtm_monitor.acctest"
 
 	fmt.Printf("\n\nMonitor Name is %s.\n\n", monitorName)
+	config := testAccProvider.Meta().(map[string]interface{})
+
+	apiVersions := config["jsonClient"].(*api.Client).VersionsSupported
+	sort.Sort(sort.Reverse(sort.StringSlice(apiVersions)))
+	usedVersion := apiVersions[0]
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -28,7 +33,7 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccBrocadeVTMMonitorInvalidName(),
-				ExpectError: regexp.MustCompile(`BrocadeVTM Monitor error whilst creating ../virtual_servers/some_random_virtual_server: The path '/api/tm/3.8/config/active/monitors/../virtual_servers/some_random_virtual_server' is invalid`),
+				ExpectError: regexp.MustCompile(`BrocadeVTM Monitor error whilst creating ../virtual_servers/some_random_virtual_server: The path '/api/tm/`+usedVersion+`/config/active/monitors/../virtual_servers/some_random_virtual_server' is invalid`),
 			},
 			{
 				Config: testAccBrocadeVTMMonitorCreateTemplate(monitorName),
