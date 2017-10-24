@@ -2,13 +2,13 @@ package brocadevtm
 
 import (
 	"fmt"
-	"regexp"
-	"testing"
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
-	"os"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
+	"os"
+	"regexp"
+	"testing"
 )
 
 func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
@@ -22,7 +22,6 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 		usedVersion = os.Getenv("BROCADEVTM_API_VERSION")
 	}
 
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
@@ -32,7 +31,7 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccBrocadeVTMMonitorInvalidName(),
-				ExpectError: regexp.MustCompile(`BrocadeVTM Monitor error whilst creating ../virtual_servers/some_random_virtual_server: The path '/api/tm/`+usedVersion+`/config/active/monitors/../virtual_servers/some_random_virtual_server' is invalid`),
+				ExpectError: regexp.MustCompile(`BrocadeVTM Monitor error whilst creating ../virtual_servers/some_random_virtual_server: The path '/api/tm/` + usedVersion + `/config/active/monitors/../virtual_servers/some_random_virtual_server' is invalid`),
 			},
 			{
 				Config: testAccBrocadeVTMMonitorCreateTemplate(monitorName),
