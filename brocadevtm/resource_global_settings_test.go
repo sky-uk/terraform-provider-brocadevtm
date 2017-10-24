@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"testing"
+	"sort"
 )
 
 func TestAccBrocadeVTMResourceGlobalSettings(t *testing.T) {
@@ -69,7 +70,11 @@ func testAccBrocadeVTMGlobalSettingsCheckDestroy(state *terraform.State) error {
 			return nil
 		}
 		gs := make(map[string]interface{})
-		err := client.GetByURL("/api/tm/3.8/config/active/global_settings", &gs)
+
+		apiVersions := client.VersionsSupported
+		sort.Sort(sort.Reverse(sort.StringSlice(apiVersions)))
+		latestVersion := apiVersions[0]
+		err := client.GetByURL("/api/tm/"+latestVersion+"/config/active/global_settings", &gs)
 		if err != nil {
 			return nil
 		}
@@ -90,8 +95,11 @@ func testAccBrocadeVTMGlobalSettingsExists() resource.TestCheckFunc {
 
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
+		apiVersions := client.VersionsSupported
+		sort.Sort(sort.Reverse(sort.StringSlice(apiVersions)))
+		latestVersion := apiVersions[0]
 		gs := make(map[string]interface{})
-		err := client.GetByURL("/api/tm/3.8/config/active/global_settings", &gs)
+		err := client.GetByURL("/api/tm/"+latestVersion+"/config/active/global_settings", &gs)
 		if err != nil {
 			return fmt.Errorf("Error getting global settings: %+v", err)
 		}
