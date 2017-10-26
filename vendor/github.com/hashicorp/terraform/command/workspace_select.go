@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/mitchellh/cli"
-	"github.com/posener/complete"
 )
 
 type WorkspaceSelectCommand struct {
@@ -102,18 +101,6 @@ func (c *WorkspaceSelectCommand) Run(args []string) int {
 	)
 
 	return 0
-}
-
-func (c *WorkspaceSelectCommand) AutocompleteArgs() complete.Predictor {
-	return completePredictSequence{
-		complete.PredictNothing, // the "select" subcommand itself (already matched)
-		c.completePredictWorkspaceName(),
-		complete.PredictDirs(""),
-	}
-}
-
-func (c *WorkspaceSelectCommand) AutocompleteFlags() complete.Flags {
-	return nil
 }
 
 func (c *WorkspaceSelectCommand) Help() string {

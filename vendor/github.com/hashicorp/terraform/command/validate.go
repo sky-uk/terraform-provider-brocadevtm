@@ -17,7 +17,7 @@ type ValidateCommand struct {
 const defaultPath = "."
 
 func (c *ValidateCommand) Run(args []string) int {
-	args, err := c.Meta.process(args, true)
+	args, err := c.Meta.process(args, false)
 	if err != nil {
 		return 1
 	}

@@ -110,8 +110,11 @@ func (c *ShowCommand) Run(args []string) int {
 	}
 
 	if plan != nil {
-		dispPlan := format.NewPlan(plan)
-		c.Ui.Output(dispPlan.Format(c.Colorize()))
+		c.Ui.Output(format.Plan(&format.PlanOpts{
+			Plan:        plan,
+			Color:       c.Colorize(),
+			ModuleDepth: moduleDepth,
+		}))
 		return 0
 	}
 

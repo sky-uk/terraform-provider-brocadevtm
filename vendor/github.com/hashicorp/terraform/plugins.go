@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"path/filepath"
-	"runtime"
 )
 
 // globalPluginDirs returns directories that should be searched for
@@ -20,9 +18,7 @@ func globalPluginDirs() []string {
 	if err != nil {
 		log.Printf("[ERROR] Error finding global config directory: %s", err)
 	} else {
-		machineDir := fmt.Sprintf("%s_%s", runtime.GOOS, runtime.GOARCH)
 		ret = append(ret, filepath.Join(dir, "plugins"))
-		ret = append(ret, filepath.Join(dir, "plugins", machineDir))
 	}
 
 	return ret

@@ -19,10 +19,6 @@ import (
 	"github.com/mitchellh/go-linereader"
 )
 
-// maxBackoffDealy is the maximum delay between retry attempts
-var maxBackoffDelay = 10 * time.Second
-var initialBackoffDelay = time.Second
-
 func Provisioner() terraform.ResourceProvisioner {
 	return &schema.Provisioner{
 		Schema: map[string]*schema.Schema{
@@ -250,6 +246,7 @@ func copyOutput(
 }
 
 // retryFunc is used to retry a function for a given duration
+// TODO: this should probably backoff too
 func retryFunc(ctx context.Context, timeout time.Duration, f func() error) error {
 	// Build a new context with the timeout
 	ctx, done := context.WithTimeout(ctx, timeout)
@@ -266,13 +263,12 @@ func retryFunc(ctx context.Context, timeout time.Duration, f func() error) error
 	go func() {
 		defer close(doneCh)
 
-		delay := time.Duration(0)
 		for {
 			// If our context ended, we want to exit right away.
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(delay):
+			default:
 			}
 
 			// Try the function call
@@ -283,19 +279,7 @@ func retryFunc(ctx context.Context, timeout time.Duration, f func() error) error
 				return
 			}
 
-			log.Printf("[WARN] retryable error: %v", err)
-
-			delay *= 2
-
-			if delay == 0 {
-				delay = initialBackoffDelay
-			}
-
-			if delay > maxBackoffDelay {
-				delay = maxBackoffDelay
-			}
-
-			log.Printf("[INFO] sleeping for %s", delay)
+			log.Printf("Retryable error: %v", err)
 		}
 	}()
 
