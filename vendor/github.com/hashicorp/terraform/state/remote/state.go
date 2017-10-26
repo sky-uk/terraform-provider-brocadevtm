@@ -2,7 +2,7 @@ package remote
 
 import (
 	"bytes"
-	"log"
+	"fmt"
 	"sync"
 
 	"github.com/hashicorp/terraform/state"
@@ -35,10 +35,7 @@ func (s *State) WriteState(state *terraform.State) error {
 	defer s.mu.Unlock()
 
 	if s.readState != nil && !state.SameLineage(s.readState) {
-		// This can't error here, because we need to be able to overwrite the
-		// state in some cases, like `state push -force` or `workspace new
-		// -state=`
-		log.Printf("[WARN] incompatible state lineage; given %s but want %s", state.Lineage, s.readState.Lineage)
+		return fmt.Errorf("incompatible state lineage; given %s but want %s", state.Lineage, s.readState.Lineage)
 	}
 
 	// We create a deep copy of the state here, because the caller also has

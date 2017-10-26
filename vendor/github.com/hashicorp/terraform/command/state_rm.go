@@ -9,6 +9,7 @@ import (
 
 // StateRmCommand is a Command implementation that shows a single resource.
 type StateRmCommand struct {
+	Meta
 	StateMeta
 }
 
@@ -19,8 +20,8 @@ func (c *StateRmCommand) Run(args []string) int {
 	}
 
 	cmdFlags := c.Meta.flagSet("state show")
-	cmdFlags.StringVar(&c.backupPath, "backup", "-", "backup")
-	cmdFlags.StringVar(&c.statePath, "state", "", "path")
+	cmdFlags.StringVar(&c.Meta.backupPath, "backup", "-", "backup")
+	cmdFlags.StringVar(&c.Meta.statePath, "state", DefaultStateFilename, "path")
 	if err := cmdFlags.Parse(args); err != nil {
 		return cli.RunResultHelp
 	}
@@ -31,10 +32,10 @@ func (c *StateRmCommand) Run(args []string) int {
 		return 1
 	}
 
-	state, err := c.State()
+	state, err := c.StateMeta.State(&c.Meta)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf(errStateLoadingState, err))
-		return 1
+		return cli.RunResultHelp
 	}
 	if err := state.RefreshState(); err != nil {
 		c.Ui.Error(fmt.Sprintf("Failed to load state: %s", err))
@@ -51,8 +52,6 @@ func (c *StateRmCommand) Run(args []string) int {
 		c.Ui.Error(fmt.Sprintf(errStateRm, err))
 		return 1
 	}
-
-	c.Ui.Output(fmt.Sprintf("%d items removed.", len(args)))
 
 	if err := state.WriteState(stateReal); err != nil {
 		c.Ui.Error(fmt.Sprintf(errStateRmPersist, err))
@@ -89,8 +88,9 @@ Options:
                       will write it to the same path as the statefile with
                       a backup extension.
 
-  -state=PATH         Path to the source state file. Defaults to the configured
-                      backend, or "terraform.tfstate"
+  -state=statefile    Path to a Terraform state file to use to look
+                      up Terraform-managed resources. By default it will
+                      use the state "terraform.tfstate" if it exists.
 
 `
 	return strings.TrimSpace(helpText)

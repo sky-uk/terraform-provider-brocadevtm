@@ -28,12 +28,6 @@ func Provisioner() terraform.ResourceProvisioner {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-
-			"interpreter": &schema.Schema{
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Optional: true,
-			},
 		},
 
 		ApplyFunc: applyFn,
@@ -45,29 +39,19 @@ func applyFn(ctx context.Context) error {
 	o := ctx.Value(schema.ProvOutputKey).(terraform.UIOutput)
 
 	command := data.Get("command").(string)
-
 	if command == "" {
 		return fmt.Errorf("local-exec provisioner command must be a non-empty string")
 	}
 
 	// Execute the command using a shell
-	interpreter := data.Get("interpreter").([]interface{})
-
-	var cmdargs []string
-	if len(interpreter) > 0 {
-		for _, i := range interpreter {
-			if arg, ok := i.(string); ok {
-				cmdargs = append(cmdargs, arg)
-			}
-		}
+	var shell, flag string
+	if runtime.GOOS == "windows" {
+		shell = "cmd"
+		flag = "/C"
 	} else {
-		if runtime.GOOS == "windows" {
-			cmdargs = []string{"cmd", "/C"}
-		} else {
-			cmdargs = []string{"/bin/sh", "-c"}
-		}
+		shell = "/bin/sh"
+		flag = "-c"
 	}
-	cmdargs = append(cmdargs, command)
 
 	// Setup the reader that will read the output from the command.
 	// We use an os.Pipe so that the *os.File can be passed directly to the
@@ -79,7 +63,7 @@ func applyFn(ctx context.Context) error {
 	}
 
 	// Setup the command
-	cmd := exec.CommandContext(ctx, cmdargs[0], cmdargs[1:]...)
+	cmd := exec.CommandContext(ctx, shell, flag, command)
 	cmd.Stderr = pw
 	cmd.Stdout = pw
 
@@ -93,7 +77,9 @@ func applyFn(ctx context.Context) error {
 	go copyOutput(o, tee, copyDoneCh)
 
 	// Output what we're about to run
-	o.Output(fmt.Sprintf("Executing: %q", cmdargs))
+	o.Output(fmt.Sprintf(
+		"Executing: %s %s \"%s\"",
+		shell, flag, command))
 
 	// Start the command
 	err = cmd.Start()

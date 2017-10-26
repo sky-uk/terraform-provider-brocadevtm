@@ -8,11 +8,6 @@ import (
 	"github.com/mitchellh/cli"
 )
 
-// runningInAutomationEnvName gives the name of an environment variable that
-// can be set to any non-empty value in order to suppress certain messages
-// that assume that Terraform is being run from a command prompt.
-const runningInAutomationEnvName = "TF_IN_AUTOMATION"
-
 // Commands is the mapping of all the available Terraform commands.
 var Commands map[string]cli.CommandFactory
 var PlumbingCommands map[string]struct{}
@@ -25,10 +20,13 @@ const (
 	OutputPrefix = "o:"
 )
 
-func initCommands(config *Config) {
-	var inAutomation bool
-	if v := os.Getenv(runningInAutomationEnvName); v != "" {
-		inAutomation = true
+func init() {
+	Ui = &cli.PrefixedUi{
+		AskPrefix:    OutputPrefix,
+		OutputPrefix: OutputPrefix,
+		InfoPrefix:   OutputPrefix,
+		ErrorPrefix:  ErrorPrefix,
+		Ui:           &cli.BasicUi{Writer: os.Stdout},
 	}
 
 	meta := command.Meta{
@@ -36,9 +34,6 @@ func initCommands(config *Config) {
 		GlobalPluginDirs: globalPluginDirs(),
 		PluginOverrides:  &PluginOverrides,
 		Ui:               Ui,
-
-		RunningInAutomation: inAutomation,
-		PluginCacheDir:      config.PluginCacheDir,
 	}
 
 	// The command list is included in the terraform -help
@@ -281,17 +276,13 @@ func initCommands(config *Config) {
 
 		"state rm": func() (cli.Command, error) {
 			return &command.StateRmCommand{
-				StateMeta: command.StateMeta{
-					Meta: meta,
-				},
+				Meta: meta,
 			}, nil
 		},
 
 		"state mv": func() (cli.Command, error) {
 			return &command.StateMvCommand{
-				StateMeta: command.StateMeta{
-					Meta: meta,
-				},
+				Meta: meta,
 			}, nil
 		},
 

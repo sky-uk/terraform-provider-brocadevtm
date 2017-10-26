@@ -42,23 +42,6 @@ type Meta struct {
 	// ExtraHooks are extra hooks to add to the context.
 	ExtraHooks []terraform.Hook
 
-	// RunningInAutomation indicates that commands are being run by an
-	// automated system rather than directly at a command prompt.
-	//
-	// This is a hint to various command routines that it may be confusing
-	// to print out messages that suggest running specific follow-up
-	// commands, since the user consuming the output will not be
-	// in a position to run such commands.
-	//
-	// The intended use-case of this flag is when Terraform is running in
-	// some sort of workflow orchestration tool which is abstracting away
-	// the specific commands being run.
-	RunningInAutomation bool
-
-	// PluginCacheDir, if non-empty, enables caching of downloaded plugins
-	// into the given directory.
-	PluginCacheDir string
-
 	//----------------------------------------------------------
 	// Protected: commands can set these
 	//----------------------------------------------------------
@@ -146,9 +129,6 @@ type Meta struct {
 	errWriter *io.PipeWriter
 	// done chan to wait for the scanner goroutine
 	errScannerDone chan struct{}
-
-	// Used with the import command to allow import of state when no matching config exists.
-	allowMissingConfig bool
 }
 
 type PluginOverrides struct {
