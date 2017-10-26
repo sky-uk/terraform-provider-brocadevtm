@@ -125,34 +125,34 @@ func Connect(params Params) (*Client, error) {
 	}
 
 	supportedVersionsMap := make(map[string]interface{})
-	//var errStr VTMError
-	api := rest.NewBaseAPI(
-		http.MethodGet,
-		apiPrefix,
-		nil,
-		&supportedVersionsMap,
-		new(VTMError),
-	)
-	err := client.request(api)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	if client.params.Debug {
-		log.Printf("Got:\n%+v", supportedVersionsMap)
-	}
 
-	versions := make([]string, 0)
-	for _, version := range supportedVersionsMap["children"].([]interface{}) {
-		if vAsMap, ok := version.(map[string]interface{}); ok {
-			versions = append(versions, vAsMap["name"].(string))
-		}
-	}
-	client.VersionsSupported = versions
 	if client.currentVersion == "" {
+
+		api := rest.NewBaseAPI(
+			http.MethodGet,
+			apiPrefix,
+			nil,
+			&supportedVersionsMap,
+			new(VTMError),
+		)
+		err := client.request(api)
+		if err != nil || api.StatusCode() != http.StatusOK {
+			log.Println("Error while fetching list of available API versions: ", err)
+			return nil, err
+		}
+
+		versions := make([]string, 0)
+		for _, version := range supportedVersionsMap["children"].([]interface{}) {
+			if vAsMap, ok := version.(map[string]interface{}); ok {
+				versions = append(versions, vAsMap["name"].(string))
+			}
+		}
+
+		client.VersionsSupported = versions
 		sort.Sort(sort.Reverse(sort.StringSlice(client.VersionsSupported)))
 		client.currentVersion = client.VersionsSupported[0]
 		log.Println("Working with REST API Version: ", client.currentVersion)
+
 	}
 
 	return client, nil
