@@ -87,8 +87,10 @@ func resourcePool() *schema.Resource {
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"nodes_table": {
-				Type:     schema.TypeSet,
-				Required: true,
+				Type:          schema.TypeSet,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"nodes_list"},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"node": {
@@ -125,6 +127,13 @@ func resourcePool() *schema.Resource {
 						},
 					},
 				},
+			},
+			"nodes_list": {
+				Type:          schema.TypeSet,
+				Optional:      true,
+				ConflictsWith: []string{"nodes_table"},
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				Description:   "Can be used in place of previous table when only the list of ip addresses is known",
 			},
 			"note": {
 				Type:        schema.TypeString,
@@ -1078,6 +1087,8 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 
+	var nodesTableDefined, nodesListDefined bool
+
 	var createPool pool.Pool
 	var poolName string
 	if v, ok := d.GetOk("name"); ok && v != "" {
@@ -1121,6 +1132,22 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	}
 	if v, ok := d.GetOk("nodes_table"); ok {
 		createPool.Properties.Basic.NodesTable = buildNodesTable(v.(*schema.Set))
+		nodesTableDefined = true
+	} else {
+		if v, ok := d.GetOk("nodes_list"); ok {
+			addresses := v.(*schema.Set).List()
+			nodesTable := make([]pool.MemberNode, 0)
+			for _, ip_addr := range addresses {
+				var rec pool.MemberNode
+				rec.Node = ip_addr.(string)
+				nodesTable = append(nodesTable, rec)
+			}
+			createPool.Properties.Basic.NodesTable = nodesTable
+			nodesListDefined = true
+		}
+	}
+	if nodesTableDefined == false && nodesListDefined == false {
+		return fmt.Errorf("Error creating resource: no one of nodes_table or nodes_list attr has been defined")
 	}
 	if v, ok := d.GetOk("note"); ok {
 		createPool.Properties.Basic.Note = v.(string)
@@ -1300,6 +1327,18 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	if d.HasChange("nodes_table") {
 		updatePool.Properties.Basic.NodesTable = buildNodesTable(d.Get("nodes_table").(*schema.Set))
 		hasChanges = true
+	}
+	if d.HasChange("nodes_list") {
+		if v, ok := d.GetOk("nodes_list"); ok {
+			addresses := v.(*schema.Set).List()
+			nodesTable := make([]pool.MemberNode, 0)
+			for _, ip_addr := range addresses {
+				var rec pool.MemberNode
+				rec.Node = ip_addr.(string)
+				nodesTable = append(nodesTable, rec)
+			}
+			updatePool.Properties.Basic.NodesTable = nodesTable
+		}
 	}
 	if d.HasChange("note") {
 		if v, ok := d.GetOk("note"); ok {
