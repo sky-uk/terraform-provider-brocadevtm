@@ -48,7 +48,6 @@ type Basic struct {
 	ListenOnAny              bool     `json:"listen_on_any"`
 	ListenOnHosts            []string `json:"listen_on_hosts,omitempty"`
 	ListenOnTrafficIps       []string `json:"listen_on_traffic_ips,omitempty"`
-	MSS                      uint     `json:"mss"`
 	Note                     string   `json:"note,omitempty"`
 	Pool                     string   `json:"pool,omitempty"`
 	Port                     uint     `json:"port"`
