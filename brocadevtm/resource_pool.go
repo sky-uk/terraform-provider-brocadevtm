@@ -1137,9 +1137,9 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 		if v, ok := d.GetOk("nodes_list"); ok {
 			addresses := v.(*schema.Set).List()
 			nodesTable := make([]pool.MemberNode, 0)
-			for _, ip_addr := range addresses {
+			for _, ipAddr := range addresses {
 				var rec pool.MemberNode
-				rec.Node = ip_addr.(string)
+				rec.Node = ipAddr.(string)
 				nodesTable = append(nodesTable, rec)
 			}
 			createPool.Properties.Basic.NodesTable = nodesTable
@@ -1332,9 +1332,9 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 		if v, ok := d.GetOk("nodes_list"); ok {
 			addresses := v.(*schema.Set).List()
 			nodesTable := make([]pool.MemberNode, 0)
-			for _, ip_addr := range addresses {
+			for _, ipAddr := range addresses {
 				var rec pool.MemberNode
-				rec.Node = ip_addr.(string)
+				rec.Node = ipAddr.(string)
 				nodesTable = append(nodesTable, rec)
 			}
 			updatePool.Properties.Basic.NodesTable = nodesTable
