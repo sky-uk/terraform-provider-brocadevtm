@@ -39,8 +39,8 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMTrafficManagerExists(trafficManagerName, trafficManagerResourceName),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "name", trafficManagerName),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "adminMasterXMLIP", "1.1.1.1"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "adminSlaveXMLIP", "1.1.1.2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "admin_master_xmlip", "1.1.1.1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "admin_slave_xmlip", "1.1.1.2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.#", "2"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "name"), "cardOne"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "interfaces.#"), "2"),
@@ -58,13 +58,13 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "sysctl"), "sysctrl2"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "description"), "sysctrl2 description"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "value"), "valueTwo"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "authenticationServerIP", "0.0.0.0"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "authentication_server_ip", "0.0.0.0"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "location", "locationtest"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "nameip", "1.1.1.1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "num_aptimizer_threads", "0"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "num_children", "0"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "numberOfCPUs", "0"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "restServerPort", "10"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "number_of_cpus", "0"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "rest_server_port", "10"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.#", "2"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "name"), "networkinterface1"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.#"), "2"),
@@ -73,7 +73,7 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "name"), "networkinterface2"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.0"), "0.0.0.0/20"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.1"), "1.1.1.1/20"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "updaterIP", "0.0.0.0"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "updater_ip", "0.0.0.0"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.#", "1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.gateway_ipv4", "127.0.0.1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.gateway_ipv6", "2001:db8:0:1234:0:567:8:2"),
@@ -158,8 +158,8 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMTrafficManagerExists(trafficManagerName, trafficManagerResourceName),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "name", trafficManagerName),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "adminMasterXMLIP", "1.1.1.3"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "adminSlaveXMLIP", "1.1.1.4"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "admin_master_xmlip", "1.1.1.3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "admin_slave_xmlip", "1.1.1.4"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.#", "2"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "name"), "cardOneUpdated"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "interfaces.#"), "2"),
@@ -177,13 +177,13 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "sysctl"), "sysctrl2Updated"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "description"), "sysctrl2 description Updated"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "value"), "valueTwoUpdated"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "authenticationServerIP", "0.0.0.1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "authentication_server_ip", "0.0.0.1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "location", "locationtestUpdated"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "nameip", "2.2.2.2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "num_aptimizer_threads", "1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "num_children", "1"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "numberOfCPUs", "1"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "restServerPort", "15"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "number_of_cpus", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "rest_server_port", "15"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.#", "2"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "name"), "networkinterface1Updated"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.#"), "2"),
@@ -192,7 +192,7 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "name"), "networkinterface2"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.0"), "1.0.0.0/20"),
 					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.1"), "2.1.1.1/20"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "updaterIP", "0.0.0.1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "updater_ip", "0.0.0.1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.#", "1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.gateway_ipv4", "127.0.0.2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.gateway_ipv6", "2001:db8:0:1234:0:567:8:3"),
@@ -324,8 +324,8 @@ func testAccBrocadeTrafficManagerCreate(name string) string {
 	return fmt.Sprintf(`
        resource "brocadevtm_traffic_manager" "acctest" {
        name = "%s"
-       adminMasterXMLIP = "1.1.1.1"
-       adminSlaveXMLIP = "1.1.1.2"
+       admin_master_xmlip = "1.1.1.1"
+       admin_slave_xmlip = "1.1.1.2"
        appliance_card= [
        		{
        			name = "cardOne"
@@ -351,13 +351,13 @@ func testAccBrocadeTrafficManagerCreate(name string) string {
        		}
        ]
 
-       authenticationServerIP = "0.0.0.0"
+       authentication_server_ip = "0.0.0.0"
        location = "locationtest"
        nameip = "1.1.1.1"
        num_aptimizer_threads = 0
        num_children = 0
-       numberOfCPUs = 0
-       restServerPort = 10
+       number_of_cpus = 0
+       rest_server_port = 10
 
         trafficip= [
           {
@@ -370,7 +370,7 @@ func testAccBrocadeTrafficManagerCreate(name string) string {
           }
        ]
 
-       updaterIP = "0.0.0.0"
+       updater_ip = "0.0.0.0"
 
        appliance = {
            gateway_ipv4 = "127.0.0.1"
@@ -474,8 +474,8 @@ func testAccBrocadeTrafficManagerUpdate(name string) string {
 	return fmt.Sprintf(`
        resource "brocadevtm_traffic_manager" "acctest" {
        name = "%s"
-       adminMasterXMLIP = "1.1.1.3"
-       adminSlaveXMLIP = "1.1.1.4"
+       admin_master_xmlip = "1.1.1.3"
+       admin_slave_xmlip = "1.1.1.4"
        appliance_card= [
        		{
        			name = "cardOneUpdated"
@@ -501,13 +501,13 @@ func testAccBrocadeTrafficManagerUpdate(name string) string {
        		}
        ]
 
-       authenticationServerIP = "0.0.0.1"
+       authentication_server_ip = "0.0.0.1"
        location = "locationtestUpdated"
        nameip = "2.2.2.2"
        num_aptimizer_threads = 1
        num_children = 1
-       numberOfCPUs = 1
-       restServerPort = 15
+       number_of_cpus = 1
+       rest_server_port = 15
 
         trafficip= [
           {
@@ -520,7 +520,7 @@ func testAccBrocadeTrafficManagerUpdate(name string) string {
           }
        ]
 
-       updaterIP = "0.0.0.1"
+       updater_ip = "0.0.0.1"
 	appliance = {
            gateway_ipv4 = "127.0.0.2"
 	   gateway_ipv6 = "2001:db8:0:1234:0:567:8:3"

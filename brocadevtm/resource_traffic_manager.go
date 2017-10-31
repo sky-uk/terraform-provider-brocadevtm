@@ -25,13 +25,13 @@ func resourceTrafficManager() *schema.Resource {
 				Description: "Name of the traffic manager",
 				Required:    true,
 			},
-			"adminMasterXMLIP": {
+			"admin_master_xmlip": {
 				Type:        schema.TypeString,
 				Description: "The Application Firewall master XML IP",
 				Optional:    true,
 				Default:     "0.0.0.0",
 			},
-			"adminSlaveXMLIP": {
+			"admin_slave_xmlip": {
 				Type:        schema.TypeString,
 				Description: "The Application Firewall master XML IP",
 				Optional:    true,
@@ -87,7 +87,7 @@ func resourceTrafficManager() *schema.Resource {
 					},
 				},
 			},
-			"authenticationServerIP": {
+			"authentication_server_ip": {
 				Type:        schema.TypeString,
 				Description: "The Application Firewall Authentication Server IP.",
 				Optional:    true,
@@ -121,14 +121,14 @@ func resourceTrafficManager() *schema.Resource {
 				Default:      0,
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
-			"numberOfCPUs": {
+			"number_of_cpus": {
 				Type:         schema.TypeInt,
 				Description:  "The number of Application Firewall decider process to run.",
 				Optional:     true,
 				Default:      0,
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
-			"restServerPort": {
+			"rest_server_port": {
 				Type:         schema.TypeInt,
 				Description:  "The Application Firewall REST Internal API port, this port should not be accessed directly",
 				Optional:     true,
@@ -160,7 +160,7 @@ func resourceTrafficManager() *schema.Resource {
 					},
 				},
 			},
-			"updaterIP": {
+			"updater_ip": {
 				Type:        schema.TypeString,
 				Description: "The Application Firewall Updater IP.",
 				Optional:    true,
@@ -565,14 +565,14 @@ func resourceTrafficManagerCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	trafficManagerBasicConfiguration["adminMasterXMLIP"] = d.Get("adminMasterXMLIP").(string)
-	trafficManagerBasicConfiguration["adminSlaveXMLIP"] = d.Get("adminSlaveXMLIP").(string)
-	trafficManagerBasicConfiguration["authenticationServerIP"] = d.Get("authenticationServerIP").(string)
+	trafficManagerBasicConfiguration["adminMasterXMLIP"] = d.Get("admin_master_xmlip").(string)
+	trafficManagerBasicConfiguration["adminSlaveXMLIP"] = d.Get("admin_slave_xmlip").(string)
+	trafficManagerBasicConfiguration["authenticationServerIP"] = d.Get("authentication_server_ip").(string)
 	trafficManagerBasicConfiguration["num_aptimizer_threads"] = d.Get("num_aptimizer_threads").(int)
 	trafficManagerBasicConfiguration["num_children"] = d.Get("num_children").(int)
-	trafficManagerBasicConfiguration["numberOfCPUs"] = d.Get("numberOfCPUs").(int)
-	trafficManagerBasicConfiguration["restServerPort"] = d.Get("restServerPort").(int)
-	trafficManagerBasicConfiguration["updaterIP"] = d.Get("updaterIP").(string)
+	trafficManagerBasicConfiguration["numberOfCPUs"] = d.Get("number_of_cpus").(int)
+	trafficManagerBasicConfiguration["restServerPort"] = d.Get("rest_server_port").(int)
+	trafficManagerBasicConfiguration["updaterIP"] = d.Get("updater_ip").(string)
 	trafficManagerBasicConfiguration["location"] = d.Get("location").(string)
 	trafficManagerBasicConfiguration["nameip"] = d.Get("nameip")
 
@@ -612,9 +612,23 @@ func resourceTrafficManagerRead(d *schema.ResourceData, m interface{}) error {
 	trafficManagerPropertiesConfig := trafficManagerConfiguration["properties"].(map[string]interface{})
 
 	for i, element := range trafficManagerPropertiesConfig["basic"].(map[string]interface{}) {
-		d.Set(i, element)
+		switch i {
+		case "adminMasterXMLIP":
+			d.Set("admin_master_xmlip", element)
+		case "adminSlaveXMLIP":
+			d.Set("admin_slave_xmlip", element)
+		case "authenticationServerIP":
+			d.Set("authentication_server_ip", element)
+		case "numberOfCPUs":
+			d.Set("number_of_cpus", element)
+		case "restServerPort":
+			d.Set("rest_server_port", element)
+		case "updaterIP":
+			d.Set("updater_ip", element)
+		default:
+			d.Set(i, element)
+		}
 	}
-
 	d.Set("appliance", trafficManagerPropertiesConfig["appliance"])
 
 	return nil
@@ -634,14 +648,14 @@ func resourceTrafficManagerUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	if d.HasChange("adminMasterXMLIP") {
-		trafficManagerBasicConfiguration["adminMasterXMLIP"] = d.Get("adminMasterXMLIP")
+	if d.HasChange("admin_master_xmlip") {
+		trafficManagerBasicConfiguration["adminMasterXMLIP"] = d.Get("admin_master_xmlip")
 	}
-	if d.HasChange("adminSlaveXMLIP") {
-		trafficManagerBasicConfiguration["adminSlaveXMLIP"] = d.Get("adminSlaveXMLIP").(string)
+	if d.HasChange("admin_slave_xmlip") {
+		trafficManagerBasicConfiguration["adminSlaveXMLIP"] = d.Get("admin_slave_xmlip").(string)
 	}
-	if d.HasChange("authenticationServerIP") {
-		trafficManagerBasicConfiguration["authenticationServerIP"] = d.Get("authenticationServerIP").(string)
+	if d.HasChange("authentication_server_ip") {
+		trafficManagerBasicConfiguration["authenticationServerIP"] = d.Get("authentication_server_ip").(string)
 	}
 	if d.HasChange("num_aptimizer_threads") {
 		trafficManagerBasicConfiguration["num_aptimizer_threads"] = d.Get("num_aptimizer_threads").(int)
@@ -649,14 +663,14 @@ func resourceTrafficManagerUpdate(d *schema.ResourceData, m interface{}) error {
 	if d.HasChange("num_children") {
 		trafficManagerBasicConfiguration["num_children"] = d.Get("num_children").(int)
 	}
-	if d.HasChange("numberOfCPUs") {
-		trafficManagerBasicConfiguration["numberOfCPUs"] = d.Get("numberOfCPUs").(int)
+	if d.HasChange("number_of_cpus") {
+		trafficManagerBasicConfiguration["numberOfCPUs"] = d.Get("number_of_cpus").(int)
 	}
-	if d.HasChange("restServerPort") {
-		trafficManagerBasicConfiguration["restServerPort"] = d.Get("restServerPort").(int)
+	if d.HasChange("rest_server_port") {
+		trafficManagerBasicConfiguration["restServerPort"] = d.Get("rest_server_port").(int)
 	}
-	if d.HasChange("updaterIP") {
-		trafficManagerBasicConfiguration["updaterIP"] = d.Get("updaterIP").(string)
+	if d.HasChange("updater_ip") {
+		trafficManagerBasicConfiguration["updaterIP"] = d.Get("updater_ip").(string)
 	}
 	if d.HasChange("location") {
 		trafficManagerBasicConfiguration["location"] = d.Get("location").(string)
