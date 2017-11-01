@@ -26,15 +26,15 @@ import (
 
 const (
 	// Environment variables
-	TritonAccount	= "TRITON_ACCOUNT"
-	TritonKeyId	= "TRITON_KEY_ID"
-	TritonUrl	= "TRITON_URL"
-	SdcAccount	= "SDC_ACCOUNT"
-	SdcKeyId	= "SDC_KEY_ID"
-	SdcUrl		= "SDC_URL"
-	MantaUser	= "MANTA_USER"
-	MantaKeyId	= "MANTA_KEY_ID"
-	MantaUrl	= "MANTA_URL"
+	TritonAccount = "TRITON_ACCOUNT"
+	TritonKeyId   = "TRITON_KEY_ID"
+	TritonUrl     = "TRITON_URL"
+	SdcAccount    = "SDC_ACCOUNT"
+	SdcKeyId      = "SDC_KEY_ID"
+	SdcUrl        = "SDC_URL"
+	MantaUser     = "MANTA_USER"
+	MantaKeyId    = "MANTA_KEY_ID"
+	MantaUrl      = "MANTA_URL"
 )
 
 var Locations = map[string]string{

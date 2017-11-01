@@ -203,4 +203,3 @@ Please see http://github.com/ugorji/go-codec-bench .
 
 */
 package codec
-
