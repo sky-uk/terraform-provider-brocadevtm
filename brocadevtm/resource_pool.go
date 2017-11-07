@@ -6,6 +6,7 @@ import (
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/pool"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
+	"log"
 	"net/http"
 	"regexp"
 )
@@ -89,7 +90,6 @@ func resourcePool() *schema.Resource {
 			"nodes_table": {
 				Type:          schema.TypeSet,
 				Optional:      true,
-				Computed:      true,
 				ConflictsWith: []string{"nodes_list"},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -1246,7 +1246,17 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("node_connection_attempts", *poolObj.Properties.Basic.NodeConnectionAttempts)
 	d.Set("node_delete_behaviour", poolObj.Properties.Basic.NodeDeleteBehavior)
 	d.Set("node_drain_to_delete_timeout", *poolObj.Properties.Basic.NodeDrainDeleteTimeout)
-	d.Set("nodes_table", poolObj.Properties.Basic.NodesTable)
+
+	if _, ok := d.GetOk("nodes_list"); ok {
+		var nodeList []string
+		for _, node := range poolObj.Properties.Basic.NodesTable {
+			nodeList = append(nodeList, node.Node)
+		}
+		d.Set("nodes_list", nodeList)
+	} else {
+		d.Set("nodes_table", poolObj.Properties.Basic.NodesTable)
+	}
+
 	d.Set("note", poolObj.Properties.Basic.Note)
 	d.Set("passive_monitoring", *poolObj.Properties.Basic.PassiveMonitoring)
 	d.Set("persistence_class", poolObj.Properties.Basic.PersistenceClass)
