@@ -1277,39 +1277,32 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 
 	var updatePool pool.Pool
-	hasChanges := false
 	poolName := d.Id()
 
 	if d.HasChange("bandwidth_class") {
 		if v, ok := d.GetOk("bandwidth_class"); ok {
 			updatePool.Properties.Basic.BandwidthClass = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("failure_pool") {
 		if v, ok := d.GetOk("failure_pool"); ok {
 			updatePool.Properties.Basic.FailurePool = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("max_connection_attempts") {
 		maxConnectionAttempts := uint(d.Get("max_connection_attempts").(int))
 		updatePool.Properties.Basic.MaxConnectionAttempts = &maxConnectionAttempts
-		hasChanges = true
 	}
 	if d.HasChange("max_idle_connections_pernode") {
 		maxIdleConnectionsPerNode := uint(d.Get("max_idle_connections_pernode").(int))
 		updatePool.Properties.Basic.MaxIdleConnectionsPerNode = &maxIdleConnectionsPerNode
-		hasChanges = true
 	}
 	if d.HasChange("max_timed_out_connection_attempts") {
 		maxTimedOutConnectionAttempts := uint(d.Get("max_timed_out_connection_attempts").(int))
 		updatePool.Properties.Basic.MaxTimeoutConnectionAttempts = &maxTimedOutConnectionAttempts
-		hasChanges = true
 	}
 	if d.HasChange("monitors") {
 		updatePool.Properties.Basic.Monitors = util.BuildStringArrayFromInterface(d.Get("monitors"))
-		hasChanges = true
 	}
 	if d.HasChange("node_close_with_rst") {
 		nodeCloseWithRst := d.Get("node_close_with_rst").(bool)
@@ -1318,22 +1311,18 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	if d.HasChange("node_connection_attempts") {
 		nodeConnectionAttempts := uint(d.Get("node_connection_attempts").(int))
 		updatePool.Properties.Basic.NodeConnectionAttempts = &nodeConnectionAttempts
-		hasChanges = true
 	}
 	if d.HasChange("node_delete_behaviour") {
 		if v, ok := d.GetOk("node_delete_behaviour"); ok {
 			updatePool.Properties.Basic.NodeDeleteBehavior = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("node_drain_to_delete_timeout") {
 		nodeDrainTimeout := uint(d.Get("node_drain_to_delete_timeout").(int))
 		updatePool.Properties.Basic.NodeDrainDeleteTimeout = &nodeDrainTimeout
-		hasChanges = true
 	}
 	if d.HasChange("nodes_table") {
 		updatePool.Properties.Basic.NodesTable = buildNodesTable(d.Get("nodes_table").(*schema.Set))
-		hasChanges = true
 	}
 	if d.HasChange("nodes_list") {
 		if v, ok := d.GetOk("nodes_list"); ok {
@@ -1351,25 +1340,21 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 		if v, ok := d.GetOk("note"); ok {
 			updatePool.Properties.Basic.Note = v.(string)
 		}
-		hasChanges = true
 	}
 
 	if d.HasChange("passive_monitoring") {
 		passiveMonitoring := d.Get("passive_monitoring").(bool)
 		updatePool.Properties.Basic.PassiveMonitoring = &passiveMonitoring
-		hasChanges = true
 	}
 	if d.HasChange("persistence_class") {
 		if v, ok := d.GetOk("persistence_class"); ok {
 			updatePool.Properties.Basic.PersistenceClass = v.(string)
 		}
-		hasChanges = true
 	}
 
 	if d.HasChange("transparent") {
 		transparent := d.Get("transparent").(bool)
 		updatePool.Properties.Basic.Transparent = &transparent
-		hasChanges = true
 	}
 	if d.HasChange("auto_scaling") {
 		if v, ok := d.GetOk("auto_scaling"); ok {
@@ -1379,84 +1364,70 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 			}
 			updatePool.Properties.AutoScaling = autoScaling
 		}
-		hasChanges = true
 	}
 	if d.HasChange("pool_connection") {
 		if v, ok := d.GetOk("pool_connection"); ok {
 			updatePool.Properties.Connection = buildConnection(v)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("dns_autoscale") {
 		if v, ok := d.GetOk("dns_autoscale"); ok {
 			updatePool.Properties.DNSAutoScale = buildDNSAutoScale(v)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("ftp") {
 		if v, ok := d.GetOk("ftp"); ok {
 			updatePool.Properties.FTP = buildFTP(v)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("http") {
 		if v, ok := d.GetOk("http"); ok {
 			updatePool.Properties.HTTP = buildHTTP(v)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("kerberos_protocol_transition") {
 		if v, ok := d.GetOk("kerberos_protocol_transition"); ok {
 			updatePool.Properties.KerberosProtocolTransition = buildKerberosProtocolTransition(v)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("load_balancing") {
 		if v, ok := d.GetOk("load_balancing"); ok {
 			updatePool.Properties.LoadBalancing = buildLoadBalancing(v)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("node") {
 		if v, ok := d.GetOk("node"); ok {
 			updatePool.Properties.Node = buildNode(v)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("smtp") {
 		if v, ok := d.GetOk("smtp"); ok {
 			updatePool.Properties.SMTP = buildSMTP(v)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("ssl") {
 		if v, ok := d.GetOk("ssl"); ok {
 			updatePool.Properties.Ssl = buildSSL(v)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("tcp") {
 		if v, ok := d.GetOk("tcp"); ok {
 			updatePool.Properties.TCP = buildTCP(v)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("udp") {
 		if v, ok := d.GetOk("udp"); ok {
 			updatePool.Properties.UDP = buildUDP(v)
 		}
-		hasChanges = true
 	}
 
-	if hasChanges {
-		config := m.(map[string]interface{})
-		client := config["jsonClient"].(*api.Client)
-		err := client.Set("pools", poolName, updatePool, nil)
-		if err != nil {
-			return fmt.Errorf("BrocadeVTM Pool error whilst updating %s: %s", poolName, err)
-		}
-		d.SetId(poolName)
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+	err := client.Set("pools", poolName, updatePool, nil)
+	if err != nil {
+		return fmt.Errorf("BrocadeVTM Pool error whilst updating %s: %s", poolName, err)
 	}
+	d.SetId(poolName)
 
 	return resourcePoolRead(d, m)
 }
