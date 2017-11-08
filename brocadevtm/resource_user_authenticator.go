@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_authenticator"
+	"net/http"
 )
 
 func resourceUserAuthenticator() *schema.Resource {
@@ -390,6 +391,10 @@ func resourceUserAuthenticatorRead(d *schema.ResourceData, m interface{}) error 
 	var userGroupAuthenticator userAuthenticator.UserAuthenticator
 
 	err := client.GetByName("user_authenticators", d.Id(), &userGroupAuthenticator)
+	if client.StatusCode == http.StatusNotFound {
+		d.SetId("")
+		return nil
+	}
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM error whilst retrieving user authenticator %s: %v", d.Id(), err)
 	}

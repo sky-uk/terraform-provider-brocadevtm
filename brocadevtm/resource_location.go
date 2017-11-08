@@ -6,6 +6,7 @@ import (
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/location"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
+	"net/http"
 )
 
 func resourceLocation() *schema.Resource {
@@ -132,7 +133,10 @@ func resourceLocationRead(d *schema.ResourceData, m interface{}) error {
 
 	client.WorkWithConfigurationResources()
 	err := client.GetByName("locations", name, &readLocation)
-
+	if client.StatusCode == http.StatusNotFound {
+		d.SetId("")
+		return nil
+	}
 	if err != nil {
 		d.SetId("")
 		return fmt.Errorf("BrocadeVTM location error whilst retrieving %s: %v", name, err)
