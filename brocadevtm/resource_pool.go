@@ -1247,11 +1247,13 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("node_delete_behaviour", poolObj.Properties.Basic.NodeDeleteBehavior)
 	d.Set("node_drain_to_delete_timeout", *poolObj.Properties.Basic.NodeDrainDeleteTimeout)
 
-	var nodeList []string
-	for _, node := range poolObj.Properties.Basic.NodesTable {
-		nodeList = append(nodeList, node.Node)
+	if _, ok := d.GetOk("nodes_list"); ok {
+		var nodeList []string
+		for _, node := range poolObj.Properties.Basic.NodesTable {
+			nodeList = append(nodeList, node.Node)
+		}
+		d.Set("nodes_list", nodeList)
 	}
-	d.Set("nodes_list", nodeList)
 	d.Set("nodes_table", poolObj.Properties.Basic.NodesTable)
 
 	d.Set("note", poolObj.Properties.Basic.Note)
