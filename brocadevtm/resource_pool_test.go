@@ -423,7 +423,6 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, regexp.MustCompile("nodes_list."), "192.168.10.12:80"),
 				),
 			},
-
 		},
 	})
 }
