@@ -7,6 +7,7 @@ import (
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/glb"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"regexp"
+	"net/http"
 )
 
 func resourceGLB() *schema.Resource {
@@ -327,6 +328,10 @@ func resourceGLBRead(d *schema.ResourceData, m interface{}) error {
 
 	err := client.GetByName("glb_services", d.Id(), &glbObject)
 
+	if client.StatusCode == http.StatusNotFound {
+		d.SetId("")
+		return nil
+	}
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM GLB error whilst retrieving %s: %v", d.Id(), err)
 	}

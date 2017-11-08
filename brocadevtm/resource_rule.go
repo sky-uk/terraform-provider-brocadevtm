@@ -67,6 +67,7 @@ func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 
 	if client.StatusCode == http.StatusNotFound {
 		d.SetId("")
+		return nil
 	}
 
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/dns_zone"
+	"net/http"
 )
 
 func resourceDNSZone() *schema.Resource {
@@ -70,6 +71,10 @@ func resourceDNSZoneRead(d *schema.ResourceData, m interface{}) error {
 
 	client.WorkWithConfigurationResources()
 	err := client.GetByName("dns_server/zones", dnsZoneName, &dnsZoneObject)
+	if client.StatusCode == http.StatusNotFound {
+		d.SetId("")
+		return nil
+	}
 	if err != nil {
 		d.SetId("")
 		return fmt.Errorf("BrocadeVTM DNS zone error whilst reading %s: %v", dnsZoneName, err)

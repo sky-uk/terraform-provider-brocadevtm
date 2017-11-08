@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_group"
+	"net/http"
 )
 
 func resourceUserGroup() *schema.Resource {
@@ -127,6 +128,10 @@ func resourceUserGroupRead(d *schema.ResourceData, m interface{}) error {
 	var userGroupObject userGroup.UserGroup
 
 	err := client.GetByName("user_groups", d.Id(), &userGroupObject)
+	if client.StatusCode == http.StatusNotFound {
+		d.SetId("")
+		return nil
+	}
 	if err != nil {
 		d.SetId("")
 		return fmt.Errorf("BrocadeVTM User Group error whilst retrieving %s: %v", d.Id(), err)
