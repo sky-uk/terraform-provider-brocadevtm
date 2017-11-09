@@ -2,10 +2,10 @@ package brocadevtm
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/dns_zone"
-	"net/http"
 )
 
 func resourceDNSZone() *schema.Resource {
@@ -38,27 +38,32 @@ func resourceDNSZone() *schema.Resource {
 
 func resourceDNSZoneCreate(d *schema.ResourceData, m interface{}) error {
 
-	var dnsZoneName string
-	var dnsZoneObject dnsZone.DNSZone
+	var name string
+	res := make(map[string]interface{})
+	prop := make(map[string]interface{})
+	basic := make(map[string]interface{})
+
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 
 	if v, ok := d.GetOk("name"); ok && v != "" {
-		dnsZoneName = v.(string)
+		name = v.(string)
 	}
 	if v, ok := d.GetOk("origin"); ok && v != "" {
-		dnsZoneObject.Properties.Basic.Origin = v.(string)
+		basic["origin"] = v.(string)
 	}
 	if v, ok := d.GetOk("zone_file"); ok && v != "" {
-		dnsZoneObject.Properties.Basic.ZoneFile = v.(string)
+		basic["zonefile"] = v.(string)
 	}
 
-	err := client.Set("dns_server/zones", dnsZoneName, dnsZoneObject, nil)
+	prop["basic"] = basic
+	res["properties"] = prop
+	err := client.Set("dns_server/zones", name, res, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM DNS zone error whilst creating %s: %v", dnsZoneName, err)
+		return fmt.Errorf("BrocadeVTM DNS zone error whilst creating %s: %v", name, err)
 	}
 
-	d.SetId(dnsZoneName)
+	d.SetId(name)
 	return resourceDNSZoneRead(d, m)
 }
 
@@ -66,52 +71,50 @@ func resourceDNSZoneRead(d *schema.ResourceData, m interface{}) error {
 
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	dnsZoneName := d.Id()
-	var dnsZoneObject dnsZone.DNSZone
+	name := d.Id()
+
+	res := make(map[string]interface{})
 
 	client.WorkWithConfigurationResources()
-	err := client.GetByName("dns_server/zones", dnsZoneName, &dnsZoneObject)
+	err := client.GetByName("dns_server/zones", name, &res)
 	if client.StatusCode == http.StatusNotFound {
 		d.SetId("")
 		return nil
 	}
 	if err != nil {
 		d.SetId("")
-		return fmt.Errorf("BrocadeVTM DNS zone error whilst reading %s: %v", dnsZoneName, err)
+		return fmt.Errorf("BrocadeVTM DNS zone error whilst reading %s: %v", name, err)
 	}
-	d.SetId(dnsZoneName)
-	d.Set("origin", dnsZoneObject.Properties.Basic.Origin)
-	d.Set("zone_file", dnsZoneObject.Properties.Basic.ZoneFile)
+	d.SetId(name)
+	props := res["properties"].(map[string]interface{})
+	basic := props["basic"].(map[string]interface{})
+	d.Set("origin", basic["origin"])
+	d.Set("zone_file", basic["zonefile"])
 
 	return nil
 }
 
 func resourceDNSZoneUpdate(d *schema.ResourceData, m interface{}) error {
 
-	hasChanges := false
-	dnsZoneName := d.Id()
-	var dnsZoneObject dnsZone.DNSZone
+	name := d.Id()
+	res := make(map[string]interface{})
+	props := make(map[string]interface{})
+	basic := make(map[string]interface{})
 
-	if d.HasChange("origin") {
-		if v, ok := d.GetOk("origin"); ok && v != "" {
-			dnsZoneObject.Properties.Basic.Origin = v.(string)
+	for _, key := range []string{"origin", "zone_file"} {
+		if d.HasChange(key) {
+			basic[key] = d.Get(key).(string)
 		}
-		hasChanges = true
-	}
-	if d.HasChange("zone_file") {
-		if v, ok := d.GetOk("zone_file"); ok && v != "" {
-			dnsZoneObject.Properties.Basic.ZoneFile = v.(string)
-		}
-		hasChanges = true
 	}
 
-	if hasChanges {
-		config := m.(map[string]interface{})
-		client := config["jsonClient"].(*api.Client)
-		err := client.Set("dns_server/zones", dnsZoneName, dnsZoneObject, nil)
-		if err != nil {
-			return fmt.Errorf("BrocadeVTM DNS zone error whilst updating %s: %v", dnsZoneName, err)
-		}
+	props["basic"] = basic
+	res["properties"] = props
+
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+	err := client.Set("dns_server/zones", name, &res, nil)
+	if err != nil {
+		return fmt.Errorf("BrocadeVTM DNS zone error whilst updating %s: %v", name, err)
 	}
 
 	return resourceDNSZoneRead(d, m)
