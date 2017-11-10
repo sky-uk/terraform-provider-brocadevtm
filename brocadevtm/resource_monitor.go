@@ -186,9 +186,10 @@ func resourceMonitor() *schema.Resource {
 				Computed: true,
 			},
 			"tcp_max_response_len": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"tcp_response_regex": {
 				Type:     schema.TypeString,
@@ -216,15 +217,12 @@ func buildScriptArgumentsSection(scriptArguments interface{}) []map[string]strin
 	for _, item := range scriptArguments.([]interface{}) {
 		scriptArgumentItem := item.(map[string]interface{})
 		monitorScriptArgument := make(map[string]string)
+		argumentOptions := []string{"name", "description", "value"}
 
-		if v, ok := scriptArgumentItem["name"].(string); ok {
-			monitorScriptArgument["name"] = v
-		}
-		if v, ok := scriptArgumentItem["description"].(string); ok {
-			monitorScriptArgument["description"] = v
-		}
-		if v, ok := scriptArgumentItem["value"].(string); ok {
-			monitorScriptArgument["value"] = v
+		for _, option := range argumentOptions {
+			if v, ok := scriptArgumentItem[option].(string); ok {
+				monitorScriptArgument[option] = v
+			}
 		}
 		monitorScriptArguments = append(monitorScriptArguments, monitorScriptArgument)
 	}
@@ -243,8 +241,8 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 	// Basic section
 	monitorBasicConfiguration := make(map[string]interface{})
 	monitorBasicConfiguration["back_off"] = d.Get("back_off").(bool)
-	monitorBasicConfiguration["delay"] = uint(d.Get("delay").(int))
-	monitorBasicConfiguration["failures"] = uint(d.Get("failures").(int))
+	monitorBasicConfiguration["delay"] = d.Get("delay").(int)
+	monitorBasicConfiguration["failures"] = d.Get("failures").(int)
 	if v, ok := d.GetOk("machine"); ok {
 		monitorBasicConfiguration["machine"] = v.(string)
 	}
@@ -252,7 +250,7 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 		monitorBasicConfiguration["note"] = v.(string)
 	}
 	monitorBasicConfiguration["scope"] = d.Get("scope").(string)
-	monitorBasicConfiguration["timeout"] = uint(d.Get("timeout").(int))
+	monitorBasicConfiguration["timeout"] = d.Get("timeout").(int)
 	monitorBasicConfiguration["type"] = d.Get("type").(string)
 	monitorBasicConfiguration["use_ssl"] = d.Get("use_ssl").(bool)
 	monitorBasicConfiguration["verbose"] = d.Get("verbose").(bool)
@@ -319,7 +317,7 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 		monitorTCPConfiguration["close_string"] = v.(string)
 	}
 	if v, ok := d.GetOk("tcp_max_response_len"); ok {
-		monitorTCPConfiguration["max_response_len"] = uint(v.(int))
+		monitorTCPConfiguration["max_response_len"] = v.(int)
 	}
 	if v, ok := d.GetOk("tcp_response_regex"); ok {
 		monitorTCPConfiguration["response_regex"] = v.(string)
@@ -430,10 +428,10 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 		monitorBasicConfiguration["back_off"] = d.Get("back_off").(bool)
 	}
 	if d.HasChange("delay") {
-		monitorBasicConfiguration["delay"] = uint(d.Get("delay").(int))
+		monitorBasicConfiguration["delay"] = d.Get("delay").(int)
 	}
 	if d.HasChange("failures") {
-		monitorBasicConfiguration["failures"] = uint(d.Get("failures").(int))
+		monitorBasicConfiguration["failures"] = d.Get("failures").(int)
 	}
 	if d.HasChange("machine") {
 		monitorBasicConfiguration["machine"] = d.Get("machine").(string)
@@ -445,7 +443,7 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 		monitorBasicConfiguration["scope"] = d.Get("scope").(string)
 	}
 	if d.HasChange("timeout") {
-		monitorBasicConfiguration["timeout"] = uint(d.Get("timeout").(int))
+		monitorBasicConfiguration["timeout"] = d.Get("timeout").(int)
 	}
 	if d.HasChange("type") {
 		monitorBasicConfiguration["type"] = d.Get("type").(string)
@@ -519,7 +517,7 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 		monitorTCPConfiguration["close_string"] = d.Get("tcp_close_string").(string)
 	}
 	if d.HasChange("tcp_max_response_len") {
-		monitorTCPConfiguration["max_response_len"] = uint(d.Get("tcp_max_response_len").(int))
+		monitorTCPConfiguration["max_response_len"] = d.Get("tcp_max_response_len").(int)
 	}
 	if d.HasChange("tcp_response_regex") {
 		monitorTCPConfiguration["response_regex"] = d.Get("tcp_response_regex").(string)
