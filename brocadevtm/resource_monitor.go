@@ -233,6 +233,28 @@ func buildScriptArgumentsSection(scriptArguments interface{}) []map[string]inter
 	return monitorScriptArguments
 }
 
+func setScriptArguments(arguments interface{}) []map[string]string {
+
+	setArguments := make([]map[string]string, 0)
+
+	for _, item := range arguments.([]interface{}) {
+		itemArgument := item.(map[string]interface{})
+		argument := make(map[string]string)
+		
+		if v, ok := itemArgument["name"]; ok {
+			argument["name"] = v.(string)
+		}
+		if v, ok := itemArgument["description"]; ok {
+			argument["description"] = v.(string)
+		}
+		if v, ok := itemArgument["value"]; ok {
+			argument["value"] = v.(string)
+		}
+		setArguments = append(setArguments, argument)
+	}
+	return setArguments
+}
+
 func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 
 	config := m.(map[string]interface{})
@@ -395,7 +417,7 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 	// Script Section
 	monitorScriptConfiguration := monitorPropertiesConfiguration["script"].(map[string]interface{})
 	d.Set("script_program", monitorScriptConfiguration["program"])
-	d.Set("script_arguments", monitorScriptConfiguration["arguments"])
+	d.Set("script_arguments", setScriptArguments(monitorScriptConfiguration["arguments"]))
 
 	// SIP Section
 	monitorSIPConfiguration := monitorPropertiesConfiguration["sip"].(map[string]interface{})
