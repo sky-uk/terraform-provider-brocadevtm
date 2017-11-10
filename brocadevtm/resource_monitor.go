@@ -209,50 +209,26 @@ func resourceMonitor() *schema.Resource {
 	}
 }
 
-func buildScriptArgumentsSection(scriptArguments interface{}) []map[string]interface{} {
+func buildScriptArgumentsSection(scriptArguments interface{}) []map[string]string {
 
-	monitorScriptArguments := make([]map[string]interface{}, 0)
+	monitorScriptArguments := make([]map[string]string, 0)
 
-	if arguments, ok := scriptArguments.(*schema.Set); ok {
-		for _, item := range arguments.List() {
-			argumentItem := item.(map[string]interface{})
-			monitorScriptArgument := make(map[string]interface{})
+	for _, item := range scriptArguments.([]interface{}) {
+		scriptArgumentItem := item.(map[string]interface{})
+		monitorScriptArgument := make(map[string]string)
 
-			if v, ok := argumentItem["name"].(string); ok {
-				monitorScriptArgument["name"] = v
-			}
-			if v, ok := argumentItem["description"].(string); ok {
-				monitorScriptArgument["description"] = v
-			}
-			if v, ok := argumentItem["value"].(string); ok {
-				monitorScriptArgument["value"] = v
-			}
-			monitorScriptArguments = append(monitorScriptArguments, monitorScriptArgument)
+		if v, ok := scriptArgumentItem["name"].(string); ok {
+			monitorScriptArgument["name"] = v
 		}
+		if v, ok := scriptArgumentItem["description"].(string); ok {
+			monitorScriptArgument["description"] = v
+		}
+		if v, ok := scriptArgumentItem["value"].(string); ok {
+			monitorScriptArgument["value"] = v
+		}
+		monitorScriptArguments = append(monitorScriptArguments, monitorScriptArgument)
 	}
 	return monitorScriptArguments
-}
-
-func setScriptArguments(arguments interface{}) []map[string]string {
-
-	setArguments := make([]map[string]string, 0)
-
-	for _, item := range arguments.([]interface{}) {
-		itemArgument := item.(map[string]interface{})
-		argument := make(map[string]string)
-
-		if v, ok := itemArgument["name"]; ok {
-			argument["name"] = v.(string)
-		}
-		if v, ok := itemArgument["description"]; ok {
-			argument["description"] = v.(string)
-		}
-		if v, ok := itemArgument["value"]; ok {
-			argument["value"] = v.(string)
-		}
-		setArguments = append(setArguments, argument)
-	}
-	return setArguments
 }
 
 func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
@@ -320,7 +296,7 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 		monitorScriptConfiguration["program"] = v.(string)
 	}
 	if v, ok := d.GetOk("script_arguments"); ok {
-		monitorScriptConfiguration["arguments"] = buildScriptArgumentsSection(v)
+		monitorScriptConfiguration["arguments"] = buildScriptArgumentsSection(v.(*schema.Set).List())
 	}
 	monitorPropertiesConfiguration["script"] = monitorScriptConfiguration
 
@@ -417,7 +393,7 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 	// Script Section
 	monitorScriptConfiguration := monitorPropertiesConfiguration["script"].(map[string]interface{})
 	d.Set("script_program", monitorScriptConfiguration["program"])
-	d.Set("script_arguments", setScriptArguments(monitorScriptConfiguration["arguments"]))
+	d.Set("script_arguments", buildScriptArgumentsSection(monitorScriptConfiguration["arguments"]))
 
 	// SIP Section
 	monitorSIPConfiguration := monitorPropertiesConfiguration["sip"].(map[string]interface{})
@@ -517,7 +493,7 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 	// Script Section
 	monitorScriptConfiguration := make(map[string]interface{})
 	if d.HasChange("script_arguments") {
-		monitorScriptConfiguration["arguments"] = buildScriptArgumentsSection(d.Get("script_arguments"))
+		monitorScriptConfiguration["arguments"] = buildScriptArgumentsSection(d.Get("script_arguments").(*schema.Set).List())
 	}
 	if d.HasChange("script_program") {
 		monitorScriptConfiguration["program"] = d.Get("script_program").(string)
