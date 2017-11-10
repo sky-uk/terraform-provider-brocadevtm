@@ -527,13 +527,13 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 	// SIP Section
 	monitorSIPConfiguration := make(map[string]interface{})
 	if d.HasChange("sip_body_regex") {
-		monitorSIPConfiguration["body_regex"] = d.Get("body_regex").(string)
+		monitorSIPConfiguration["body_regex"] = d.Get("sip_body_regex").(string)
 	}
 	if d.HasChange("sip_status_regex") {
-		monitorSIPConfiguration["status_regex"] = d.Get("status_regex").(string)
+		monitorSIPConfiguration["status_regex"] = d.Get("sip_status_regex").(string)
 	}
 	if d.HasChange("sip_transport") {
-		monitorSIPConfiguration["transport"] = d.Get("transport").(string)
+		monitorSIPConfiguration["transport"] = d.Get("sip_transport").(string)
 	}
 	monitorPropertiesConfiguration["sip"] = monitorSIPConfiguration
 
