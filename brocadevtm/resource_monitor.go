@@ -240,7 +240,7 @@ func setScriptArguments(arguments interface{}) []map[string]string {
 	for _, item := range arguments.([]interface{}) {
 		itemArgument := item.(map[string]interface{})
 		argument := make(map[string]string)
-		
+
 		if v, ok := itemArgument["name"]; ok {
 			argument["name"] = v.(string)
 		}
