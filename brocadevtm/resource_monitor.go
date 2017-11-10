@@ -215,19 +215,19 @@ func buildScriptArgumentsSection(scriptArguments interface{}) []map[string]inter
 
 	if arguments, ok := scriptArguments.(*schema.Set); ok {
 		for _, item := range arguments.List() {
-			argumentsObject := item.(map[string]interface{})
-			scriptArgument := make(map[string]interface{})
+			argumentItem := item.(map[string]interface{})
+			monitorScriptArgument := make(map[string]interface{})
 
-			if v, ok := argumentsObject["name"].(string); ok {
-				scriptArgument["name"] = v
+			if v, ok := argumentItem["name"].(string); ok {
+				monitorScriptArgument["name"] = v
 			}
-			if v, ok := argumentsObject["description"].(string); ok {
-				scriptArgument["description"] = v
+			if v, ok := argumentItem["description"].(string); ok {
+				monitorScriptArgument["description"] = v
 			}
-			if v, ok := argumentsObject["value"].(string); ok {
-				scriptArgument["value"] = v
+			if v, ok := argumentItem["value"].(string); ok {
+				monitorScriptArgument["value"] = v
 			}
-			monitorScriptArguments = append(monitorScriptArguments, scriptArgument)
+			monitorScriptArguments = append(monitorScriptArguments, monitorScriptArgument)
 		}
 	}
 	return monitorScriptArguments
@@ -345,7 +345,6 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 	}
 	d.SetId(name)
 	return resourceMonitorRead(d, m)
-
 }
 
 func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
@@ -506,13 +505,13 @@ func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 	// SIP Section
 	monitorSIPConfiguration := make(map[string]interface{})
 	if d.HasChange("sip_body_regex") {
-		monitorSIPConfiguration[""] = d.Get("body_regex").(string)
+		monitorSIPConfiguration["body_regex"] = d.Get("body_regex").(string)
 	}
 	if d.HasChange("sip_status_regex") {
-		monitorSIPConfiguration[""] = d.Get("status_regex").(string)
+		monitorSIPConfiguration["status_regex"] = d.Get("status_regex").(string)
 	}
 	if d.HasChange("sip_transport") {
-		monitorSIPConfiguration[""] = d.Get("transport").(string)
+		monitorSIPConfiguration["transport"] = d.Get("transport").(string)
 	}
 	monitorPropertiesConfiguration["sip"] = monitorSIPConfiguration
 
