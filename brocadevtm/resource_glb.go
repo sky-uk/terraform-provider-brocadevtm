@@ -257,62 +257,64 @@ func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	var createGLB glb.GLB
-	var name string
 
-	if v, ok := d.GetOk("name"); ok && v != "" {
-		name = v.(string)
-	}
-	if v, ok := d.GetOk("algorithm"); ok && v != "" {
-		createGLB.Properties.Basic.Algorithm = v.(string)
-	}
+	res := make(map[string]interface{})
+	props := make(map[string]interface{})
+	basic := make(map[string]interface{})
 
-	createGLB.Properties.Basic.AllMonitorsNeeded = d.Get("all_monitors_needed").(bool)
-	createGLB.Properties.Basic.AutoRecovery = d.Get("auto_recovery").(bool)
-	createGLB.Properties.Basic.ChainedAutoFailback = d.Get("chained_auto_failback").(bool)
-	createGLB.Properties.Basic.DisableOnFailure = d.Get("disable_on_failure").(bool)
-	createGLB.Properties.Basic.Enabled = d.Get("enabled").(bool)
-	createGLB.Properties.Basic.ReturnIPSOnFail = d.Get("return_ips_on_fail").(bool)
+	name := d.Get("name").(string)
+
+	basic["all_monitors_needed"] = d.Get("all_monitors_needed").(bool)
+	basic["autorecovery"] = d.Get("auto_recovery").(bool)
+	basic["chained_auto_failback"] = d.Get("chained_auto_failback").(bool)
+	basic["disable_on_failure"] = d.Get("disable_on_failure").(bool)
+	basic["enabled"] = d.Get("enabled").(bool)
+	basic["return_ips_on_fail"] = d.Get("return_ips_on_fail").(bool)
 
 	if v, ok := d.GetOk("geo_effect"); ok {
 		geoEffect := v.(int)
-		createGLB.Properties.Basic.GeoEffect = uint(geoEffect)
+		basic["geo_effect"] = uint(geoEffect)
 	}
 	if v, ok := d.GetOk("ttl"); ok {
-		createGLB.Properties.Basic.TTL = v.(int)
+		basic["ttl"] = v.(int)
 	}
 	if v, ok := d.GetOk("chained_location_order"); ok {
-		createGLB.Properties.Basic.ChainedLocationOrder = util.BuildStringArrayFromInterface(v)
+		basic["chained_location_order"] = util.BuildStringArrayFromInterface(v)
 	}
 	if v, ok := d.GetOk("rules"); ok {
-		createGLB.Properties.Basic.Rules = util.BuildStringArrayFromInterface(v)
+		basic["rules"] = util.BuildStringArrayFromInterface(v)
 	}
 	if v, ok := d.GetOk("domains"); ok {
-		createGLB.Properties.Basic.Domains = util.BuildStringListFromSet(v.(*schema.Set))
+		basic["domains"] = util.BuildStringListFromSet(v.(*schema.Set))
 	}
 	if v, ok := d.GetOk("last_resort_response"); ok {
-		createGLB.Properties.Basic.LastResortResponse = util.BuildStringListFromSet(v.(*schema.Set))
+		basic["last_resort_response"] = util.BuildStringListFromSet(v.(*schema.Set))
 	}
 	if v, ok := d.GetOk("location_draining"); ok {
-		createGLB.Properties.Basic.LocationDraining = util.BuildStringListFromSet(v.(*schema.Set))
+		basic["location_draining"] = util.BuildStringListFromSet(v.(*schema.Set))
 	}
 	if v, ok := d.GetOk("location_settings"); ok {
-		createGLB.Properties.Basic.LocationSettings = buildLocationSettings(v.(*schema.Set))
+		basic["location_settings"] = buildLocationSettings(v.(*schema.Set))
 	}
 	if v, ok := d.GetOk("dns_sec_keys"); ok {
-		createGLB.Properties.Basic.DNSSecKeys = buildDNSSecKeys(v.(*schema.Set))
+		basic["dnssec_keys"] = buildDNSSecKeys(v.(*schema.Set))
 	}
 
-	createGLB.Properties.Log.Enabled = d.Get("logging_enabled").(bool)
+	log := make(map[string]interface{})
+	log["enabled"] = d.Get("logging_enabled").(bool)
 
 	if v, ok := d.GetOk("log_file_name"); ok && v != "" {
-		createGLB.Properties.Log.Filename = v.(string)
+		log["filename"] = v.(string)
 	}
 	if v, ok := d.GetOk("log_format"); ok && v != "" {
-		createGLB.Properties.Log.Format = v.(string)
+		log["format"] = v.(string)
 	}
 
-	err := client.Set("glb_services", name, createGLB, nil)
+	props["basic"] = basic
+	props["log"] = log
+	res["properties"] = props
+
+	err := client.Set("glb_services", name, res, nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM GLB error whilst creating %s: %v", name, err)
 	}
