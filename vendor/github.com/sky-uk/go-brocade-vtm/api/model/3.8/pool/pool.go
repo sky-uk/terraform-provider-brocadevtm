@@ -35,7 +35,7 @@ type Basic struct {
 	MaxConnectionAttempts        *uint        `json:"max_connection_attempts,omitempty"`
 	MaxIdleConnectionsPerNode    *uint        `json:"max_idle_connections_pernode,omitempty"`
 	MaxTimeoutConnectionAttempts *uint        `json:"max_timed_out_connection_attempts,omitempty"`
-	Monitors                     []string     `json:"monitors,omitempty"`
+	Monitors                     []string     `json:"monitors"`
 	NodeCloseWithReset           *bool        `json:"node_close_with_rst,omitempty"`
 	NodeConnectionAttempts       *uint        `json:"node_connection_attempts,omitempty"`
 	NodeDeleteBehavior           string       `json:"node_delete_behavior,omitempty"`
