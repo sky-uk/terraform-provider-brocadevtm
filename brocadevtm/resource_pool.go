@@ -1112,9 +1112,9 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 		maxTimedOutConnectionAttempts := uint(v.(int))
 		createPool.Properties.Basic.MaxTimeoutConnectionAttempts = &maxTimedOutConnectionAttempts
 	}
-	if v, ok := d.GetOk("monitors"); ok {
-		createPool.Properties.Basic.Monitors = util.BuildStringArrayFromInterface(v)
-	}
+
+	createPool.Properties.Basic.Monitors = util.BuildStringArrayFromInterface(d.Get("monitors"))
+
 	if v, ok := d.GetOk("node_close_with_rst"); ok {
 		nodeCloseWithRst := v.(bool)
 		createPool.Properties.Basic.NodeCloseWithReset = &nodeCloseWithRst
