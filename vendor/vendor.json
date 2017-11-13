@@ -2087,12 +2087,12 @@
 			"versionExact": "0.4.9"
 		},
 		{
-			"checksumSHA1": "oX6AvqkL3pHKVSYadveXOkyEZQI=",
+			"checksumSHA1": "iTcxFVJ4YiA2A/etr1wSaYDsHqk=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api/model/3.8/pool",
-			"revision": "f40dbc3e630ae902821051a4aa55fe7c483552ed",
-			"revisionTime": "2017-11-13T11:07:24Z",
-			"version": "0.4.12",
-			"versionExact": "0.4.12"
+			"revision": "ac42e76390f8709d6988af3e850561b880c22690",
+			"revisionTime": "2017-10-26T14:54:00Z",
+			"version": "0.4.9",
+			"versionExact": "0.4.9"
 		},
 		{
 			"checksumSHA1": "7LBpr84Qw3qvHxh7lkk3mWbV0E4=",
