@@ -43,19 +43,6 @@ func TestAccBrocadeVTMGLBBasic(t *testing.T) {
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
-				Config:      testAccBrocadeVTMGLBInvalidAlgorithmTemplate(glbName),
-				ExpectError: new(regexp.Regexp([]string{"brocadevtm_glb.acctest: expected algorithm to be one of [chained geo hybrid load round_robin weighted_random], got INVALID_ALGO"})),
-				//ExpectError: regexp.MustCompile(`expected algorithm to be one of [chained geo hybrid load round_robin weighted_random], got INVALID_ALGO`),
-			},
-			{
-				Config:      testAccBrocadeVTMGLBInvalidGeoEffectTemplate(glbName),
-				ExpectError: regexp.MustCompile(`must be a whole number between 0 and 100 \(percentage\)`),
-			},
-			{
-				Config:      testAccBrocadeVTMGLBInvalidLocationWeightTemplate(glbName),
-				ExpectError: regexp.MustCompile(`must be a whole number between 1 and 100`),
-			},
-			{
 				Config: testAccBrocadeGLBCreateTemplate(glbName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMGLBExists(glbName, glbResourceName),
@@ -203,40 +190,6 @@ resource "brocadevtm_glb" "acctest" {
 
 }
 `
-}
-
-func testAccBrocadeVTMGLBInvalidAlgorithmTemplate(name string) string {
-	return fmt.Sprintf(`
-resource "brocadevtm_glb" "acctest" {
-  name = "%s"
-  algorithm = "INVALID_ALGO"
-}
-`, name)
-}
-
-func testAccBrocadeVTMGLBInvalidGeoEffectTemplate(name string) string {
-	return fmt.Sprintf(`
-resource "brocadevtm_glb" "acctest" {
-  name = "%s"
-  geo_effect = 101
-}
-`, name)
-}
-
-func testAccBrocadeVTMGLBInvalidLocationWeightTemplate(name string) string {
-	return fmt.Sprintf(`
-resource "brocadevtm_glb" "acctest" {
-  name = "%s"
-  location_settings = [
-    {
-      ip_addresses = [ "192.168.234.56", "192.0.2.2" ]
-      location = "example-location-one"
-      weight = 101
-      monitors = [ "glb-example-monitor", "glb-example-monitor2" ]
-    },
-  ]
-}
-`, name)
 }
 
 func testAccBrocadeGLBCreateTemplate(glbName string) string {

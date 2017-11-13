@@ -79,7 +79,7 @@ func resourceGLB() *schema.Resource {
 				Optional:     true,
 				Default:      50,
 				Description:  "How important the client's location is when deciding which location to use",
-				ValidateFunc: validateGeoEffect,
+				ValidateFunc: validation.IntBetween(0, 100),
 			},
 			"ttl": {
 				Type:        schema.TypeInt,
@@ -133,7 +133,7 @@ func resourceGLB() *schema.Resource {
 							Description:  "Weight to be given to this location when using the weighted random algorithm",
 							Optional:     true,
 							Default:      1,
-							ValidateFunc: validateLocationWeight,
+							ValidateFunc: validation.IntBetween(1, 100),
 						},
 						"ip_addresses": {
 							Type:        schema.TypeList,
@@ -189,22 +189,6 @@ func resourceGLB() *schema.Resource {
 			},
 		},
 	}
-}
-
-func validateGeoEffect(v interface{}, k string) (ws []string, errors []error) {
-	geoEffect := v.(int)
-	if geoEffect < 0 || geoEffect > 100 {
-		errors = append(errors, fmt.Errorf("%q must be a whole number between 0 and 100 (percentage)", k))
-	}
-	return
-}
-
-func validateLocationWeight(v interface{}, k string) (ws []string, errors []error) {
-	weight := v.(int)
-	if weight < 1 || weight > 100 {
-		errors = append(errors, fmt.Errorf("%q must be a whole number between 1 and 100", k))
-	}
-	return
 }
 
 func buildLocationSettings(locationSettingsSet *schema.Set) []glb.LocationSetting {
@@ -263,6 +247,7 @@ func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 	name := d.Get("name").(string)
 
 	basic["algorithm"] = d.Get("algorithm").(string)
+
 	basic["all_monitors_needed"] = d.Get("all_monitors_needed").(bool)
 	basic["autorecovery"] = d.Get("auto_recovery").(bool)
 	basic["chained_auto_failback"] = d.Get("chained_auto_failback").(bool)
@@ -270,13 +255,9 @@ func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 	basic["enabled"] = d.Get("enabled").(bool)
 	basic["return_ips_on_fail"] = d.Get("return_ips_on_fail").(bool)
 
-	if v, ok := d.GetOk("geo_effect"); ok {
-		geoEffect := v.(int)
-		basic["geo_effect"] = uint(geoEffect)
-	}
-	if v, ok := d.GetOk("ttl"); ok {
-		basic["ttl"] = v.(int)
-	}
+	basic["geo_effect"] = d.Get("geo_effect").(int)
+	basic["ttl"] = d.Get("ttl").(int)
+
 	if v, ok := d.GetOk("chained_location_order"); ok {
 		basic["chained_location_order"] = util.BuildStringArrayFromInterface(v)
 	}
