@@ -179,6 +179,10 @@ func resourceMonitor() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"tcp",
+					"udp",
+				}, false),
 			},
 			"tcp_close_string": {
 				Type:     schema.TypeString,
