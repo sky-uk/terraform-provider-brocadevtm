@@ -24,9 +24,9 @@ func BuildStringListFromSet(strings *schema.Set) []string {
 }
 
 // AddSimpleAttributeToMap : wrapper for d.Get
-func AddSimpleAttributeToMap(d *schema.ResourceData, mapItem map[string]interface{}, attributeNamePrefix string, attributes []string) map[string]interface{} {
+func AddSimpleAttributesToMap(d *schema.ResourceData, mapItem map[string]interface{}, attributeNamePrefix string, attributeNames []string) map[string]interface{} {
 
-	for _, item := range attributes {
+	for _, item := range attributeNames {
 		attributeName := fmt.Sprintf("%s%s", attributeNamePrefix, item)
 		attributeValue := d.Get(attributeName)
 		switch attributeValue.(type) {
@@ -43,9 +43,9 @@ func AddSimpleAttributeToMap(d *schema.ResourceData, mapItem map[string]interfac
 }
 
 // AddSimpleAttributeOkToMap : wrapper for d.GetOk
-func AddSimpleAttributeOkToMap(d *schema.ResourceData, mapItem map[string]interface{}, attributeNamePrefix string, attributes []string) map[string]interface{} {
+func AddSimpleAttributesOkToMap(d *schema.ResourceData, mapItem map[string]interface{}, attributeNamePrefix string, attributeNames []string) map[string]interface{} {
 
-	for _, item := range attributes {
+	for _, item := range attributeNames {
 		attributeName := fmt.Sprintf("%s%s", attributeNamePrefix, item)
 		if attributeValue, ok := d.GetOk(attributeName); ok {
 			switch attributeValue.(type) {
@@ -61,4 +61,34 @@ func AddSimpleAttributeOkToMap(d *schema.ResourceData, mapItem map[string]interf
 		}
 	}
 	return mapItem
+}
+
+// AddChangedSimpleAttributesToMap : wrapper for d.HasChange & d.Get
+func AddChangedSimpleAttributesToMap(d *schema.ResourceData, mapItem map[string]interface{}, attributeNamePrefix string, attributeNames []string) map[string]interface{} {
+
+	for _, item := range attributeNames {
+		attributeName := fmt.Sprintf("%s%s", attributeNamePrefix, item)
+		if d.HasChange(attributeName) {
+			attributeValue := d.Get(attributeName)
+			switch attributeValue.(type) {
+			case bool:
+				mapItem[item] = attributeValue.(bool)
+			case string:
+				mapItem[item] = attributeValue.(string)
+			case int:
+				mapItem[item] = attributeValue.(int)
+			default:
+			}
+		}
+	}
+	return mapItem
+}
+
+// SetSimpleAttributeFromMap : wrapper for d.Set
+func SetSimpleAttributeFromMap(d *schema.ResourceData, mapItem map[string]interface{}, attributeNamePrefix string, attributeNames []string) {
+
+	for _, item := range attributeNames {
+		attributeName := fmt.Sprintf("%s%s", attributeNamePrefix, item)
+		d.Set(attributeName, mapItem[item])
+	}
 }
