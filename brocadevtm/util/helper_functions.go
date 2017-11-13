@@ -1,6 +1,9 @@
 package util
 
-import "github.com/hashicorp/terraform/helper/schema"
+import (
+	"fmt"
+	"github.com/hashicorp/terraform/helper/schema"
+)
 
 // BuildStringArrayFromInterface : take an interface and convert it into an array of strings
 func BuildStringArrayFromInterface(strings interface{}) []string {
@@ -20,26 +23,42 @@ func BuildStringListFromSet(strings *schema.Set) []string {
 	return stringList
 }
 
-func AddBooleansToMap(d *schema.ResourceData, mapItem map[string]interface{}, boolOptions []string) map[string]interface{} {
+// AddSimpleAttributeToMap : wrapper for d.Get
+func AddSimpleAttributeToMap(d *schema.ResourceData, mapItem map[string]interface{}, attributeNamePrefix string, attributes []string) map[string]interface{} {
 
-	for _, item := range boolOptions {
-		mapItem[item] = d.Get(item).(bool)
+	for _, item := range attributes {
+		attributeName := fmt.Sprintf("%s%s", attributeNamePrefix, item)
+		attributeValue := d.Get(attributeName)
+		switch attributeValue.(type) {
+		case bool:
+			mapItem[item] = attributeValue.(bool)
+		case string:
+			mapItem[item] = attributeValue.(string)
+		case int:
+			mapItem[item] = attributeValue.(int)
+		default:
+		}
 	}
 	return mapItem
 }
 
-func AddIntegersToMap(d *schema.ResourceData, mapItem map[string]interface{}, integerOptions []string) map[string]interface{} {
+// AddSimpleAttributeOkToMap : wrapper for d.GetOk
+func AddSimpleAttributeOkToMap(d *schema.ResourceData, mapItem map[string]interface{}, attributeNamePrefix string, attributes []string) map[string]interface{} {
 
-	for _, item := range integerOptions {
-		mapItem[item] = d.Get(item).(int)
-	}
-	return mapItem
-}
+	for _, item := range attributes {
+		attributeName := fmt.Sprintf("%s%s", attributeNamePrefix, item)
+		if attributeValue, ok := d.GetOk(attributeName); ok {
+			switch attributeValue.(type) {
+			case bool:
+				mapItem[item] = attributeValue.(bool)
+			case string:
+				mapItem[item] = attributeValue.(string)
 
-func AddStringsToMap(d *schema.ResourceData, mapItem map[string]interface{}, stringOptions []string) map[string]interface{} {
-
-	for _, item := range stringOptions {
-		mapItem[item] = d.Get(item).(string)
+			case int:
+				mapItem[item] = attributeValue.(int)
+			default:
+			}
+		}
 	}
 	return mapItem
 }
