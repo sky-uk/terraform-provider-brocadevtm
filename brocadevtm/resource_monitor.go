@@ -240,22 +240,22 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 
 	// Basic section
 	monitorBasicConfiguration := make(map[string]interface{})
-	monitorBasicConfiguration = util.AddSimpleAttributesToMap(d, monitorBasicConfiguration, "", []string{"back_off", "delay", "failures", "machine", "note", "scope", "timeout", "type", "use_ssl", "verbose"})
+	monitorBasicConfiguration = util.AddSimpleGetAttributesToMap(d, monitorBasicConfiguration, "", []string{"back_off", "delay", "failures", "machine", "note", "scope", "timeout", "type", "use_ssl", "verbose"})
 	monitorPropertiesConfiguration["basic"] = monitorBasicConfiguration
 
 	// HTTP Section
 	monitorHTTPConfiguration := make(map[string]interface{})
-	monitorHTTPConfiguration = util.AddSimpleAttributesOkToMap(d, monitorHTTPConfiguration, "http_", []string{"authentication", "host_header", "body_regex", "path", "status_regex"})
+	monitorHTTPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorHTTPConfiguration, "http_", []string{"authentication", "host_header", "body_regex", "path", "status_regex"})
 	monitorPropertiesConfiguration["http"] = monitorHTTPConfiguration
 
 	// RTSP section
 	monitorRTSPConfiguration := make(map[string]interface{})
-	monitorRTSPConfiguration = util.AddSimpleAttributesOkToMap(d, monitorRTSPConfiguration, "rtsp_", []string{"body_regex", "status_regex", "path"})
+	monitorRTSPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorRTSPConfiguration, "rtsp_", []string{"body_regex", "status_regex", "path"})
 	monitorPropertiesConfiguration["rtsp"] = monitorRTSPConfiguration
 
 	// Script section
 	monitorScriptConfiguration := make(map[string]interface{})
-	monitorScriptConfiguration = util.AddSimpleAttributesOkToMap(d, monitorScriptConfiguration, "script_", []string{"program"})
+	monitorScriptConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorScriptConfiguration, "script_", []string{"program"})
 	if v, ok := d.GetOk("script_arguments"); ok {
 		monitorScriptConfiguration["arguments"] = buildScriptArgumentsSection(v.(*schema.Set).List())
 	}
@@ -263,17 +263,17 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 
 	// SIP Section
 	monitorSIPConfiguration := make(map[string]interface{})
-	monitorSIPConfiguration = util.AddSimpleAttributesOkToMap(d, monitorSIPConfiguration, "sip_", []string{"body_regex", "status_regex", "transport"})
+	monitorSIPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorSIPConfiguration, "sip_", []string{"body_regex", "status_regex", "transport"})
 	monitorPropertiesConfiguration["sip"] = monitorSIPConfiguration
 
 	// TCP Section
 	monitorTCPConfiguration := make(map[string]interface{})
-	monitorTCPConfiguration = util.AddSimpleAttributesOkToMap(d, monitorTCPConfiguration, "tcp_", []string{"close_string", "max_response_len", "response_regex", "write_string"})
+	monitorTCPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorTCPConfiguration, "tcp_", []string{"close_string", "max_response_len", "response_regex", "write_string"})
 	monitorPropertiesConfiguration["tcp"] = monitorTCPConfiguration
 
 	// UDP Section
 	monitorUDPConfiguration := make(map[string]interface{})
-	monitorUDPConfiguration = util.AddSimpleAttributesOkToMap(d, monitorUDPConfiguration, "udp_", []string{"accept_all"})
+	monitorUDPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorUDPConfiguration, "udp_", []string{"accept_all"})
 	monitorPropertiesConfiguration["udp"] = monitorUDPConfiguration
 
 	monitorConfiguration["properties"] = monitorPropertiesConfiguration
@@ -305,15 +305,15 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 
 	// Basic Section
 	monitorBasicConfiguration := monitorPropertiesConfiguration["basic"].(map[string]interface{})
-	util.SetSimpleAttributeFromMap(d, monitorBasicConfiguration, "", []string{"back_off", "delay", "failures", "machine", "note", "scope", "timeout", "type", "use_ssl", "verbose"})
+	util.SetSimpleAttributesFromMap(d, monitorBasicConfiguration, "", []string{"back_off", "delay", "failures", "machine", "note", "scope", "timeout", "type", "use_ssl", "verbose"})
 
 	// HTTP Section
 	monitorHTTPConfiguration := monitorPropertiesConfiguration["http"].(map[string]interface{})
-	util.SetSimpleAttributeFromMap(d, monitorHTTPConfiguration, "http_", []string{"host_header", "path", "authentication", "body_regex", "status_regex"})
+	util.SetSimpleAttributesFromMap(d, monitorHTTPConfiguration, "http_", []string{"host_header", "path", "authentication", "body_regex", "status_regex"})
 
 	// RTSP Section
 	monitorRTSPConfiguration := monitorPropertiesConfiguration["rtsp"].(map[string]interface{})
-	util.SetSimpleAttributeFromMap(d, monitorRTSPConfiguration, "rtsp_", []string{"body_regex", "status_regex", "path"})
+	util.SetSimpleAttributesFromMap(d, monitorRTSPConfiguration, "rtsp_", []string{"body_regex", "status_regex", "path"})
 
 	// Script Section
 	monitorScriptConfiguration := monitorPropertiesConfiguration["script"].(map[string]interface{})
@@ -322,11 +322,11 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 
 	// SIP Section
 	monitorSIPConfiguration := monitorPropertiesConfiguration["sip"].(map[string]interface{})
-	util.SetSimpleAttributeFromMap(d, monitorSIPConfiguration, "sip_", []string{"body_regex", "status_regex", "transport"})
+	util.SetSimpleAttributesFromMap(d, monitorSIPConfiguration, "sip_", []string{"body_regex", "status_regex", "transport"})
 
 	// TCP Section
 	monitorTCPConfiguration := monitorPropertiesConfiguration["tcp"].(map[string]interface{})
-	util.SetSimpleAttributeFromMap(d, monitorTCPConfiguration, "tcp_", []string{"close_string", "max_response_len", "response_regex", "write_string"})
+	util.SetSimpleAttributesFromMap(d, monitorTCPConfiguration, "tcp_", []string{"close_string", "max_response_len", "response_regex", "write_string"})
 
 	// UDP Section
 	monitorUDPConfiguration := monitorPropertiesConfiguration["udp"].(map[string]interface{})

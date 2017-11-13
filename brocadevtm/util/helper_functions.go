@@ -23,8 +23,8 @@ func BuildStringListFromSet(strings *schema.Set) []string {
 	return stringList
 }
 
-// AddSimpleAttributeToMap : wrapper for d.Get
-func AddSimpleAttributesToMap(d *schema.ResourceData, mapItem map[string]interface{}, attributeNamePrefix string, attributeNames []string) map[string]interface{} {
+// AddSimpleGetAttributesToMap : wrapper for d.Get
+func AddSimpleGetAttributesToMap(d *schema.ResourceData, mapItem map[string]interface{}, attributeNamePrefix string, attributeNames []string) map[string]interface{} {
 
 	for _, item := range attributeNames {
 		attributeName := fmt.Sprintf("%s%s", attributeNamePrefix, item)
@@ -42,8 +42,8 @@ func AddSimpleAttributesToMap(d *schema.ResourceData, mapItem map[string]interfa
 	return mapItem
 }
 
-// AddSimpleAttributeOkToMap : wrapper for d.GetOk
-func AddSimpleAttributesOkToMap(d *schema.ResourceData, mapItem map[string]interface{}, attributeNamePrefix string, attributeNames []string) map[string]interface{} {
+// AddSimpleGetOkAttributesToMap : wrapper for d.GetOk
+func AddSimpleGetOkAttributesToMap(d *schema.ResourceData, mapItem map[string]interface{}, attributeNamePrefix string, attributeNames []string) map[string]interface{} {
 
 	for _, item := range attributeNames {
 		attributeName := fmt.Sprintf("%s%s", attributeNamePrefix, item)
@@ -84,8 +84,8 @@ func AddChangedSimpleAttributesToMap(d *schema.ResourceData, mapItem map[string]
 	return mapItem
 }
 
-// SetSimpleAttributeFromMap : wrapper for d.Set
-func SetSimpleAttributeFromMap(d *schema.ResourceData, mapItem map[string]interface{}, attributeNamePrefix string, attributeNames []string) {
+// SetSimpleAttributesFromMap : wrapper for d.Set
+func SetSimpleAttributesFromMap(d *schema.ResourceData, mapItem map[string]interface{}, attributeNamePrefix string, attributeNames []string) {
 
 	for _, item := range attributeNames {
 		attributeName := fmt.Sprintf("%s%s", attributeNamePrefix, item)
