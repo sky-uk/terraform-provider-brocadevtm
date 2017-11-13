@@ -44,7 +44,8 @@ func TestAccBrocadeVTMGLBBasic(t *testing.T) {
 			},
 			{
 				Config:      testAccBrocadeVTMGLBInvalidAlgorithmTemplate(glbName),
-				ExpectError: regexp.MustCompile(`must be one of chained, geo, hybrid, load, round_robin or weighted_random`),
+				ExpectError: new(regexp.Regexp([]string{"brocadevtm_glb.acctest: expected algorithm to be one of [chained geo hybrid load round_robin weighted_random], got INVALID_ALGO"})),
+				//ExpectError: regexp.MustCompile(`expected algorithm to be one of [chained geo hybrid load round_robin weighted_random], got INVALID_ALGO`),
 			},
 			{
 				Config:      testAccBrocadeVTMGLBInvalidGeoEffectTemplate(glbName),

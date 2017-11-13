@@ -2,12 +2,13 @@ package brocadevtm
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/glb"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
-	"net/http"
-	"regexp"
 )
 
 func resourceGLB() *schema.Resource {
@@ -25,11 +26,17 @@ func resourceGLB() *schema.Resource {
 				ForceNew:    true,
 			},
 			"algorithm": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Computed:     true,
-				Description:  "GLB Algorithm",
-				ValidateFunc: validateGLBAlgorithm,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "hybrid",
+				Description: "GLB Algorithm",
+				ValidateFunc: validation.StringInSlice([]string{
+					"chained",
+					"geo",
+					"hybrid",
+					"load",
+					"round_robin",
+					"weighted_random"}, false),
 			},
 			"all_monitors_needed": {
 				Type:        schema.TypeBool,
@@ -184,15 +191,6 @@ func resourceGLB() *schema.Resource {
 	}
 }
 
-func validateGLBAlgorithm(v interface{}, k string) (ws []string, errors []error) {
-	algorithm := v.(string)
-	algorithmOptions := regexp.MustCompile(`^(chained|geo|hybrid|load|round_robin|weighted_random)$`)
-	if !algorithmOptions.MatchString(algorithm) {
-		errors = append(errors, fmt.Errorf("%q must be one of chained, geo, hybrid, load, round_robin or weighted_random", k))
-	}
-	return
-}
-
 func validateGeoEffect(v interface{}, k string) (ws []string, errors []error) {
 	geoEffect := v.(int)
 	if geoEffect < 0 || geoEffect > 100 {
@@ -264,6 +262,7 @@ func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 
 	name := d.Get("name").(string)
 
+	basic["algorithm"] = d.Get("algorithm").(string)
 	basic["all_monitors_needed"] = d.Get("all_monitors_needed").(bool)
 	basic["autorecovery"] = d.Get("auto_recovery").(bool)
 	basic["chained_auto_failback"] = d.Get("chained_auto_failback").(bool)
