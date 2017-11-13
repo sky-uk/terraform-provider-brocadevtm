@@ -204,7 +204,7 @@ func resourceMonitor() *schema.Resource {
 			"udp_accept_all": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Computed: true,
+				Default:  false,
 			},
 		},
 	}
@@ -217,11 +217,11 @@ func buildScriptArgumentsSection(scriptArguments interface{}) []map[string]strin
 	for _, item := range scriptArguments.([]interface{}) {
 		scriptArgumentItem := item.(map[string]interface{})
 		monitorScriptArgument := make(map[string]string)
-		argumentOptions := []string{"name", "description", "value"}
+		scriptArgumentAttributes := []string{"name", "description", "value"}
 
-		for _, option := range argumentOptions {
-			if v, ok := scriptArgumentItem[option].(string); ok {
-				monitorScriptArgument[option] = v
+		for _, argumentAttribute := range scriptArgumentAttributes {
+			if v, ok := scriptArgumentItem[argumentAttribute].(string); ok {
+				monitorScriptArgument[argumentAttribute] = v
 			}
 		}
 		monitorScriptArguments = append(monitorScriptArguments, monitorScriptArgument)
