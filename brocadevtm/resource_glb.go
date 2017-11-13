@@ -2,19 +2,18 @@ package brocadevtm
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/glb"
-	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"net/http"
-	"regexp"
+
+	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/sky-uk/go-brocade-vtm/api"
 )
 
 func resourceGLB() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceGLBCreate,
+		Create: resourceGLBSet,
 		Read:   resourceGLBRead,
-		Update: resourceGLBUpdate,
+		Update: resourceGLBSet,
 		Delete: resourceGLBDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -25,11 +24,17 @@ func resourceGLB() *schema.Resource {
 				ForceNew:    true,
 			},
 			"algorithm": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Computed:     true,
-				Description:  "GLB Algorithm",
-				ValidateFunc: validateGLBAlgorithm,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "hybrid",
+				Description: "GLB Algorithm",
+				ValidateFunc: validation.StringInSlice([]string{
+					"chained",
+					"geo",
+					"hybrid",
+					"load",
+					"round_robin",
+					"weighted_random"}, false),
 			},
 			"all_monitors_needed": {
 				Type:        schema.TypeBool,
@@ -37,7 +42,7 @@ func resourceGLB() *schema.Resource {
 				Default:     false,
 				Description: "Whether all assigned monitors in a location need to be working",
 			},
-			"auto_recovery": {
+			"autorecovery": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -72,7 +77,7 @@ func resourceGLB() *schema.Resource {
 				Optional:     true,
 				Default:      50,
 				Description:  "How important the client's location is when deciding which location to use",
-				ValidateFunc: validateGeoEffect,
+				ValidateFunc: validation.IntBetween(0, 100),
 			},
 			"ttl": {
 				Type:        schema.TypeInt,
@@ -81,13 +86,13 @@ func resourceGLB() *schema.Resource {
 				Description: "The TTL for the DNS records handled by the GLB service",
 			},
 			"chained_location_order": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Description: "Locations the GLB service operates in and the order in which locations fail",
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"rules": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Description: "A list of response rules to be applied to the GLB service",
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -126,16 +131,16 @@ func resourceGLB() *schema.Resource {
 							Description:  "Weight to be given to this location when using the weighted random algorithm",
 							Optional:     true,
 							Default:      1,
-							ValidateFunc: validateLocationWeight,
+							ValidateFunc: validation.IntBetween(1, 100),
 						},
-						"ip_addresses": {
-							Type:        schema.TypeList,
+						"ips": {
+							Type:        schema.TypeSet,
 							Description: "IP addresses in the location",
 							Optional:    true,
 							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 						"monitors": {
-							Type:        schema.TypeList,
+							Type:        schema.TypeSet,
 							Description: "Monitors used in the location",
 							Optional:    true,
 							Elem:        &schema.Schema{Type: schema.TypeString},
@@ -143,7 +148,7 @@ func resourceGLB() *schema.Resource {
 					},
 				},
 			},
-			"dns_sec_keys": {
+			"dnssec_keys": {
 				Type:        schema.TypeSet,
 				Description: "Maps keys to domains",
 				Optional:    true,
@@ -154,8 +159,8 @@ func resourceGLB() *schema.Resource {
 							Description: "Domain related to associated keys",
 							Optional:    true,
 						},
-						"ssl_keys": {
-							Type:        schema.TypeList,
+						"ssl_key": {
+							Type:        schema.TypeSet,
 							Description: "Keys for the associated domain",
 							Optional:    true,
 							Elem:        &schema.Schema{Type: schema.TypeString},
@@ -163,156 +168,106 @@ func resourceGLB() *schema.Resource {
 					},
 				},
 			},
-			"logging_enabled": {
-				Type:        schema.TypeBool,
-				Description: "Whether or not to log connections to this GLB service",
-				Optional:    true,
-			},
-			"log_file_name": {
-				Type:        schema.TypeString,
-				Description: "File to log to",
-				Optional:    true,
-				Computed:    true,
-			},
-			"log_format": {
-				Type:        schema.TypeString,
-				Description: "Format to us in log file",
-				Optional:    true,
-				Computed:    true,
+			"log": {
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not to log connections to this GLB service",
+							Optional:    true,
+							Default:     false,
+						},
+						"filename": {
+							Type:        schema.TypeString,
+							Description: "The filename the verbose query information should be logged to. Appliances will ignore this",
+							Optional:    true,
+							Default:     `%zeushome%/zxtm/log/services/%g.log`,
+						},
+						"format": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default:  `%t,%s,%l,%q,%g,%n,%d,%a`,
+						},
+					},
+				},
 			},
 		},
 	}
 }
 
-func validateGLBAlgorithm(v interface{}, k string) (ws []string, errors []error) {
-	algorithm := v.(string)
-	algorithmOptions := regexp.MustCompile(`^(chained|geo|hybrid|load|round_robin|weighted_random)$`)
-	if !algorithmOptions.MatchString(algorithm) {
-		errors = append(errors, fmt.Errorf("%q must be one of chained, geo, hybrid, load, round_robin or weighted_random", k))
-	}
-	return
-}
-
-func validateGeoEffect(v interface{}, k string) (ws []string, errors []error) {
-	geoEffect := v.(int)
-	if geoEffect < 0 || geoEffect > 100 {
-		errors = append(errors, fmt.Errorf("%q must be a whole number between 0 and 100 (percentage)", k))
-	}
-	return
-}
-
-func validateLocationWeight(v interface{}, k string) (ws []string, errors []error) {
-	weight := v.(int)
-	if weight < 1 || weight > 100 {
-		errors = append(errors, fmt.Errorf("%q must be a whole number between 1 and 100", k))
-	}
-	return
-}
-
-func buildLocationSettings(locationSettingsSet *schema.Set) []glb.LocationSetting {
-
-	locationSettingObjects := make([]glb.LocationSetting, 0)
-
-	for _, locationSettingItem := range locationSettingsSet.List() {
-
-		locationSetting := locationSettingItem.(map[string]interface{})
-		locationSettingObject := glb.LocationSetting{}
-		if location, ok := locationSetting["location"].(string); ok {
-			locationSettingObject.Location = location
-		}
-		if weight, ok := locationSetting["weight"].(int); ok {
-			locationSettingObject.Weight = uint(weight)
-		}
-		if ipAddresses, ok := locationSetting["ip_addresses"]; ok {
-			locationSettingObject.IPS = util.BuildStringArrayFromInterface(ipAddresses)
-		}
-		if monitors, ok := locationSetting["monitors"]; ok {
-			locationSettingObject.Monitors = util.BuildStringArrayFromInterface(monitors)
-		}
-		locationSettingObjects = append(locationSettingObjects, locationSettingObject)
-	}
-	return locationSettingObjects
-}
-
-func buildDNSSecKeys(dnsSecKeysSet *schema.Set) []glb.DNSSecKey {
-
-	dnsSecKeyObjects := make([]glb.DNSSecKey, 0)
-
-	for _, dnsSecItem := range dnsSecKeysSet.List() {
-
-		dnsSec := dnsSecItem.(map[string]interface{})
-		dnsSecObject := glb.DNSSecKey{}
-		if domain, ok := dnsSec["domain"].(string); ok {
-			dnsSecObject.Domain = domain
-		}
-		if sslKeys, ok := dnsSec["ssl_keys"]; ok {
-			dnsSecObject.SSLKeys = util.BuildStringArrayFromInterface(sslKeys)
-		}
-		dnsSecKeyObjects = append(dnsSecKeyObjects, dnsSecObject)
-	}
-	return dnsSecKeyObjects
-}
-
-func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
+func resourceGLBSet(d *schema.ResourceData, m interface{}) error {
 
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	var createGLB glb.GLB
-	var name string
 
-	if v, ok := d.GetOk("name"); ok && v != "" {
-		name = v.(string)
-	}
-	if v, ok := d.GetOk("algorithm"); ok && v != "" {
-		createGLB.Properties.Basic.Algorithm = v.(string)
-	}
+	res := make(map[string]interface{})
+	props := make(map[string]interface{})
+	basic := make(map[string]interface{})
 
-	createGLB.Properties.Basic.AllMonitorsNeeded = d.Get("all_monitors_needed").(bool)
-	createGLB.Properties.Basic.AutoRecovery = d.Get("auto_recovery").(bool)
-	createGLB.Properties.Basic.ChainedAutoFailback = d.Get("chained_auto_failback").(bool)
-	createGLB.Properties.Basic.DisableOnFailure = d.Get("disable_on_failure").(bool)
-	createGLB.Properties.Basic.Enabled = d.Get("enabled").(bool)
-	createGLB.Properties.Basic.ReturnIPSOnFail = d.Get("return_ips_on_fail").(bool)
+	name := d.Get("name").(string)
 
-	if v, ok := d.GetOk("geo_effect"); ok {
-		geoEffect := v.(int)
-		createGLB.Properties.Basic.GeoEffect = uint(geoEffect)
-	}
-	if v, ok := d.GetOk("ttl"); ok {
-		createGLB.Properties.Basic.TTL = v.(int)
-	}
+	basic["algorithm"] = d.Get("algorithm").(string)
+
+	basic["all_monitors_needed"] = d.Get("all_monitors_needed").(bool)
+	basic["autorecovery"] = d.Get("autorecovery").(bool)
+	basic["chained_auto_failback"] = d.Get("chained_auto_failback").(bool)
+	basic["disable_on_failure"] = d.Get("disable_on_failure").(bool)
+	basic["enabled"] = d.Get("enabled").(bool)
+	basic["return_ips_on_fail"] = d.Get("return_ips_on_fail").(bool)
+
+	basic["geo_effect"] = d.Get("geo_effect").(int)
+	basic["ttl"] = d.Get("ttl").(int)
+
 	if v, ok := d.GetOk("chained_location_order"); ok {
-		createGLB.Properties.Basic.ChainedLocationOrder = util.BuildStringArrayFromInterface(v)
+		basic["chained_location_order"] = v.(*schema.Set).List()
 	}
 	if v, ok := d.GetOk("rules"); ok {
-		createGLB.Properties.Basic.Rules = util.BuildStringArrayFromInterface(v)
+		basic["rules"] = v.(*schema.Set).List()
 	}
 	if v, ok := d.GetOk("domains"); ok {
-		createGLB.Properties.Basic.Domains = util.BuildStringListFromSet(v.(*schema.Set))
+		basic["domains"] = v.(*schema.Set).List()
 	}
 	if v, ok := d.GetOk("last_resort_response"); ok {
-		createGLB.Properties.Basic.LastResortResponse = util.BuildStringListFromSet(v.(*schema.Set))
+		basic["last_resort_response"] = v.(*schema.Set).List()
 	}
 	if v, ok := d.GetOk("location_draining"); ok {
-		createGLB.Properties.Basic.LocationDraining = util.BuildStringListFromSet(v.(*schema.Set))
+		basic["location_draining"] = v.(*schema.Set).List()
 	}
 	if v, ok := d.GetOk("location_settings"); ok {
-		createGLB.Properties.Basic.LocationSettings = buildLocationSettings(v.(*schema.Set))
-	}
-	if v, ok := d.GetOk("dns_sec_keys"); ok {
-		createGLB.Properties.Basic.DNSSecKeys = buildDNSSecKeys(v.(*schema.Set))
+		ls := v.(*schema.Set).List()
+		locations := make([]map[string]interface{}, 0)
+
+		for _, item := range ls {
+			itemAsMap := item.(map[string]interface{})
+			itemAsMap["ips"] = itemAsMap["ips"].(*schema.Set).List()
+			itemAsMap["monitors"] = itemAsMap["monitors"].(*schema.Set).List()
+			locations = append(locations, itemAsMap)
+		}
+		basic["location_settings"] = locations
 	}
 
-	createGLB.Properties.Log.Enabled = d.Get("logging_enabled").(bool)
+	if v, ok := d.GetOk("dnssec_keys"); ok {
+		dks := v.(*schema.Set).List()
+		dksAsList := make([]map[string]interface{}, 0)
 
-	if v, ok := d.GetOk("log_file_name"); ok && v != "" {
-		createGLB.Properties.Log.Filename = v.(string)
-	}
-	if v, ok := d.GetOk("log_format"); ok && v != "" {
-		createGLB.Properties.Log.Format = v.(string)
+		for _, item := range dks {
+			itemAsMap := item.(map[string]interface{})
+			itemAsMap["ssl_key"] = itemAsMap["ssl_key"].(*schema.Set).List()
+			dksAsList = append(dksAsList, itemAsMap)
+		}
+
+		basic["dnssec_keys"] = dksAsList
 	}
 
-	err := client.Set("glb_services", name, createGLB, nil)
+	props["basic"] = basic
+	logs := d.Get("log").([]interface{})
+	props["log"] = logs[0].(map[string]interface{})
+	res["properties"] = props
+
+	err := client.Set("glb_services", name, res, nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM GLB error whilst creating %s: %v", name, err)
 	}
@@ -324,9 +279,9 @@ func resourceGLBRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 	client.WorkWithConfigurationResources()
-	var glbObject glb.GLB
 
-	err := client.GetByName("glb_services", d.Id(), &glbObject)
+	res := make(map[string]interface{})
+	err := client.GetByName("glb_services", d.Id(), &res)
 
 	if client.StatusCode == http.StatusNotFound {
 		d.SetId("")
@@ -336,148 +291,34 @@ func resourceGLBRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("BrocadeVTM GLB error whilst retrieving %s: %v", d.Id(), err)
 	}
 
-	d.Set("algorithm", glbObject.Properties.Basic.Algorithm)
-	d.Set("all_monitors_needed", glbObject.Properties.Basic.AllMonitorsNeeded)
-	d.Set("auto_recovery", glbObject.Properties.Basic.AutoRecovery)
-	d.Set("chained_auto_failback", glbObject.Properties.Basic.ChainedAutoFailback)
-	d.Set("disable_on_failure", glbObject.Properties.Basic.DisableOnFailure)
-	d.Set("enabled", glbObject.Properties.Basic.Enabled)
-	d.Set("return_ips_on_fail", glbObject.Properties.Basic.ReturnIPSOnFail)
-	d.Set("ttl", glbObject.Properties.Basic.TTL)
-	d.Set("geo_effect", glbObject.Properties.Basic.GeoEffect)
-	d.Set("chained_location_order", glbObject.Properties.Basic.ChainedLocationOrder)
-	d.Set("rules", glbObject.Properties.Basic.Rules)
-	d.Set("domains", glbObject.Properties.Basic.Domains)
-	d.Set("last_resort_response", glbObject.Properties.Basic.LastResortResponse)
-	d.Set("location_draining", glbObject.Properties.Basic.LocationDraining)
-	d.Set("location_settings", glbObject.Properties.Basic.LocationSettings)
-	d.Set("dns_sec_keys", glbObject.Properties.Basic.DNSSecKeys)
-	d.Set("logging_enabled", glbObject.Properties.Log.Enabled)
-	d.Set("log_file_name", glbObject.Properties.Log.Filename)
-	d.Set("log_format", glbObject.Properties.Log.Format)
+	pros := res["properties"].(map[string]interface{})
+	basic := pros["basic"].(map[string]interface{})
+
+	for _, attr := range []string{
+		"algorithm",
+		"all_monitors_needed",
+		"autorecovery",
+		"chained_auto_failback",
+		"chained_location_order",
+		"disable_on_failure",
+		"dnssec_keys",
+		"domains",
+		"enabled",
+		"geo_effect",
+		"last_resort_response",
+		"location_draining",
+		"location_settings",
+		"peer_health_timeout",
+		"return_ips_on_fail",
+		"rules",
+		"ttl",
+	} {
+		d.Set(attr, basic[attr])
+	}
+
+	d.Set("log", pros["log"])
 
 	return nil
-}
-
-func resourceGLBUpdate(d *schema.ResourceData, m interface{}) error {
-
-	hasChanges := false
-	name := d.Id()
-	var updateGLB glb.GLB
-
-	if d.HasChange("algorithm") {
-		if v, ok := d.GetOk("algorithm"); ok && v != "" {
-			updateGLB.Properties.Basic.Algorithm = v.(string)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("all_monitors_needed") {
-		hasChanges = true
-	}
-	updateGLB.Properties.Basic.AllMonitorsNeeded = d.Get("all_monitors_needed").(bool)
-
-	if d.HasChange("auto_recovery") {
-		hasChanges = true
-	}
-	updateGLB.Properties.Basic.AutoRecovery = d.Get("auto_recovery").(bool)
-
-	if d.HasChange("chained_auto_failback") {
-		hasChanges = true
-	}
-	updateGLB.Properties.Basic.ChainedAutoFailback = d.Get("chained_auto_failback").(bool)
-
-	if d.HasChange("disable_on_failure") {
-		hasChanges = true
-	}
-	updateGLB.Properties.Basic.DisableOnFailure = d.Get("disable_on_failure").(bool)
-
-	if d.HasChange("enabled") {
-		hasChanges = true
-	}
-	updateGLB.Properties.Basic.Enabled = d.Get("enabled").(bool)
-
-	if d.HasChange("return_ips_on_fail") {
-		hasChanges = true
-	}
-	updateGLB.Properties.Basic.ReturnIPSOnFail = d.Get("return_ips_on_fail").(bool)
-
-	if d.HasChange("geo_effect") {
-		hasChanges = true
-	}
-	geoEffect := d.Get("geo_effect").(int)
-	updateGLB.Properties.Basic.GeoEffect = uint(geoEffect)
-
-	if d.HasChange("ttl") {
-		hasChanges = true
-	}
-	updateGLB.Properties.Basic.TTL = d.Get("ttl").(int)
-
-	if d.HasChange("chained_location_order") {
-		if v, ok := d.GetOk("chained_location_order"); ok {
-			updateGLB.Properties.Basic.ChainedLocationOrder = util.BuildStringArrayFromInterface(v)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("rules") {
-		if v, ok := d.GetOk("rules"); ok {
-			updateGLB.Properties.Basic.Rules = util.BuildStringArrayFromInterface(v)
-		}
-		hasChanges = true
-	}
-	if d.HasChange("domains") {
-		if v, ok := d.GetOk("domains"); ok {
-			updateGLB.Properties.Basic.Domains = util.BuildStringListFromSet(v.(*schema.Set))
-		}
-		hasChanges = true
-	}
-	if d.HasChange("last_resort_response") {
-		if v, ok := d.GetOk("last_resort_response"); ok {
-			updateGLB.Properties.Basic.LastResortResponse = util.BuildStringListFromSet(v.(*schema.Set))
-		}
-		hasChanges = true
-	}
-	if d.HasChange("location_draining") {
-		if v, ok := d.GetOk("location_draining"); ok {
-			updateGLB.Properties.Basic.LocationDraining = util.BuildStringListFromSet(v.(*schema.Set))
-		}
-		hasChanges = true
-	}
-	if d.HasChange("location_settings") {
-		if v, ok := d.GetOk("location_settings"); ok {
-			updateGLB.Properties.Basic.LocationSettings = buildLocationSettings(v.(*schema.Set))
-		}
-	}
-	if d.HasChange("dns_sec_keys") {
-		if v, ok := d.GetOk("dns_sec_keys"); ok {
-			updateGLB.Properties.Basic.DNSSecKeys = buildDNSSecKeys(v.(*schema.Set))
-		}
-	}
-	if d.HasChange("logging_enabled") {
-		hasChanges = true
-	}
-	updateGLB.Properties.Log.Enabled = d.Get("logging_enabled").(bool)
-
-	if d.HasChange("log_file_name") {
-		if v, ok := d.GetOk("log_file_name"); ok && v != "" {
-			updateGLB.Properties.Log.Filename = v.(string)
-		}
-	}
-	if d.HasChange("log_format") {
-		if v, ok := d.GetOk("log_format"); ok && v != "" {
-			updateGLB.Properties.Log.Format = v.(string)
-		}
-	}
-
-	if hasChanges {
-		config := m.(map[string]interface{})
-		client := config["jsonClient"].(*api.Client)
-		err := client.Set("glb_services", name, updateGLB, nil)
-		if err != nil {
-			return fmt.Errorf("BrocadeVTM GLB error whilst updating %s: %v", name, err)
-		}
-	}
-	d.SetId(name)
-	return resourceGLBRead(d, m)
 }
 
 func resourceGLBDelete(d *schema.ResourceData, m interface{}) error {
