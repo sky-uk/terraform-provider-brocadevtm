@@ -240,20 +240,16 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 
 	// Basic section
 	monitorBasicConfiguration := make(map[string]interface{})
-	monitorBasicConfiguration["back_off"] = d.Get("back_off").(bool)
-	monitorBasicConfiguration["delay"] = d.Get("delay").(int)
-	monitorBasicConfiguration["failures"] = d.Get("failures").(int)
+	util.AddBooleansToMap(d, monitorBasicConfiguration, []string{"back_off", "use_ssl", "verbose"})
+	util.AddIntegersToMap(d, monitorBasicConfiguration, []string{"delay", "failures", "timeout"})
+	util.AddStringsToMap(d, monitorBasicConfiguration, []string{"scope", "type"})
+
 	if v, ok := d.GetOk("machine"); ok {
 		monitorBasicConfiguration["machine"] = v.(string)
 	}
 	if v, ok := d.GetOk("note"); ok {
 		monitorBasicConfiguration["note"] = v.(string)
 	}
-	monitorBasicConfiguration["scope"] = d.Get("scope").(string)
-	monitorBasicConfiguration["timeout"] = d.Get("timeout").(int)
-	monitorBasicConfiguration["type"] = d.Get("type").(string)
-	monitorBasicConfiguration["use_ssl"] = d.Get("use_ssl").(bool)
-	monitorBasicConfiguration["verbose"] = d.Get("verbose").(bool)
 	monitorPropertiesConfiguration["basic"] = monitorBasicConfiguration
 
 	// HTTP Section

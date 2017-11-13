@@ -19,3 +19,27 @@ func BuildStringListFromSet(strings *schema.Set) []string {
 	}
 	return stringList
 }
+
+func AddBooleansToMap(d *schema.ResourceData, mapItem map[string]interface{}, boolOptions []string) map[string]interface{} {
+
+	for _, item := range boolOptions {
+		mapItem[item] = d.Get(item).(bool)
+	}
+	return mapItem
+}
+
+func AddIntegersToMap(d *schema.ResourceData, mapItem map[string]interface{}, integerOptions []string) map[string]interface{} {
+
+	for _, item := range integerOptions {
+		mapItem[item] = d.Get(item).(int)
+	}
+	return mapItem
+}
+
+func AddStringsToMap(d *schema.ResourceData, mapItem map[string]interface{}, stringOptions []string) map[string]interface{} {
+
+	for _, item := range stringOptions {
+		mapItem[item] = d.Get(item).(string)
+	}
+	return mapItem
+}
