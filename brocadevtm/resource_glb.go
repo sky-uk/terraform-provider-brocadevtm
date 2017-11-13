@@ -44,7 +44,7 @@ func resourceGLB() *schema.Resource {
 				Default:     false,
 				Description: "Whether all assigned monitors in a location need to be working",
 			},
-			"auto_recovery": {
+			"autorecovery": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -150,7 +150,7 @@ func resourceGLB() *schema.Resource {
 					},
 				},
 			},
-			"dns_sec_keys": {
+			"dnssec_keys": { // TODO : should be "dnssec_keys"
 				Type:        schema.TypeSet,
 				Description: "Maps keys to domains",
 				Optional:    true,
@@ -249,7 +249,7 @@ func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 	basic["algorithm"] = d.Get("algorithm").(string)
 
 	basic["all_monitors_needed"] = d.Get("all_monitors_needed").(bool)
-	basic["autorecovery"] = d.Get("auto_recovery").(bool)
+	basic["autorecovery"] = d.Get("autorecovery").(bool)
 	basic["chained_auto_failback"] = d.Get("chained_auto_failback").(bool)
 	basic["disable_on_failure"] = d.Get("disable_on_failure").(bool)
 	basic["enabled"] = d.Get("enabled").(bool)
@@ -276,7 +276,7 @@ func resourceGLBCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("location_settings"); ok {
 		basic["location_settings"] = buildLocationSettings(v.(*schema.Set))
 	}
-	if v, ok := d.GetOk("dns_sec_keys"); ok {
+	if v, ok := d.GetOk("dnssec_keys"); ok {
 		basic["dnssec_keys"] = buildDNSSecKeys(v.(*schema.Set))
 	}
 
@@ -306,9 +306,9 @@ func resourceGLBRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 	client.WorkWithConfigurationResources()
-	var glbObject glb.GLB
 
-	err := client.GetByName("glb_services", d.Id(), &glbObject)
+	res := make(map[string]interface{})
+	err := client.GetByName("glb_services", d.Id(), &res)
 
 	if client.StatusCode == http.StatusNotFound {
 		d.SetId("")
@@ -318,9 +318,36 @@ func resourceGLBRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("BrocadeVTM GLB error whilst retrieving %s: %v", d.Id(), err)
 	}
 
+	// lists
+	//chained_location_order
+	//dnssec_keys
+	//domains
+	//last_resort_response
+	//location_draining
+	//location_settings
+	//rules
+
+	// scalars...
+	for _, attr := range []string{
+		"algorithm",
+		"all_monitors_needed",
+		"autorecovery",
+		"chained_auto_failback",
+		"disable_on_failure",
+		"enabled",
+		"geo_effect",
+		"peer_health_timeout",
+		"return_ips_on_fail",
+		"ttl",
+	} {
+		d.Set(attr, res[attr])
+	}
+
+	//... and the log section...
+
 	d.Set("algorithm", glbObject.Properties.Basic.Algorithm)
 	d.Set("all_monitors_needed", glbObject.Properties.Basic.AllMonitorsNeeded)
-	d.Set("auto_recovery", glbObject.Properties.Basic.AutoRecovery)
+	d.Set("autorecovery", glbObject.Properties.Basic.AutoRecovery)
 	d.Set("chained_auto_failback", glbObject.Properties.Basic.ChainedAutoFailback)
 	d.Set("disable_on_failure", glbObject.Properties.Basic.DisableOnFailure)
 	d.Set("enabled", glbObject.Properties.Basic.Enabled)
@@ -333,7 +360,7 @@ func resourceGLBRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("last_resort_response", glbObject.Properties.Basic.LastResortResponse)
 	d.Set("location_draining", glbObject.Properties.Basic.LocationDraining)
 	d.Set("location_settings", glbObject.Properties.Basic.LocationSettings)
-	d.Set("dns_sec_keys", glbObject.Properties.Basic.DNSSecKeys)
+	d.Set("dnssec_keys", glbObject.Properties.Basic.DNSSecKeys)
 	d.Set("logging_enabled", glbObject.Properties.Log.Enabled)
 	d.Set("log_file_name", glbObject.Properties.Log.Filename)
 	d.Set("log_format", glbObject.Properties.Log.Format)
@@ -358,10 +385,10 @@ func resourceGLBUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 	updateGLB.Properties.Basic.AllMonitorsNeeded = d.Get("all_monitors_needed").(bool)
 
-	if d.HasChange("auto_recovery") {
+	if d.HasChange("autorecovery") {
 		hasChanges = true
 	}
-	updateGLB.Properties.Basic.AutoRecovery = d.Get("auto_recovery").(bool)
+	updateGLB.Properties.Basic.AutoRecovery = d.Get("autorecovery").(bool)
 
 	if d.HasChange("chained_auto_failback") {
 		hasChanges = true
@@ -429,8 +456,8 @@ func resourceGLBUpdate(d *schema.ResourceData, m interface{}) error {
 			updateGLB.Properties.Basic.LocationSettings = buildLocationSettings(v.(*schema.Set))
 		}
 	}
-	if d.HasChange("dns_sec_keys") {
-		if v, ok := d.GetOk("dns_sec_keys"); ok {
+	if d.HasChange("dnssec_keys") {
+		if v, ok := d.GetOk("dnssec_keys"); ok {
 			updateGLB.Properties.Basic.DNSSecKeys = buildDNSSecKeys(v.(*schema.Set))
 		}
 	}
