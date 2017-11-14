@@ -5,7 +5,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/monitor"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"net/http"
 )
@@ -26,7 +25,7 @@ func resourceMonitor() *schema.Resource {
 			"back_off": {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Default:     true,
+				Default:     false,
 				Description: "Should the monitor slowly increase the delay after it has failed?",
 			},
 			"delay": {
@@ -180,6 +179,10 @@ func resourceMonitor() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"tcp",
+					"udp",
+				}, false),
 			},
 			"tcp_close_string": {
 				Type:     schema.TypeString,
@@ -187,9 +190,10 @@ func resourceMonitor() *schema.Resource {
 				Computed: true,
 			},
 			"tcp_max_response_len": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"tcp_response_regex": {
 				Type:     schema.TypeString,
@@ -204,152 +208,121 @@ func resourceMonitor() *schema.Resource {
 			"udp_accept_all": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Computed: true,
+				Default:  false,
 			},
 		},
 	}
 }
 
+func buildScriptArgumentsSection(scriptArguments interface{}) []map[string]string {
+
+	monitorScriptArguments := make([]map[string]string, 0)
+
+	for _, item := range scriptArguments.([]interface{}) {
+		scriptArgumentItem := item.(map[string]interface{})
+		monitorScriptArgument := make(map[string]string)
+		scriptArgumentAttributes := []string{"name", "description", "value"}
+
+		for _, argumentAttribute := range scriptArgumentAttributes {
+			if v, ok := scriptArgumentItem[argumentAttribute].(string); ok {
+				monitorScriptArgument[argumentAttribute] = v
+			}
+		}
+		monitorScriptArguments = append(monitorScriptArguments, monitorScriptArgument)
+	}
+	return monitorScriptArguments
+}
+
+func getMonitorMapAttributeList(mapName string) []string {
+
+	var attributes []string
+
+	switch mapName {
+	case "basic":
+		attributes = []string{"back_off", "delay", "failures", "machine", "note", "scope", "timeout", "type", "use_ssl", "verbose"}
+	case "http":
+		attributes = []string{"authentication", "host_header", "body_regex", "path", "status_regex"}
+	case "rtsp":
+		attributes = []string{"body_regex", "status_regex", "path"}
+	case "script":
+		attributes = []string{"program"}
+	case "sip":
+		attributes = []string{"body_regex", "status_regex", "transport"}
+	case "tcp":
+		attributes = []string{"close_string", "max_response_len", "response_regex", "write_string"}
+	case "udp":
+		attributes = []string{"accept_all"}
+	default:
+		attributes = []string{}
+	}
+	return attributes
+}
+
 func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 
-	var createMonitor monitor.Monitor
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
+	monitorConfiguration := make(map[string]interface{})
+	monitorPropertiesConfiguration := make(map[string]interface{})
 
 	name := d.Get("name").(string)
 
-	if v, ok := d.GetOk("back_off"); ok {
-		backOffFlag := v.(bool)
-		createMonitor.Properties.Basic.BackOff = &backOffFlag
-	}
-	if v, ok := d.GetOk("delay"); ok {
-		delay := v.(int)
-		createMonitor.Properties.Basic.Delay = uint(delay)
-	}
-	if v, ok := d.GetOk("failures"); ok {
-		failures := v.(int)
-		createMonitor.Properties.Basic.Failures = uint(failures)
-	}
-	if v, ok := d.GetOk("machine"); ok {
-		createMonitor.Properties.Basic.Machine = v.(string)
-	}
-	if v, ok := d.GetOk("note"); ok {
-		createMonitor.Properties.Basic.Note = v.(string)
-	}
-	if v, ok := d.GetOk("scope"); ok {
-		createMonitor.Properties.Basic.Scope = v.(string)
-	}
-	if v, ok := d.GetOk("timeout"); ok {
-		timeout := v.(int)
-		createMonitor.Properties.Basic.Timeout = uint(timeout)
-	}
-	if v, ok := d.GetOk("type"); ok {
-		createMonitor.Properties.Basic.Type = v.(string)
-	}
-	if v, ok := d.GetOk("use_ssl"); ok {
-		monitorSSL := v.(bool)
-		createMonitor.Properties.Basic.UseSSL = &monitorSSL
-	}
-	if v, ok := d.GetOk("verbose"); ok {
-		monitorVerbosity := v.(bool)
-		createMonitor.Properties.Basic.Verbose = &monitorVerbosity
-	}
-	if v, ok := d.GetOk("http_host_header"); ok {
-		createMonitor.Properties.HTTP.HostHeader = v.(string)
-	}
-	if v, ok := d.GetOk("http_path"); ok {
-		createMonitor.Properties.HTTP.URIPath = v.(string)
-	}
-	if v, ok := d.GetOk("http_authentication"); ok {
-		createMonitor.Properties.HTTP.Authentication = v.(string)
-	}
-	if v, ok := d.GetOk("http_body_regex"); ok {
-		createMonitor.Properties.HTTP.BodyRegex = v.(string)
-	}
-	if v, ok := d.GetOk("http_status_regex"); ok {
-		createMonitor.Properties.HTTP.StatusRegex = v.(string)
-	}
-	if v, ok := d.GetOk("rtsp_body_regex"); ok {
-		createMonitor.Properties.RTSP.BodyRegex = v.(string)
-	}
-	if v, ok := d.GetOk("rtsp_status_regex"); ok {
-		createMonitor.Properties.RTSP.StatusRegex = v.(string)
-	}
-	if v, ok := d.GetOk("rtsp_path"); ok {
-		createMonitor.Properties.RTSP.URIPath = v.(string)
-	}
-	if v, ok := d.GetOk("script_program"); ok {
-		createMonitor.Properties.SCRIPT.Program = v.(string)
-	}
+	// Basic section
+	monitorBasicConfiguration := make(map[string]interface{})
+	monitorBasicConfiguration = util.AddSimpleGetAttributesToMap(d, monitorBasicConfiguration, "", getMonitorMapAttributeList("basic"))
+	monitorPropertiesConfiguration["basic"] = monitorBasicConfiguration
+
+	// HTTP Section
+	monitorHTTPConfiguration := make(map[string]interface{})
+	monitorHTTPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorHTTPConfiguration, "http_", getMonitorMapAttributeList("http"))
+	monitorPropertiesConfiguration["http"] = monitorHTTPConfiguration
+
+	// RTSP section
+	monitorRTSPConfiguration := make(map[string]interface{})
+	monitorRTSPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorRTSPConfiguration, "rtsp_", getMonitorMapAttributeList("rtsp"))
+	monitorPropertiesConfiguration["rtsp"] = monitorRTSPConfiguration
+
+	// Script section
+	monitorScriptConfiguration := make(map[string]interface{})
+	monitorScriptConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorScriptConfiguration, "script_", getMonitorMapAttributeList("script"))
 	if v, ok := d.GetOk("script_arguments"); ok {
-		if arguments, ok := v.(*schema.Set); ok {
-			argumentsList := []monitor.ArgumentIssue{}
-			for _, value := range arguments.List() {
-				argumentsObject := value.(map[string]interface{})
-				newArguments := monitor.ArgumentIssue{}
-				if nameValue, ok := argumentsObject["name"].(string); ok {
-					newArguments.Name = nameValue
-				}
-				if descriptionValue, ok := argumentsObject["description"].(string); ok {
-					newArguments.Description = descriptionValue
-				}
-				if valueValue, ok := argumentsObject["value"].(string); ok {
-					newArguments.Value = valueValue
-				}
-				argumentsList = append(argumentsList, newArguments)
+		monitorScriptConfiguration["arguments"] = buildScriptArgumentsSection(v.(*schema.Set).List())
+	}
+	monitorPropertiesConfiguration["script"] = monitorScriptConfiguration
 
-			}
-			createMonitor.Properties.SCRIPT.Arguments = argumentsList
-		}
-	}
+	// SIP Section
+	monitorSIPConfiguration := make(map[string]interface{})
+	monitorSIPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorSIPConfiguration, "sip_", getMonitorMapAttributeList("sip"))
+	monitorPropertiesConfiguration["sip"] = monitorSIPConfiguration
 
-	if v, ok := d.GetOk("sip_body_regex"); ok {
-		createMonitor.Properties.SIP.BodyRegex = v.(string)
-	}
-	if v, ok := d.GetOk("sip_status_regex"); ok {
-		createMonitor.Properties.SIP.StatusRegex = v.(string)
-	}
-	if v, ok := d.GetOk("sip_transport"); ok {
-		createMonitor.Properties.SIP.Transport = v.(string)
-	}
-	if v, ok := d.GetOk("tcp_close_string"); ok {
-		createMonitor.Properties.TCP.CloseString = v.(string)
-	}
-	if v, ok := d.GetOk("tcp_max_response_len"); ok {
-		createMonitor.Properties.TCP.MaxResponseLen = uint(v.(int))
-	}
-	if v, ok := d.GetOk("tcp_response_regex"); ok {
-		createMonitor.Properties.TCP.ResponseRegex = v.(string)
-	}
-	if v, ok := d.GetOk("tcp_write_string"); ok {
-		createMonitor.Properties.TCP.WriteString = v.(string)
-	}
-	if v, ok := d.GetOk("udp_accept_all"); ok {
-		monitorAcceptAll := v.(bool)
-		createMonitor.Properties.UDP.AcceptAll = &monitorAcceptAll
-	}
+	// TCP Section
+	monitorTCPConfiguration := make(map[string]interface{})
+	monitorTCPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorTCPConfiguration, "tcp_", getMonitorMapAttributeList("tcp"))
+	monitorPropertiesConfiguration["tcp"] = monitorTCPConfiguration
 
-	err := client.Set("monitors", name, createMonitor, nil)
+	// UDP Section
+	monitorUDPConfiguration := make(map[string]interface{})
+	monitorUDPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorUDPConfiguration, "udp_", getMonitorMapAttributeList("udp"))
+	monitorPropertiesConfiguration["udp"] = monitorUDPConfiguration
 
+	monitorConfiguration["properties"] = monitorPropertiesConfiguration
+	err := client.Set("monitors", name, monitorConfiguration, nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Monitor error whilst creating %s: %v", name, err)
 	}
-
 	d.SetId(name)
 	return resourceMonitorRead(d, m)
-
 }
 
 func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 
-	var readMonitor monitor.Monitor
+	name := d.Id()
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-
-	name := d.Get("name").(string)
+	monitorConfiguration := make(map[string]interface{})
 
 	client.WorkWithConfigurationResources()
-	err := client.GetByName("monitors", name, &readMonitor)
+	err := client.GetByName("monitors", name, &monitorConfiguration)
 	if client.StatusCode == http.StatusNotFound {
 		d.SetId("")
 		return nil
@@ -357,212 +330,92 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Monitor error whilst retrieving %s: %v", name, err)
 	}
+	monitorPropertiesConfiguration := monitorConfiguration["properties"].(map[string]interface{})
 
-	d.Set("name", name)
-	d.Set("back_off", *readMonitor.Properties.Basic.BackOff)
-	d.Set("delay", readMonitor.Properties.Basic.Delay)
-	d.Set("failures", readMonitor.Properties.Basic.Failures)
-	d.Set("machine", readMonitor.Properties.Basic.Machine)
-	d.Set("note", readMonitor.Properties.Basic.Note)
-	d.Set("scope", readMonitor.Properties.Basic.Scope)
-	d.Set("timeout", readMonitor.Properties.Basic.Timeout)
-	d.Set("type", readMonitor.Properties.Basic.Type)
-	d.Set("use_ssl", *readMonitor.Properties.Basic.UseSSL)
-	d.Set("verbose", *readMonitor.Properties.Basic.Verbose)
-	d.Set("http_host_header", readMonitor.Properties.HTTP.HostHeader)
-	d.Set("http_path", readMonitor.Properties.HTTP.URIPath)
-	d.Set("http_authentication", readMonitor.Properties.HTTP.Authentication)
-	d.Set("http_body_regex", readMonitor.Properties.HTTP.BodyRegex)
-	d.Set("http_status_regex", readMonitor.Properties.HTTP.StatusRegex)
-	d.Set("rtsp_body_regex", readMonitor.Properties.RTSP.BodyRegex)
-	d.Set("rtsp_status_regex", readMonitor.Properties.RTSP.StatusRegex)
-	d.Set("rtsp_path", readMonitor.Properties.RTSP.URIPath)
-	d.Set("script_program", readMonitor.Properties.SCRIPT.Program)
-	d.Set("script_arguments", readMonitor.Properties.SCRIPT.Arguments)
-	d.Set("sip_body_regex", readMonitor.Properties.SIP.BodyRegex)
-	d.Set("sip_status_regex", readMonitor.Properties.SIP.StatusRegex)
-	d.Set("sip_transport", readMonitor.Properties.SIP.Transport)
-	d.Set("tcp_close_string", readMonitor.Properties.TCP.CloseString)
-	d.Set("tcp_max_response_len", readMonitor.Properties.TCP.MaxResponseLen)
-	d.Set("tcp_response_regex", readMonitor.Properties.TCP.ResponseRegex)
-	d.Set("tcp_write_string", readMonitor.Properties.TCP.WriteString)
-	d.Set("udp_accept_all", readMonitor.Properties.UDP.AcceptAll)
+	// Basic Section
+	monitorBasicConfiguration := monitorPropertiesConfiguration["basic"].(map[string]interface{})
+	util.SetSimpleAttributesFromMap(d, monitorBasicConfiguration, "", getMonitorMapAttributeList("basic"))
+
+	// HTTP Section
+	monitorHTTPConfiguration := monitorPropertiesConfiguration["http"].(map[string]interface{})
+	util.SetSimpleAttributesFromMap(d, monitorHTTPConfiguration, "http_", getMonitorMapAttributeList("http"))
+
+	// RTSP Section
+	monitorRTSPConfiguration := monitorPropertiesConfiguration["rtsp"].(map[string]interface{})
+	util.SetSimpleAttributesFromMap(d, monitorRTSPConfiguration, "rtsp_", getMonitorMapAttributeList("rtsp"))
+
+	// Script Section
+	monitorScriptConfiguration := monitorPropertiesConfiguration["script"].(map[string]interface{})
+	d.Set("script_program", monitorScriptConfiguration["program"])
+	d.Set("script_arguments", buildScriptArgumentsSection(monitorScriptConfiguration["arguments"]))
+
+	// SIP Section
+	monitorSIPConfiguration := monitorPropertiesConfiguration["sip"].(map[string]interface{})
+	util.SetSimpleAttributesFromMap(d, monitorSIPConfiguration, "sip_", getMonitorMapAttributeList("sip"))
+
+	// TCP Section
+	monitorTCPConfiguration := monitorPropertiesConfiguration["tcp"].(map[string]interface{})
+	util.SetSimpleAttributesFromMap(d, monitorTCPConfiguration, "tcp_", getMonitorMapAttributeList("tcp"))
+
+	// UDP Section
+	monitorUDPConfiguration := monitorPropertiesConfiguration["udp"].(map[string]interface{})
+	d.Set("udp_accept_all", monitorUDPConfiguration["accept_all"])
+
 	return nil
 }
 
 func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
 
+	name := d.Id()
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	var updateMonitor monitor.Monitor
 
-	name := d.Get("name").(string)
+	monitorConfiguration := make(map[string]interface{})
+	monitorPropertiesConfiguration := make(map[string]interface{})
 
-	if d.HasChange("back_off") {
-		backOffFlag := d.Get("back_off").(bool)
-		updateMonitor.Properties.Basic.BackOff = &backOffFlag
-	}
-	if d.HasChange("delay") {
-		if v, ok := d.GetOk("delay"); ok {
-			delay := v.(int)
-			updateMonitor.Properties.Basic.Delay = uint(delay)
-		}
-	}
-	if d.HasChange("failures") {
-		if v, ok := d.GetOk("failures"); ok {
-			failures := v.(int)
-			updateMonitor.Properties.Basic.Failures = uint(failures)
-		}
-	}
-	if d.HasChange("machine") {
-		if v, ok := d.GetOk("machine"); ok {
-			updateMonitor.Properties.Basic.Machine = v.(string)
-		}
-	}
-	if d.HasChange("note") {
-		if v, ok := d.GetOk("note"); ok {
-			updateMonitor.Properties.Basic.Note = v.(string)
-		}
-	}
-	if d.HasChange("scope") {
-		if v, ok := d.GetOk("scope"); ok {
-			updateMonitor.Properties.Basic.Scope = v.(string)
-		}
-	}
-	if d.HasChange("timeout") {
-		if v, ok := d.GetOk("timeout"); ok {
-			timeout := v.(int)
-			updateMonitor.Properties.Basic.Timeout = uint(timeout)
-		}
-	}
-	if d.HasChange("type") {
-		if v, ok := d.GetOk("type"); ok {
-			updateMonitor.Properties.Basic.Type = v.(string)
-		}
-	}
-	if d.HasChange("verbose") {
-		monitorVerbosity := d.Get("verbose").(bool)
-		updateMonitor.Properties.Basic.Verbose = &monitorVerbosity
-	}
-	if d.HasChange("use_ssl") {
-		monitorSSL := d.Get("use_ssl").(bool)
-		updateMonitor.Properties.Basic.UseSSL = &monitorSSL
-	}
-	if d.HasChange("http_host_header") {
-		if v, ok := d.GetOk("http_host_header"); ok {
-			updateMonitor.Properties.HTTP.HostHeader = v.(string)
-		}
-	}
-	if d.HasChange("http_path") {
-		if v, ok := d.GetOk("http_path"); ok {
-			updateMonitor.Properties.HTTP.URIPath = v.(string)
-		}
-	}
-	if d.HasChange("http_authentication") {
-		if v, ok := d.GetOk("http_authentication"); ok {
-			updateMonitor.Properties.HTTP.Authentication = v.(string)
-		}
-	}
-	if d.HasChange("http_body_regex") {
-		if v, ok := d.GetOk("http_body_regex"); ok {
-			updateMonitor.Properties.HTTP.BodyRegex = v.(string)
-		}
-	}
-	if d.HasChange("http_status_regex") {
-		if v, ok := d.GetOk("http_status_regex"); ok {
-			updateMonitor.Properties.HTTP.StatusRegex = v.(string)
-		}
-	}
-	if d.HasChange("rtsp_status_regex") {
-		if v, ok := d.GetOk("rtsp_status_regex"); ok {
-			updateMonitor.Properties.RTSP.StatusRegex = v.(string)
-		}
-	}
-	if d.HasChange("rtsp_body_regex") {
-		if v, ok := d.GetOk("rtsp_body_regex"); ok {
-			updateMonitor.Properties.RTSP.BodyRegex = v.(string)
-		}
-	}
-	if d.HasChange("rtsp_path") {
-		if v, ok := d.GetOk("rtsp_path"); ok {
-			updateMonitor.Properties.RTSP.URIPath = v.(string)
-		}
-	}
+	// Basic Section
+	monitorBasicConfiguration := make(map[string]interface{})
+	monitorBasicConfiguration = util.AddChangedSimpleAttributesToMap(d, monitorBasicConfiguration, "", getMonitorMapAttributeList("basic"))
+	monitorPropertiesConfiguration["basic"] = monitorBasicConfiguration
+
+	// HTTP Section
+	monitorHTTPConfiguration := make(map[string]interface{})
+	monitorHTTPConfiguration = util.AddChangedSimpleAttributesToMap(d, monitorHTTPConfiguration, "http_", getMonitorMapAttributeList("http"))
+	monitorPropertiesConfiguration["http"] = monitorHTTPConfiguration
+
+	// RTSP Section
+	monitorRTSPConfiguration := make(map[string]interface{})
+	monitorRTSPConfiguration = util.AddChangedSimpleAttributesToMap(d, monitorRTSPConfiguration, "rtsp_", getMonitorMapAttributeList("rtsp"))
+	monitorPropertiesConfiguration["rtsp"] = monitorRTSPConfiguration
+
+	// Script Section
+	monitorScriptConfiguration := make(map[string]interface{})
+	monitorScriptConfiguration = util.AddChangedSimpleAttributesToMap(d, monitorScriptConfiguration, "script_", getMonitorMapAttributeList("script"))
 	if d.HasChange("script_arguments") {
-		if v, ok := d.GetOk("script_arguments"); ok {
-			if arguments, ok := v.(*schema.Set); ok {
-				argumentsList := []monitor.ArgumentIssue{}
-				for _, value := range arguments.List() {
-					argumentsObject := value.(map[string]interface{})
-					newArguments := monitor.ArgumentIssue{}
-					if nameValue, ok := argumentsObject["name"].(string); ok {
-						newArguments.Name = nameValue
-					}
-					if descriptionValue, ok := argumentsObject["description"].(string); ok {
-						newArguments.Description = descriptionValue
-					}
-					if valueValue, ok := argumentsObject["value"].(string); ok {
-						newArguments.Value = valueValue
-					}
-					argumentsList = append(argumentsList, newArguments)
+		monitorScriptConfiguration["arguments"] = buildScriptArgumentsSection(d.Get("script_arguments").(*schema.Set).List())
+	}
+	monitorPropertiesConfiguration["script"] = monitorScriptConfiguration
 
-				}
-				updateMonitor.Properties.SCRIPT.Arguments = argumentsList
-			}
-		}
-	}
-	if d.HasChange("script_program") {
-		if v, ok := d.GetOk("script_program"); ok {
-			updateMonitor.Properties.SCRIPT.Program = v.(string)
-		}
-	}
-	if d.HasChange("sip_body_regex") {
-		if v, ok := d.GetOk("sip_body_regex"); ok {
-			updateMonitor.Properties.SIP.BodyRegex = v.(string)
-		}
-	}
-	if d.HasChange("sip_status_regex") {
-		if v, ok := d.GetOk("sip_status_regex"); ok {
-			updateMonitor.Properties.SIP.StatusRegex = v.(string)
-		}
-	}
-	if d.HasChange("sip_transport") {
-		if v, ok := d.GetOk("sip_transport"); ok {
-			updateMonitor.Properties.SIP.StatusRegex = v.(string)
-		}
-	}
-	if d.HasChange("tcp_close_string") {
-		if v, ok := d.GetOk("tcp_close_string"); ok {
-			updateMonitor.Properties.TCP.CloseString = v.(string)
-		}
-	}
-	if d.HasChange("tcp_max_response_len") {
-		if v, ok := d.GetOk("tcp_max_response_len"); ok {
-			updateMonitor.Properties.TCP.MaxResponseLen = uint(v.(int))
-		}
-	}
-	if d.HasChange("tcp_response_regex") {
-		if v, ok := d.GetOk("tcp_response_regex"); ok {
-			updateMonitor.Properties.TCP.ResponseRegex = v.(string)
-		}
-	}
-	if d.HasChange("tcp_write_string") {
-		if v, ok := d.GetOk("tcp_write_string"); ok {
-			updateMonitor.Properties.TCP.WriteString = v.(string)
-		}
-	}
-	if d.HasChange("udp_accept_all") {
-		if v, ok := d.GetOk("udp_accept_all"); ok {
-			monitorAcceptAll := v.(bool)
-			updateMonitor.Properties.UDP.AcceptAll = &monitorAcceptAll
-		}
-	}
+	// SIP Section
+	monitorSIPConfiguration := make(map[string]interface{})
+	monitorSIPConfiguration = util.AddChangedSimpleAttributesToMap(d, monitorSIPConfiguration, "sip_", getMonitorMapAttributeList("sip"))
+	monitorPropertiesConfiguration["sip"] = monitorSIPConfiguration
 
-	err := client.Set("monitors", name, updateMonitor, nil)
+	// TCP Section
+	monitorTCPConfiguration := make(map[string]interface{})
+	monitorTCPConfiguration = util.AddChangedSimpleAttributesToMap(d, monitorTCPConfiguration, "tcp_", getMonitorMapAttributeList("tcp"))
+	monitorPropertiesConfiguration["tcp"] = monitorTCPConfiguration
+
+	// UDP Section
+	monitorUDPConfiguration := make(map[string]interface{})
+	monitorUDPConfiguration = util.AddChangedSimpleAttributesToMap(d, monitorUDPConfiguration, "udp_", getMonitorMapAttributeList("udp"))
+	monitorPropertiesConfiguration["udp"] = monitorUDPConfiguration
+
+	monitorConfiguration["properties"] = monitorPropertiesConfiguration
+	err := client.Set("monitors", name, monitorConfiguration, nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Monitor error whilst updating %s: %s", name, err)
 	}
-
 	return resourceMonitorRead(d, m)
 }
 
