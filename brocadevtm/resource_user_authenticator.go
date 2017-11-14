@@ -5,8 +5,10 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_authenticator"
+	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"net/http"
 )
 
@@ -35,7 +37,7 @@ func resourceUserAuthenticator() *schema.Resource {
 			"type": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validateAuthenticationType,
+				ValidateFunc: validation.StringInSlice([]string{"ldap", "radius", "tacacs_plus"}, false),
 			},
 			"ldap": {
 				Type:     schema.TypeList,
@@ -57,7 +59,7 @@ func resourceUserAuthenticator() *schema.Resource {
 							Type:         schema.TypeString,
 							Description:  "FQDN of the member pair",
 							Optional:     true,
-							ValidateFunc: validateDistinguishedNameMethod,
+							ValidateFunc: validation.StringInSlice([]string{"construct", "none", "search"}, false),
 						},
 						"fallback_group": {
 							Type:        schema.TypeString,
@@ -185,7 +187,7 @@ func resourceUserAuthenticator() *schema.Resource {
 							Description:  "Authentication type to use",
 							Optional:     true,
 							Default:      "pap",
-							ValidateFunc: validateTACACSPlusAuthenticationType,
+							ValidateFunc: validation.StringInSlice([]string{"ascii", "pap"}),
 						},
 						"fallback_group": {
 							Type:        schema.TypeString,
@@ -234,53 +236,20 @@ func resourceUserAuthenticator() *schema.Resource {
 	}
 }
 
-// validateAuthenticationType : Validates that the authentication type entered is supported
-func validateAuthenticationType(v interface{}, k string) (ws []string, errors []error) {
-	switch strings.ToLower(v.(string)) {
-	case
-		"ldap",
-		"radius",
-		"tacacs_plus":
-		return
-	}
-	errors = append(errors, fmt.Errorf("Access level must be one of ldap, radius or tacacs_plus"))
-	return
-}
-
-// validateTACACSPlusAuthenticationType : Validates that the authentication type entered is supported
-func validateTACACSPlusAuthenticationType(v interface{}, k string) (ws []string, errors []error) {
-	switch strings.ToLower(v.(string)) {
-	case
-		"ascii",
-		"pap":
-		return
-	}
-	errors = append(errors, fmt.Errorf("Access level must be one of ascii or pap"))
-	return
-}
-
-// validateDistinguishedNameMethod : Validates that the Distinguished Name method entered is supported
-func validateDistinguishedNameMethod(v interface{}, k string) (ws []string, errors []error) {
-	switch strings.ToLower(v.(string)) {
-	case
-		"construct",
-		"none",
-		"search":
-		return
-	}
-	errors = append(errors, fmt.Errorf("Access level must be one of construct, none or search"))
-	return
-}
-
 func resourceUserAuthenticatorCreate(d *schema.ResourceData, m interface{}) error {
-	var userAuthenticator userAuthenticator.UserAuthenticator
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 
-	userAuthenticatorName := d.Get("name").(string)
+	res := make(map[string]interface{})
+	props := make(map[string]interface{})
+	basic := make(map[string]interface{})
+
+	name := d.Get("name").(string)
+
+	util.AddSimpleGetAttributesToMap
 
 	if v, ok := d.GetOk("description"); ok {
-		userAuthenticator.Properties.Basic.Description = v.(string)
+		basic["description"] = v.(string)
 	}
 	if v, ok := d.GetOk("enabled"); ok {
 		userAuthenticator.Properties.Basic.Enabled = v.(bool)
@@ -313,11 +282,11 @@ func resourceUserAuthenticatorCreate(d *schema.ResourceData, m interface{}) erro
 		userAuthenticator.TACACSPlus = assignTACACSPlusValues(tacacsPlusList)
 	}
 
-	err := client.Set("user_authenticators", userAuthenticatorName, &userAuthenticator, nil)
+	err := client.Set("user_authenticators", name, &userAuthenticator, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst creating user authenticator %s: %v", userAuthenticatorName, err)
+		return fmt.Errorf("BrocadeVTM error whilst creating user authenticator %s: %v", name, err)
 	}
-	d.SetId(userAuthenticatorName)
+	d.SetId(name)
 	return resourceUserAuthenticatorRead(d, m)
 }
 
