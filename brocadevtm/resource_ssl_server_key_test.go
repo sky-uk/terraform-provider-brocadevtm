@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/ssl_server_key"
 
 	"github.com/sky-uk/go-brocade-vtm/api"
 )
@@ -96,8 +95,8 @@ func testAccBrocadeVTMSSLServerKeyExists(sslServerKeyName, sslServerKeyResourceN
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
 		client.WorkWithConfigurationResources()
-		var sslKeyName sslServerKey.SSLServerKey
-		err := client.GetByName("ssl/server_keys", sslServerKeyName, &sslKeyName)
+		res := make(map[string]interface{})
+		err := client.GetByName("ssl/server_keys", sslServerKeyName, &res)
 		if err != nil {
 			return fmt.Errorf("Brocade vTM error whilst retrieving SSL Server Key: %+v", err)
 		}
