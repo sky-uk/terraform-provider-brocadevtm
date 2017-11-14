@@ -794,19 +794,18 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	//var nodesTableDefined, nodesListDefined bool
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	monitorConfiguration := make(map[string]interface{})
-	monitorPropertiesConfiguration := make(map[string]interface{})
+	poolConfiguration := make(map[string]interface{})
+	poolPropertiesConfiguration := make(map[string]interface{})
 
 	poolName := d.Get("name").(string)
 
 	// basic section
-	monitorBasicConfiguration := make(map[string]interface{})
-	monitorBasicConfiguration = util.AddSimpleGetAttributesToMap(d, monitorBasicConfiguration, "", getPoolMapAttributeList("basic"))
-	monitorBasicConfiguration["monitors"] = util.BuildStringArrayFromInterface(d.Get("monitors"))
+	poolBasicConfiguration := make(map[string]interface{})
+	poolBasicConfiguration = util.AddSimpleGetAttributesToMap(d, poolBasicConfiguration, "", getPoolMapAttributeList("basic"))
+	poolBasicConfiguration["monitors"] = util.BuildStringArrayFromInterface(d.Get("monitors"))
 
 	if v, ok := d.GetOk("nodes_table"); ok {
-		//monitorBasicConfiguration["nodes_table"] = buildNodesTable(v.(*schema.Set).List(), "nodes_table")
-		monitorBasicConfiguration["nodes_table"] = util.BuildListMaps(v.(*schema.Set).List(), getPoolMapAttributeList("nodes_table"))
+		poolBasicConfiguration["nodes_table"] = util.BuildListMaps(v.(*schema.Set).List(), getPoolMapAttributeList("nodes_table"))
 		//nodesTableDefined = true
 	} /*else {
 		if v, ok := d.GetOk("nodes_list"); ok {
@@ -826,70 +825,70 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	if nodesTableDefined == false && nodesListDefined == false {
 		return fmt.Errorf("Error creating resource: no one of nodes_table or nodes_list attr has been defined")
 	}*/
-	monitorPropertiesConfiguration["basic"] = monitorBasicConfiguration
+	poolPropertiesConfiguration["basic"] = poolBasicConfiguration
 
 	// auto_scaling section
 	if v, ok := d.GetOk("auto_scaling"); ok {
-		monitorPropertiesConfiguration["auto_scaling"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("auto_scaling"))[0]
+		poolPropertiesConfiguration["auto_scaling"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("auto_scaling"))[0]
 	}
 
 	// connection section
 	if v, ok := d.GetOk("pool_connection"); ok {
-		monitorPropertiesConfiguration["connection"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("pool_connection"))[0]
+		poolPropertiesConfiguration["connection"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("pool_connection"))[0]
 	}
 
 	// dns_autoscale section
 	if v, ok := d.GetOk("dns_autoscale"); ok {
-		monitorPropertiesConfiguration["dns_autoscale"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("dns_autoscale"))[0]
+		poolPropertiesConfiguration["dns_autoscale"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("dns_autoscale"))[0]
 	}
 
 	// ftp section
 	if v, ok := d.GetOk("ftp"); ok {
-		monitorPropertiesConfiguration["ftp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("ftp"))[0]
+		poolPropertiesConfiguration["ftp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("ftp"))[0]
 	}
 
 	// http section
 	if v, ok := d.GetOk("http"); ok {
-		monitorPropertiesConfiguration["http"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("http"))[0]
+		poolPropertiesConfiguration["http"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("http"))[0]
 	}
 
 	// kerberos_protocol_transition section
 	if v, ok := d.GetOk("kerberos_protocol_transition"); ok {
-		monitorPropertiesConfiguration["kerberos_protocol_transition"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("kerberos_protocol_transition"))[0]
+		poolPropertiesConfiguration["kerberos_protocol_transition"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("kerberos_protocol_transition"))[0]
 	}
 
 	// load_balancing section
 	if v, ok := d.GetOk("load_balancing"); ok {
-		monitorPropertiesConfiguration["load_balancing"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("load_balancing"))[0]
+		poolPropertiesConfiguration["load_balancing"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("load_balancing"))[0]
 	}
 
 	// node section
 	if v, ok := d.GetOk("node"); ok {
-		monitorPropertiesConfiguration["node"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("node"))[0]
+		poolPropertiesConfiguration["node"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("node"))[0]
 	}
 
 	// smtp section
 	if v, ok := d.GetOk("smtp"); ok {
-		monitorPropertiesConfiguration["smtp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("smtp"))[0]
+		poolPropertiesConfiguration["smtp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("smtp"))[0]
 	}
 
 	// ssl section
 	if v, ok := d.GetOk("ssl"); ok {
-		monitorPropertiesConfiguration["ssl"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("ssl"))[0]
+		poolPropertiesConfiguration["ssl"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("ssl"))[0]
 	}
 
 	// tcp section
 	if v, ok := d.GetOk("tcp"); ok {
-		monitorPropertiesConfiguration["tcp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("tcp"))[0]
+		poolPropertiesConfiguration["tcp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("tcp"))[0]
 	}
 
 	// udp section
 	if v, ok := d.GetOk("udp"); ok {
-		monitorPropertiesConfiguration["udp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("udp"))[0]
+		poolPropertiesConfiguration["udp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("udp"))[0]
 	}
 
-	monitorConfiguration["properties"] = monitorPropertiesConfiguration
-	err := client.Set("pools", poolName, monitorConfiguration, nil)
+	poolConfiguration["properties"] = poolPropertiesConfiguration
+	err := client.Set("pools", poolName, poolConfiguration, nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Pool error whilst creating %s: %s", poolName, err)
 	}
@@ -903,11 +902,7 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	var poolName string
-
-	if v, ok := d.GetOk("name"); ok {
-		poolName = v.(string)
-	}
+	poolName := d.Id()
 
 	var poolObj pool.Pool
 	client.WorkWithConfigurationResources()
@@ -963,55 +958,25 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 // resourcePoolUpdate - Updates an existing pool resource
 func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 
-	var updatePool pool.Pool
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
 	poolName := d.Id()
+	poolConfiguration := make(map[string]interface{})
+	poolPropertiesConfiguration := make(map[string]interface{})
 
-	if d.HasChange("bandwidth_class") {
-		if v, ok := d.GetOk("bandwidth_class"); ok {
-			updatePool.Properties.Basic.BandwidthClass = v.(string)
-		}
-	}
-	if d.HasChange("failure_pool") {
-		if v, ok := d.GetOk("failure_pool"); ok {
-			updatePool.Properties.Basic.FailurePool = v.(string)
-		}
-	}
-	if d.HasChange("max_connection_attempts") {
-		maxConnectionAttempts := uint(d.Get("max_connection_attempts").(int))
-		updatePool.Properties.Basic.MaxConnectionAttempts = &maxConnectionAttempts
-	}
-	if d.HasChange("max_idle_connections_pernode") {
-		maxIdleConnectionsPerNode := uint(d.Get("max_idle_connections_pernode").(int))
-		updatePool.Properties.Basic.MaxIdleConnectionsPerNode = &maxIdleConnectionsPerNode
-	}
-	if d.HasChange("max_timed_out_connection_attempts") {
-		maxTimedOutConnectionAttempts := uint(d.Get("max_timed_out_connection_attempts").(int))
-		updatePool.Properties.Basic.MaxTimeoutConnectionAttempts = &maxTimedOutConnectionAttempts
+	// basic section
+	poolBasicConfiguration := make(map[string]interface{})
+	poolBasicConfiguration = util.AddChangedSimpleAttributesToMap(d, poolBasicConfiguration, "", getPoolMapAttributeList("basic"))
+
+	if d.HasChange("monitors") {
+		poolBasicConfiguration["monitors"] = util.BuildStringArrayFromInterface(d.Get("monitors"))
 	}
 
-	updatePool.Properties.Basic.Monitors = util.BuildStringArrayFromInterface(d.Get("monitors"))
-
-	if d.HasChange("node_close_with_rst") {
-		nodeCloseWithRst := d.Get("node_close_with_rst").(bool)
-		updatePool.Properties.Basic.NodeCloseWithReset = &nodeCloseWithRst
-	}
-	if d.HasChange("node_connection_attempts") {
-		nodeConnectionAttempts := uint(d.Get("node_connection_attempts").(int))
-		updatePool.Properties.Basic.NodeConnectionAttempts = &nodeConnectionAttempts
-	}
-	if d.HasChange("node_delete_behaviour") {
-		if v, ok := d.GetOk("node_delete_behaviour"); ok {
-			updatePool.Properties.Basic.NodeDeleteBehavior = v.(string)
-		}
-	}
-	if d.HasChange("node_drain_to_delete_timeout") {
-		nodeDrainTimeout := uint(d.Get("node_drain_to_delete_timeout").(int))
-		updatePool.Properties.Basic.NodeDrainDeleteTimeout = &nodeDrainTimeout
+	if d.HasChange("nodes_table") {
+		poolBasicConfiguration["nodes_table"] = util.BuildListMaps(d.Get("nodes_table").(*schema.Set).List(), getPoolMapAttributeList("nodes_table"))
+		//nodesTableDefined = true
 	}
 	/*
-		if d.HasChange("nodes_table") {
-			updatePool.Properties.Basic.NodesTable = buildNodesTable(d.Get("nodes_table").(*schema.Set))
-		}
 		if d.HasChange("nodes_list") {
 			if v, ok := d.GetOk("nodes_list"); ok {
 				addresses := v.(*schema.Set).List()
@@ -1025,99 +990,52 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 			}
 		}
 	*/
-	if d.HasChange("note") {
-		if v, ok := d.GetOk("note"); ok {
-			updatePool.Properties.Basic.Note = v.(string)
-		}
+
+	poolPropertiesConfiguration["basic"] = poolBasicConfiguration
+
+	if d.HasChange("auto_scaling") {
+		poolPropertiesConfiguration["auto_scaling"] = util.BuildListMaps(d.Get("auto_scaling").([]interface{}), getPoolMapAttributeList("auto_scaling"))[0]
+	}
+	if d.HasChange("pool_connection") {
+		poolPropertiesConfiguration["connection"] = util.BuildListMaps(d.Get("pool_connection").([]interface{}), getPoolMapAttributeList("pool_connection"))[0]
+	}
+	if d.HasChange("dns_autoscale") {
+		poolPropertiesConfiguration["dns_autoscale"] = util.BuildListMaps(d.Get("dns_autoscale").([]interface{}), getPoolMapAttributeList("dns_autoscale"))[0]
+	}
+	if d.HasChange("ftp") {
+		poolPropertiesConfiguration["ftp"] = util.BuildListMaps(d.Get("ftp").([]interface{}), getPoolMapAttributeList("ftp"))[0]
+	}
+	if d.HasChange("http") {
+		poolPropertiesConfiguration["http"] = util.BuildListMaps(d.Get("http").([]interface{}), getPoolMapAttributeList("http"))[0]
+	}
+	if d.HasChange("kerberos_protocol_transition") {
+		poolPropertiesConfiguration["kerberos_protocol_transition"] = util.BuildListMaps(d.Get("kerberos_protocol_transition").([]interface{}), getPoolMapAttributeList("kerberos_protocol_transition"))[0]
+	}
+	if d.HasChange("load_balancing") {
+		poolPropertiesConfiguration["load_balancing"] = util.BuildListMaps(d.Get("load_balancing").([]interface{}), getPoolMapAttributeList("load_balancing"))[0]
+	}
+	if d.HasChange("node") {
+		poolPropertiesConfiguration["node"] = util.BuildListMaps(d.Get("node").([]interface{}), getPoolMapAttributeList("node"))[0]
+	}
+	if d.HasChange("smtp") {
+		poolPropertiesConfiguration["smtp"] = util.BuildListMaps(d.Get("smtp").([]interface{}), getPoolMapAttributeList("smtp"))[0]
+	}
+	if d.HasChange("ssl") {
+		poolPropertiesConfiguration["ssl"] = util.BuildListMaps(d.Get("ssl").([]interface{}), getPoolMapAttributeList("ssl"))[0]
+	}
+	if d.HasChange("tcp") {
+		poolPropertiesConfiguration["tcp"] = util.BuildListMaps(d.Get("tcp").([]interface{}), getPoolMapAttributeList("tcp"))[0]
+	}
+	if d.HasChange("udp") {
+		poolPropertiesConfiguration["udp"] = util.BuildListMaps(d.Get("udp").([]interface{}), getPoolMapAttributeList("udp"))[0]
 	}
 
-	if d.HasChange("passive_monitoring") {
-		passiveMonitoring := d.Get("passive_monitoring").(bool)
-		updatePool.Properties.Basic.PassiveMonitoring = &passiveMonitoring
-	}
-	if d.HasChange("persistence_class") {
-		if v, ok := d.GetOk("persistence_class"); ok {
-			updatePool.Properties.Basic.PersistenceClass = v.(string)
-		}
-	}
-	if d.HasChange("transparent") {
-		transparent := d.Get("transparent").(bool)
-		updatePool.Properties.Basic.Transparent = &transparent
-	}
-	/*
-		if d.HasChange("auto_scaling") {
-			if v, ok := d.GetOk("auto_scaling"); ok {
-				autoScaling, err := buildAutoScaling(v)
-				if err != nil {
-					return fmt.Errorf("BrocadeVTM Pool - auto_scaling error whilst updating %s: %v", poolName, err)
-				}
-				updatePool.Properties.AutoScaling = autoScaling
-			}
-		}
-		if d.HasChange("pool_connection") {
-			if v, ok := d.GetOk("pool_connection"); ok {
-				updatePool.Properties.Connection = buildConnection(v)
-			}
-		}
-		if d.HasChange("dns_autoscale") {
-			if v, ok := d.GetOk("dns_autoscale"); ok {
-				updatePool.Properties.DNSAutoScale = buildDNSAutoScale(v)
-			}
-		}
-		if d.HasChange("ftp") {
-			if v, ok := d.GetOk("ftp"); ok {
-				updatePool.Properties.FTP = buildFTP(v)
-			}
-		}
-		if d.HasChange("http") {
-			if v, ok := d.GetOk("http"); ok {
-				updatePool.Properties.HTTP = buildHTTP(v)
-			}
-		}
-		if d.HasChange("kerberos_protocol_transition") {
-			if v, ok := d.GetOk("kerberos_protocol_transition"); ok {
-				updatePool.Properties.KerberosProtocolTransition = buildKerberosProtocolTransition(v)
-			}
-		}
-		if d.HasChange("load_balancing") {
-			if v, ok := d.GetOk("load_balancing"); ok {
-				updatePool.Properties.LoadBalancing = buildLoadBalancing(v)
-			}
-		}
-		if d.HasChange("node") {
-			if v, ok := d.GetOk("node"); ok {
-				updatePool.Properties.Node = buildNode(v)
-			}
-		}
-		if d.HasChange("smtp") {
-			if v, ok := d.GetOk("smtp"); ok {
-				updatePool.Properties.SMTP = buildSMTP(v)
-			}
-		}
-		if d.HasChange("ssl") {
-			if v, ok := d.GetOk("ssl"); ok {
-				updatePool.Properties.Ssl = buildSSL(v)
-			}
-		}
-		if d.HasChange("tcp") {
-			if v, ok := d.GetOk("tcp"); ok {
-				updatePool.Properties.TCP = buildTCP(v)
-			}
-		}
-		if d.HasChange("udp") {
-			if v, ok := d.GetOk("udp"); ok {
-				updatePool.Properties.UDP = buildUDP(v)
-			}
-		}
-	*/
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	err := client.Set("pools", poolName, updatePool, nil)
+	poolConfiguration["properties"] = poolConfiguration
+	err := client.Set("pools", poolName, poolConfiguration, nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Pool error whilst updating %s: %s", poolName, err)
 	}
 	d.SetId(poolName)
-
 	return resourcePoolRead(d, m)
 }
 
