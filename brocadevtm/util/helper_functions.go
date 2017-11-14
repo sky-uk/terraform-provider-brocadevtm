@@ -53,7 +53,6 @@ func AddSimpleGetOkAttributesToMap(d *schema.ResourceData, mapItem map[string]in
 				mapItem[item] = attributeValue.(bool)
 			case string:
 				mapItem[item] = attributeValue.(string)
-
 			case int:
 				mapItem[item] = attributeValue.(int)
 			default:
@@ -91,4 +90,37 @@ func SetSimpleAttributesFromMap(d *schema.ResourceData, mapItem map[string]inter
 		attributeName := fmt.Sprintf("%s%s", attributeNamePrefix, item)
 		d.Set(attributeName, mapItem[item])
 	}
+}
+
+// BuildListMaps : builds a list of maps from a list of interfaces using a list of attributes
+func BuildListMaps(itemList []interface{}, attributeNames []string) []map[string]interface{} {
+
+	listOfMaps := make([]map[string]interface{}, 0)
+
+	for _, item := range itemList {
+
+		definedItem := item.(map[string]interface{})
+		newMap := make(map[string]interface{})
+
+		for _, attributeName := range attributeNames {
+
+			if attributeValue, ok := definedItem[attributeName]; ok {
+				switch attributeValue.(type) {
+				case bool:
+					newMap[attributeName] = attributeValue.(bool)
+				case string:
+					newMap[attributeName] = attributeValue.(string)
+				case int:
+					newMap[attributeName] = attributeValue.(int)
+				case []interface{}:
+					newMap[attributeName] = BuildStringArrayFromInterface(attributeValue)
+				case *schema.Set:
+					newMap[attributeName] = BuildStringListFromSet(attributeValue.(*schema.Set))
+				default:
+				}
+			}
+		}
+		listOfMaps = append(listOfMaps, newMap)
+	}
+	return listOfMaps
 }
