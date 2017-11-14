@@ -32,10 +32,6 @@ func TestAccBrocadeVTMUserGroupBasic(t *testing.T) {
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
-				Config:      testAccBrocadeVTMUserGroupInvalidAccessLevel(),
-				ExpectError: regexp.MustCompile(`Access level must be one of NONE, RO or FULL`),
-			},
-			{
 				Config: testAccBrocadeUserGroupCreate(userGroupName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMUserGroupExists(userGroupName, userGroupResourceName),
@@ -118,21 +114,6 @@ resource "brocadevtm_user_group" "acctest" {
        permissions = {
           name =  "Web_Cache"
           access_level = "FULL"
-       }
-}
-`)
-}
-
-func testAccBrocadeVTMUserGroupInvalidAccessLevel() string {
-	return fmt.Sprintf(`
-resource "brocadevtm_user_group" "acctest" {
-       name = "invalidAccessLevel"
-       description = "test description"
-       password_expire_time = 300
-       timeout = 300
-       permissions = {
-          name =  "TestPermissionOne"
-          access_level = "invalid"
        }
 }
 `)

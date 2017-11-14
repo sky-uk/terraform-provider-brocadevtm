@@ -2,12 +2,12 @@ package brocadevtm
 
 import (
 	"fmt"
-	"strings"
+
+	"net/http"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_group"
-	"net/http"
 )
 
 func resourceUserGroup() *schema.Resource {
@@ -27,15 +27,15 @@ func resourceUserGroup() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-
 			"password_expire_time": {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
 			"timeout": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Default:  30,
+				Type:         schema.TypeInt,
+				Optional:     true,
+				Default:      30,
+				ValidateFunc: validation.IntAtLeast(0),
 			},
 			"permissions": {
 				Type:     schema.TypeSet,
@@ -47,9 +47,13 @@ func resourceUserGroup() *schema.Resource {
 							Required: true,
 						},
 						"access_level": {
-							Type:         schema.TypeString,
-							Required:     true,
-							ValidateFunc: ValidateAccessLevel,
+							Type:     schema.TypeString,
+							Required: true,
+							ValidateFunc: validation.StringInSlice([]string{
+								"none",
+								"ro",
+								"full",
+							}, false),
 						},
 					},
 				},
@@ -58,76 +62,50 @@ func resourceUserGroup() *schema.Resource {
 	}
 }
 
-// ValidateAccessLevel : Validates that the access level entered is correct
-func ValidateAccessLevel(v interface{}, k string) (ws []string, errors []error) {
-	switch strings.ToLower(v.(string)) {
-	case
-		"none",
-		"ro",
-		"full":
-		return
-	}
-	errors = append(errors, fmt.Errorf("Access level must be one of NONE, RO or FULL"))
-	return
-}
-
-func buildPermissionsObject(permissions *schema.Set) []userGroup.Permission {
-	permissionValues := []userGroup.Permission{}
-	for _, permission := range permissions.List() {
-		permissionObject := permission.(map[string]interface{})
-		newPermission := userGroup.Permission{}
-		if conigurationElement, ok := permissionObject["name"].(string); ok {
-			newPermission.Name = conigurationElement
-		}
-		if accessLevel, ok := permissionObject["access_level"].(string); ok {
-			newPermission.AccessLevel = strings.ToLower(accessLevel)
-		}
-		permissionValues = append(permissionValues, newPermission)
-	}
-	return permissionValues
-}
-
 func resourceUserGroupCreate(d *schema.ResourceData, m interface{}) error {
-	var userGroup userGroup.UserGroup
 
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 
-	userGroupName := d.Get("name").(string)
+	res := make(map[string]interface{})
+	props := make(map[string]interface{})
+	basic := make(map[string]interface{})
+
+	name := d.Get("name").(string)
 
 	if v, ok := d.GetOk("description"); ok && v != "" {
-		userGroup.Properties.Basic.Description = v.(string)
+		basic["description"] = v.(string)
 	}
 	if v, ok := d.GetOk("password_expire_time"); ok {
-		userGroup.Properties.Basic.PasswordExpireTime = uint(v.(int))
+		basic["password_expire_time"] = uint(v.(int))
 	}
 	if v, ok := d.GetOk("timeout"); ok {
-		userGroup.Properties.Basic.Timeout = uint(v.(int))
+		basic["timeout"] = uint(v.(int))
 	}
-
 	if v, ok := d.GetOk("permissions"); ok {
-		if permissions, ok := v.(*schema.Set); ok {
-			userGroup.Properties.Basic.Permissions = buildPermissionsObject(permissions)
-		}
+		basic["permissions"] = v.(*schema.Set).List()
 	}
 
-	err := client.Set("user_groups", userGroupName, &userGroup, nil)
+	props["basic"] = basic
+	res["properties"] = props
+
+	err := client.Set("user_groups", name, &res, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM User Group error whilst creating %s: %v", userGroupName, err)
+		return fmt.Errorf("BrocadeVTM User Group error whilst creating %s: %v", name, err)
 	}
 
-	d.SetId(userGroupName)
-
+	d.SetId(name)
 	return resourceUserGroupRead(d, m)
 }
 
 func resourceUserGroupRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	client.WorkWithConfigurationResources()
-	var userGroupObject userGroup.UserGroup
 
-	err := client.GetByName("user_groups", d.Id(), &userGroupObject)
+	res := make(map[string]interface{})
+
+	client.WorkWithConfigurationResources()
+	err := client.GetByName("user_groups", d.Id(), &res)
 	if client.StatusCode == http.StatusNotFound {
 		d.SetId("")
 		return nil
@@ -137,41 +115,43 @@ func resourceUserGroupRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("BrocadeVTM User Group error whilst retrieving %s: %v", d.Id(), err)
 	}
 
-	d.Set("description", userGroupObject.Properties.Basic.Description)
-	d.Set("password_expire_time", userGroupObject.Properties.Basic.PasswordExpireTime)
-	d.Set("timeout", userGroupObject.Properties.Basic.Timeout)
-	d.Set("permissions", userGroupObject.Properties.Basic.Permissions)
+	props := res["properties"].(map[string]interface{})
+	basic := props["basic"].(map[string]interface{})
+
+	d.Set("description", basic["description"])
+	d.Set("password_expire_time", basic["password_expire_time"])
+	d.Set("timeout", basic["timeout"])
+	d.Set("permissions", basic["permissions"])
 
 	return nil
 }
 
 func resourceUserGroupUpdate(d *schema.ResourceData, m interface{}) error {
-	var updatedUserGroup userGroup.UserGroup
-	hasChanges := false
+	res := make(map[string]interface{})
+	props := make(map[string]interface{})
+	basic := make(map[string]interface{})
 
 	if d.HasChange("description") {
-		updatedUserGroup.Properties.Basic.Description = d.Get("description").(string)
-		hasChanges = true
+		basic["description"] = d.Get("description").(string)
 	}
 	if d.HasChange("password_expire_time") {
-		updatedUserGroup.Properties.Basic.PasswordExpireTime = uint(d.Get("password_expire_time").(int))
-		hasChanges = true
+		basic["password_expire_time"] = uint(d.Get("password_expire_time").(int))
 	}
 	if d.HasChange("timeout") {
-		updatedUserGroup.Properties.Basic.Timeout = uint(d.Get("timeout").(int))
-		hasChanges = true
+		basic["timeout"] = uint(d.Get("timeout").(int))
 	}
 	if d.HasChange("permissions") {
-		updatedUserGroup.Properties.Basic.Permissions = buildPermissionsObject(d.Get("permissions").(*schema.Set))
-		hasChanges = true
+		basic["permissions"] = d.Get("permissions").(*schema.Set).List()
 	}
-	if hasChanges {
-		config := m.(map[string]interface{})
-		client := config["jsonClient"].(*api.Client)
-		err := client.Set("user_groups", d.Id(), updatedUserGroup, nil)
-		if err != nil {
-			return fmt.Errorf("BrocadeVTM User Group error whilst updating %s: %v", d.Id(), err)
-		}
+
+	props["basic"] = basic
+	res["properties"] = props
+
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+	err := client.Set("user_groups", d.Id(), res, nil)
+	if err != nil {
+		return fmt.Errorf("BrocadeVTM User Group error whilst updating %s: %v", d.Id(), err)
 	}
 	return resourceUserGroupRead(d, m)
 }
