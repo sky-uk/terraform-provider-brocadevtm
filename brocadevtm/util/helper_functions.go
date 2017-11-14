@@ -113,9 +113,9 @@ func BuildListMaps(itemList []interface{}, attributeNames []string) []map[string
 				case int:
 					newMap[attributeName] = attributeValue.(int)
 				case []interface{}:
-					newMap[attributeName] = BuildStringArrayFromInterface(attributeValue)
+					newMap[attributeName] = attributeValue
 				case *schema.Set:
-					newMap[attributeName] = BuildStringListFromSet(attributeValue.(*schema.Set))
+					newMap[attributeName] = attributeValue.(*schema.Set).List()
 				default:
 				}
 			}
