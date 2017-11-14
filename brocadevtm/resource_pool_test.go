@@ -66,19 +66,11 @@ func TestAccPool_Basic(t *testing.T) {
 			},
 			{
 				Config:      testAccPoolInvalidNodeDeleteBehaviour(poolName),
-				ExpectError: regexp.MustCompile(`must be one of immediate or drain`),
+				ExpectError: regexp.MustCompile(`expected node_delete_behaviour to be one of \[drain immediate\]`),
 			},
 			{
 				Config:      testAccPoolOneItemList(poolName),
 				ExpectError: regexp.MustCompile(`attribute supports 1 item maximum, config has 2 declared`),
-			},
-			{
-				Config:      testAccPoolValidAWSSGPrefix(poolName),
-				ExpectError: regexp.MustCompile(`one or more items in the list of strings doesn't match the prefix sg-`),
-			},
-			{
-				Config:      testAccPoolValidAWSSubnetPrefix(poolName),
-				ExpectError: regexp.MustCompile(`one or more items in the list of strings doesn't match the prefix subnet-`),
 			},
 			{
 				Config: testAccPoolCreateTemplate(poolName),
@@ -121,7 +113,7 @@ func TestAccPool_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.min_nodes", "20"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.name", "example"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.port", "8980"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.refactory", "10"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.refractory", "10"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.response_time", "100"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_down_level", "90"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_up_level", "20"),
@@ -236,7 +228,7 @@ func TestAccPool_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.min_nodes", "50"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.name", "anotherExample"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.port", "9980"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.refactory", "56"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.refractory", "56"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.response_time", "89"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_down_level", "75"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_up_level", "15"),
@@ -344,7 +336,7 @@ func TestAccPool_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.min_nodes", "20"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.name", "example"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.port", "8980"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.refactory", "10"),
+					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.refractory", "10"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.response_time", "100"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_down_level", "90"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_up_level", "20"),
@@ -627,48 +619,6 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
-func testAccPoolValidAWSSGPrefix(poolName string) string {
-	return fmt.Sprintf(`
-resource "brocadevtm_pool" "acctest"{
-  name = "%s"
-  nodes_table = [
-    {
-      node = "192.168.10.10:80"
-      priority = 5
-      state = "draining"
-      weight = 2
-      source_ip = "192.168.120.6"
-    },
-  ]
-  auto_scaling = [
-    {
-      securitygroupids = [ "INVALID_PREFIX-1234567" ]
-    },
-  ]
-}`, poolName)
-}
-
-func testAccPoolValidAWSSubnetPrefix(poolName string) string {
-	return fmt.Sprintf(`
-resource "brocadevtm_pool" "acctest"{
-  name = "%s"
-  nodes_table = [
-    {
-      node = "192.168.10.10:80"
-      priority = 5
-      state = "draining"
-      weight = 2
-      source_ip = "192.168.120.6"
-    },
-  ]
-  auto_scaling = [
-    {
-      subnetids = [ "INVALID_SUBNET-12345" ]
-    },
-  ]
-}`, poolName)
-}
-
 func testAccPoolCreateTemplate(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
@@ -713,7 +663,7 @@ resource "brocadevtm_pool" "acctest" {
       min_nodes = 20
       name = "example"
       port = 8980
-      refactory = 10
+      refractory = 10
       response_time = 100
       scale_down_level = 90
       scale_up_level = 20
@@ -860,7 +810,7 @@ resource "brocadevtm_pool" "acctest" {
       min_nodes = 50
       name = "anotherExample"
       port = 9980
-      refactory = 56
+      refractory = 56
       response_time = 89
       scale_down_level = 75
       scale_up_level = 15
@@ -992,7 +942,7 @@ resource "brocadevtm_pool" "acctest" {
       min_nodes = 20
       name = "example"
       port = 8980
-      refactory = 10
+      refractory = 10
       response_time = 100
       scale_down_level = 90
       scale_up_level = 20
@@ -1124,7 +1074,7 @@ resource "brocadevtm_pool" "acctest" {
       min_nodes = 20
       name = "example"
       port = 8980
-      refactory = 10
+      refractory = 10
       response_time = 100
       scale_down_level = 90
       scale_up_level = 20

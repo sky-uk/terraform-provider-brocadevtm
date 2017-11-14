@@ -285,7 +285,8 @@ func resourcePool() *schema.Resource {
 							Type:        schema.TypeSet,
 							Optional:    true,
 							Description: "List of security group IDs to assciate with a new ec2 instance",
-							Elem:        &schema.Schema{Type: schema.TypeString},
+							// When we're able to validate a list we should check each subnet ID starts with 'sg-'
+							Elem: &schema.Schema{Type: schema.TypeString},
 						},
 						"size_id": {
 							Type:        schema.TypeString,
@@ -296,7 +297,8 @@ func resourcePool() *schema.Resource {
 							Type:        schema.TypeSet,
 							Optional:    true,
 							Description: "List of VPC subnet IDs where the new ec2 instances will be launched",
-							Elem:        &schema.Schema{Type: schema.TypeString},
+							// When we're able to validate a list we should check each subnet ID starts with 'subnet-'
+							Elem: &schema.Schema{Type: schema.TypeString},
 						},
 					},
 				},
@@ -702,7 +704,6 @@ func getPoolMapAttributeList(mapName string) []string {
 			"max_timed_out_connection_attempts",
 			"node_close_with_rst",
 			"node_connection_attempts",
-			"node_delete_behavior",
 			"node_drain_to_delete_timeout",
 			"note",
 			"passive_monitoring",
@@ -778,6 +779,19 @@ func getPoolMapAttributeList(mapName string) []string {
 			"ssl_support_tls1_2",
 			"strict_verify",
 		}
+	case "sub_sections":
+		attributes = []string{"auto_scaling",
+			"dns_autoscale",
+			"ftp",
+			"http",
+			"kerberos_protocol_transition",
+			"load_balancing",
+			"node",
+			"smtp",
+			"ssl",
+			"tcp",
+			"udp",
+		}
 	case "tcp":
 		attributes = []string{"nagle"}
 	case "udp":
@@ -788,10 +802,23 @@ func getPoolMapAttributeList(mapName string) []string {
 	return attributes
 }
 
+func buildNodesTableFromList(nodes interface{}) []map[string]interface{} {
+
+	addresses := nodes.(*schema.Set).List()
+	nodesTable := make([]map[string]interface{}, 0)
+
+	for _, address := range addresses {
+		node := make(map[string]interface{})
+		node["node"] = address
+		nodesTable = append(nodesTable, node)
+	}
+	return nodesTable
+}
+
 // resourcePoolCreate - Creates a  pool resource object
 func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 
-	//var nodesTableDefined, nodesListDefined bool
+	var nodesTableDefined, nodesListDefined bool
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 	poolConfiguration := make(map[string]interface{})
@@ -803,88 +830,32 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	poolBasicConfiguration := make(map[string]interface{})
 	poolBasicConfiguration = util.AddSimpleGetAttributesToMap(d, poolBasicConfiguration, "", getPoolMapAttributeList("basic"))
 	poolBasicConfiguration["monitors"] = util.BuildStringArrayFromInterface(d.Get("monitors"))
+	poolBasicConfiguration["node_delete_behavior"] = d.Get("node_delete_behaviour").(string)
 
 	if v, ok := d.GetOk("nodes_table"); ok {
 		poolBasicConfiguration["nodes_table"] = util.BuildListMaps(v.(*schema.Set).List(), getPoolMapAttributeList("nodes_table"))
-		//nodesTableDefined = true
-	} /*else {
+		nodesTableDefined = true
+	} else {
 		if v, ok := d.GetOk("nodes_list"); ok {
-			addresses := v.(*schema.Set).List()
-
-
-			nodesTable := make([]pool.MemberNode, 0)
-			for _, ipAddr := range addresses {
-				var rec pool.MemberNode
-				rec.Node = ipAddr.(string)
-				nodesTable = append(nodesTable, rec)
-			}
-			monitorBasicConfiguration["nodes_table"] = nodesTable
+			poolBasicConfiguration["nodes_table"] = buildNodesTableFromList(v)
 			nodesListDefined = true
 		}
 	}
 	if nodesTableDefined == false && nodesListDefined == false {
 		return fmt.Errorf("Error creating resource: no one of nodes_table or nodes_list attr has been defined")
-	}*/
+	}
 	poolPropertiesConfiguration["basic"] = poolBasicConfiguration
 
-	// auto_scaling section
-	if v, ok := d.GetOk("auto_scaling"); ok {
-		poolPropertiesConfiguration["auto_scaling"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("auto_scaling"))[0]
-	}
-
-	// connection section
+	// connection section - we can't use "connection" as an attribute in the schema as it's reserved
 	if v, ok := d.GetOk("pool_connection"); ok {
 		poolPropertiesConfiguration["connection"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("pool_connection"))[0]
 	}
 
-	// dns_autoscale section
-	if v, ok := d.GetOk("dns_autoscale"); ok {
-		poolPropertiesConfiguration["dns_autoscale"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("dns_autoscale"))[0]
-	}
-
-	// ftp section
-	if v, ok := d.GetOk("ftp"); ok {
-		poolPropertiesConfiguration["ftp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("ftp"))[0]
-	}
-
-	// http section
-	if v, ok := d.GetOk("http"); ok {
-		poolPropertiesConfiguration["http"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("http"))[0]
-	}
-
-	// kerberos_protocol_transition section
-	if v, ok := d.GetOk("kerberos_protocol_transition"); ok {
-		poolPropertiesConfiguration["kerberos_protocol_transition"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("kerberos_protocol_transition"))[0]
-	}
-
-	// load_balancing section
-	if v, ok := d.GetOk("load_balancing"); ok {
-		poolPropertiesConfiguration["load_balancing"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("load_balancing"))[0]
-	}
-
-	// node section
-	if v, ok := d.GetOk("node"); ok {
-		poolPropertiesConfiguration["node"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("node"))[0]
-	}
-
-	// smtp section
-	if v, ok := d.GetOk("smtp"); ok {
-		poolPropertiesConfiguration["smtp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("smtp"))[0]
-	}
-
-	// ssl section
-	if v, ok := d.GetOk("ssl"); ok {
-		poolPropertiesConfiguration["ssl"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("ssl"))[0]
-	}
-
-	// tcp section
-	if v, ok := d.GetOk("tcp"); ok {
-		poolPropertiesConfiguration["tcp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("tcp"))[0]
-	}
-
-	// udp section
-	if v, ok := d.GetOk("udp"); ok {
-		poolPropertiesConfiguration["udp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("udp"))[0]
+	// all other sections
+	for _, section := range getPoolMapAttributeList("sub_sections") {
+		if v, ok := d.GetOk(section); ok {
+			poolPropertiesConfiguration[section] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList(section))[0]
+		}
 	}
 
 	poolConfiguration["properties"] = poolPropertiesConfiguration
@@ -958,6 +929,7 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 // resourcePoolUpdate - Updates an existing pool resource
 func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 
+	//var nodesTableDefined, nodesListDefined bool
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 	poolName := d.Id()
@@ -967,6 +939,7 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	// basic section
 	poolBasicConfiguration := make(map[string]interface{})
 	poolBasicConfiguration = util.AddChangedSimpleAttributesToMap(d, poolBasicConfiguration, "", getPoolMapAttributeList("basic"))
+	poolBasicConfiguration["node_delete_behavior"] = d.Get("node_delete_behaviour").(string)
 
 	if d.HasChange("monitors") {
 		poolBasicConfiguration["monitors"] = util.BuildStringArrayFromInterface(d.Get("monitors"))
@@ -975,62 +948,32 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	if d.HasChange("nodes_table") {
 		poolBasicConfiguration["nodes_table"] = util.BuildListMaps(d.Get("nodes_table").(*schema.Set).List(), getPoolMapAttributeList("nodes_table"))
 		//nodesTableDefined = true
+	} else {
+		if v, ok := d.GetOk("nodes_list"); ok {
+			poolBasicConfiguration["nodes_table"] = buildNodesTableFromList(v)
+			//nodesListDefined = true
+		}
 	}
 	/*
-		if d.HasChange("nodes_list") {
-			if v, ok := d.GetOk("nodes_list"); ok {
-				addresses := v.(*schema.Set).List()
-				nodesTable := make([]pool.MemberNode, 0)
-				for _, ipAddr := range addresses {
-					var rec pool.MemberNode
-					rec.Node = ipAddr.(string)
-					nodesTable = append(nodesTable, rec)
-				}
-				updatePool.Properties.Basic.NodesTable = nodesTable
-			}
+		if nodesTableDefined == false && nodesListDefined == false {
+			return fmt.Errorf("Error creating resource: no one of nodes_table or nodes_list attr has been defined")
 		}
 	*/
-
 	poolPropertiesConfiguration["basic"] = poolBasicConfiguration
 
-	if d.HasChange("auto_scaling") {
-		poolPropertiesConfiguration["auto_scaling"] = util.BuildListMaps(d.Get("auto_scaling").([]interface{}), getPoolMapAttributeList("auto_scaling"))[0]
-	}
+	// connection section
 	if d.HasChange("pool_connection") {
 		poolPropertiesConfiguration["connection"] = util.BuildListMaps(d.Get("pool_connection").([]interface{}), getPoolMapAttributeList("pool_connection"))[0]
 	}
-	if d.HasChange("dns_autoscale") {
-		poolPropertiesConfiguration["dns_autoscale"] = util.BuildListMaps(d.Get("dns_autoscale").([]interface{}), getPoolMapAttributeList("dns_autoscale"))[0]
-	}
-	if d.HasChange("ftp") {
-		poolPropertiesConfiguration["ftp"] = util.BuildListMaps(d.Get("ftp").([]interface{}), getPoolMapAttributeList("ftp"))[0]
-	}
-	if d.HasChange("http") {
-		poolPropertiesConfiguration["http"] = util.BuildListMaps(d.Get("http").([]interface{}), getPoolMapAttributeList("http"))[0]
-	}
-	if d.HasChange("kerberos_protocol_transition") {
-		poolPropertiesConfiguration["kerberos_protocol_transition"] = util.BuildListMaps(d.Get("kerberos_protocol_transition").([]interface{}), getPoolMapAttributeList("kerberos_protocol_transition"))[0]
-	}
-	if d.HasChange("load_balancing") {
-		poolPropertiesConfiguration["load_balancing"] = util.BuildListMaps(d.Get("load_balancing").([]interface{}), getPoolMapAttributeList("load_balancing"))[0]
-	}
-	if d.HasChange("node") {
-		poolPropertiesConfiguration["node"] = util.BuildListMaps(d.Get("node").([]interface{}), getPoolMapAttributeList("node"))[0]
-	}
-	if d.HasChange("smtp") {
-		poolPropertiesConfiguration["smtp"] = util.BuildListMaps(d.Get("smtp").([]interface{}), getPoolMapAttributeList("smtp"))[0]
-	}
-	if d.HasChange("ssl") {
-		poolPropertiesConfiguration["ssl"] = util.BuildListMaps(d.Get("ssl").([]interface{}), getPoolMapAttributeList("ssl"))[0]
-	}
-	if d.HasChange("tcp") {
-		poolPropertiesConfiguration["tcp"] = util.BuildListMaps(d.Get("tcp").([]interface{}), getPoolMapAttributeList("tcp"))[0]
-	}
-	if d.HasChange("udp") {
-		poolPropertiesConfiguration["udp"] = util.BuildListMaps(d.Get("udp").([]interface{}), getPoolMapAttributeList("udp"))[0]
+
+	// all other sections
+	for _, section := range getPoolMapAttributeList("sub_sections") {
+		if d.HasChange(section) {
+			poolPropertiesConfiguration[section] = util.BuildListMaps(d.Get(section).([]interface{}), getPoolMapAttributeList(section))[0]
+		}
 	}
 
-	poolConfiguration["properties"] = poolConfiguration
+	poolConfiguration["properties"] = poolPropertiesConfiguration
 	err := client.Set("pools", poolName, poolConfiguration, nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Pool error whilst updating %s: %s", poolName, err)
