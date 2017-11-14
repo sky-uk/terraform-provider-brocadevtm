@@ -2,17 +2,17 @@ package brocadevtm
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/rule"
-	"net/http"
 )
 
 func resourceRule() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceRuleCreate,
+		Create: resourceRuleSet,
 		Read:   resourceRuleRead,
-		Update: resourceRuleUpdate,
+		Update: resourceRuleSet,
 		Delete: resourceRuleDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -30,82 +30,42 @@ func resourceRule() *schema.Resource {
 	}
 }
 
-func resourceRuleCreate(d *schema.ResourceData, m interface{}) error {
+func resourceRuleSet(d *schema.ResourceData, m interface{}) error {
 
-	var vtmRule rule.TrafficScriptRule
 	config := m.(map[string]interface{})
-
 	client := config["octetClient"].(*api.Client)
 
-	if v, ok := d.GetOk("name"); ok && v != "" {
-		vtmRule.Name = v.(string)
-	}
-	if v, ok := d.GetOk("rule"); ok {
-		vtmRule.Script = v.(string)
-	}
+	name := d.Get("name").(string)
+	rule := d.Get("rule").(string)
 
-	err := client.Set("rules", vtmRule.Name, []byte(vtmRule.Script), nil)
+	err := client.Set("rules", name, []byte(rule), nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Rule error whilst creating %s: %v", vtmRule.Name, err)
+		return fmt.Errorf("BrocadeVTM Rule error whilst creating %s: %v", name, err)
 	}
 
-	d.SetId(vtmRule.Name)
-
+	d.SetId(name)
 	return resourceRuleRead(d, m)
 }
 
 func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 
-	var vtmRule rule.TrafficScriptRule
 	config := m.(map[string]interface{})
-
 	client := config["octetClient"].(*api.Client)
-	vtmRule.Name = d.Id()
-	client.WorkWithConfigurationResources()
+
 	ruleText := new([]byte)
-	err := client.GetByName("rules", vtmRule.Name, ruleText)
+	client.WorkWithConfigurationResources()
+	err := client.GetByName("rules", d.Id(), ruleText)
 
 	if client.StatusCode == http.StatusNotFound {
 		d.SetId("")
 		return nil
 	}
-
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Rule error whilst retrieving %s: %v", vtmRule.Name, err)
+		return fmt.Errorf("BrocadeVTM Rule error whilst retrieving %s: %v", d.Id(), err)
 	}
 
-	d.SetId(vtmRule.Name)
 	d.Set("rule", string(*ruleText))
 	return nil
-}
-
-func resourceRuleUpdate(d *schema.ResourceData, m interface{}) error {
-
-	var vtmRule rule.TrafficScriptRule
-	config := m.(map[string]interface{})
-	hasChanges := false
-	vtmRule.Name = d.Id()
-
-	if d.HasChange("rule") {
-		if v, ok := d.GetOk("rule"); ok {
-			vtmRule.Script = v.(string)
-		}
-		hasChanges = true
-	}
-
-	if hasChanges {
-
-		client := config["octetClient"].(*api.Client)
-		err := client.Set("rules", vtmRule.Name, []byte(vtmRule.Script), nil)
-
-		if err != nil {
-			return fmt.Errorf("BrocadeVTM Rule error whilst updating %s: %vv", vtmRule.Name, err)
-		}
-		d.SetId(vtmRule.Name)
-		d.Set("rule", vtmRule.Script)
-	}
-
-	return resourceRuleRead(d, m)
 }
 
 func resourceRuleDelete(d *schema.ResourceData, m interface{}) error {
