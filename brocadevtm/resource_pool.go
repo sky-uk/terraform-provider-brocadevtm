@@ -3,6 +3,7 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/pool"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
@@ -44,14 +45,14 @@ func resourcePool() *schema.Resource {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ValidateFunc: util.ValidateUnsignedInteger,
-				Computed:     true,
+				Default:      50,
 				Description:  "Maximum number of unused HTTP keepalive connections",
 			},
 			"max_timed_out_connection_attempts": {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				ValidateFunc: util.ValidateUnsignedInteger,
-				Computed:     true,
+				Default:      2,
 				Description:  "Maxiumum failed connection attempts within the max_reply_time.",
 			},
 			"monitors": {
@@ -64,27 +65,31 @@ func resourcePool() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Description: "Whether or not a connection to a node should be closed with a RST rather than a FIN packet",
-				Computed:    true,
+				Default:     false,
 			},
 			"node_connection_attempts": {
 				Type:         schema.TypeInt,
 				Optional:     true,
-				Computed:     true,
+				Default:      3,
 				Description:  "Number of times an attempt to connect to the same node before marking it as failed. Only used when passive_monitoring is enabled",
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"node_delete_behaviour": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "immediate",
-				Description:  "Node deletion behaviour for this pool",
-				ValidateFunc: validateNodeDeleteBehaviour,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "immediate",
+				Description: "Node deletion behaviour for this pool",
+				ValidateFunc: validation.StringInSlice([]string{
+					"drain",
+					"immediate",
+				}, false),
 			},
 			"node_drain_to_delete_timeout": {
 				Type:         schema.TypeInt,
 				Optional:     true,
 				Description:  "The maximum time a node will remain in draining after it has been deleted",
 				ValidateFunc: util.ValidateUnsignedInteger,
+				Default:      0,
 			},
 			"nodes_table": {
 				Type:          schema.TypeSet,
@@ -107,16 +112,20 @@ func resourcePool() *schema.Resource {
 							Description:  "Priority assigned to a node. Defaults to 1",
 						},
 						"state": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							ValidateFunc: validateState,
-							Description:  "State of the node in the pool",
+							Type:     schema.TypeString,
+							Optional: true,
+							ValidateFunc: validation.StringInSlice([]string{
+								"active",
+								"draining",
+								"disabled",
+							}, false),
+							Description: "State of the node in the pool",
 						},
 						"weight": {
 							Type:         schema.TypeInt,
 							Optional:     true,
 							Default:      1,
-							ValidateFunc: validateWeight,
+							ValidateFunc: validation.IntBetween(1, 100),
 							Description:  "Weight assigned to the node. Valid values are between 1 and 100",
 						},
 						"source_ip": {
@@ -144,7 +153,7 @@ func resourcePool() *schema.Resource {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Description: "Whether or not the software should check that real requests are working",
-				Computed:    true,
+				Default:     false,
 			},
 			"persistence_class": {
 				Type:        schema.TypeString,
@@ -154,7 +163,7 @@ func resourcePool() *schema.Resource {
 			"transparent": {
 				Type:        schema.TypeBool,
 				Optional:    true,
-				Computed:    true,
+				Default:     false,
 				Description: "Whether or not connections to the back ends appears to originate from the source client IP",
 			},
 
@@ -209,11 +218,14 @@ func resourcePool() *schema.Resource {
 							Description: "Identifier for the image of the instances to create",
 						},
 						"ips_to_use": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							Default:      "publicips",
-							Description:  "Type of IP addresses on the node to use",
-							ValidateFunc: validateAutoScalingIPsToUse,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Default:     "publicips",
+							Description: "Type of IP addresses on the node to use",
+							ValidateFunc: validation.StringInSlice([]string{
+								"publicips",
+								"private_ips",
+							}, false),
 						},
 						"last_node_idle_time": {
 							Type:        schema.TypeInt,
@@ -245,7 +257,7 @@ func resourcePool() *schema.Resource {
 							Description:  "Port number to use for each node in auto-scaled pool",
 							ValidateFunc: util.ValidateTCPPort,
 						},
-						"refactory": {
+						"refractory": {
 							Type:        schema.TypeInt,
 							Optional:    true,
 							Default:     180,
@@ -420,10 +432,18 @@ func resourcePool() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"algorithm": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							Description:  "Load balancing algorithm to use",
-							ValidateFunc: validatePoolLBAlgo,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Load balancing algorithm to use",
+							ValidateFunc: validation.StringInSlice([]string{
+								"fastest_response_time",
+								"least_connections",
+								"perceptive",
+								"random",
+								"round_robin",
+								"weighted_least_connections",
+								"weighted_round_robin",
+							}, false),
 						},
 						"priority_enabled": {
 							Type:        schema.TypeBool,
@@ -534,39 +554,59 @@ func resourcePool() *schema.Resource {
 							Description: "SSL/TLS ciphers to allow for connections to a node",
 						},
 						"ssl_support_ssl2": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							Default:      "use_default",
-							Description:  "Whether or not SSLv2 is enabled",
-							ValidateFunc: validateSSLSupportOptions,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Default:     "use_default",
+							Description: "Whether or not SSLv2 is enabled",
+							ValidateFunc: validation.StringInSlice([]string{
+								"disabled",
+								"enabled",
+								"use_default",
+							}, false),
 						},
 						"ssl_support_ssl3": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							Default:      "use_default",
-							Description:  "Whether or not SSLv3 is enabled",
-							ValidateFunc: validateSSLSupportOptions,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Default:     "use_default",
+							Description: "Whether or not SSLv3 is enabled",
+							ValidateFunc: validation.StringInSlice([]string{
+								"disabled",
+								"enabled",
+								"use_default",
+							}, false),
 						},
 						"ssl_support_tls1": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							Default:      "use_default",
-							Description:  "Whether or not TLSv1.0 is enabled",
-							ValidateFunc: validateSSLSupportOptions,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Default:     "use_default",
+							Description: "Whether or not TLSv1.0 is enabled",
+							ValidateFunc: validation.StringInSlice([]string{
+								"disabled",
+								"enabled",
+								"use_default",
+							}, false),
 						},
 						"ssl_support_tls1_1": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							Default:      "use_default",
-							Description:  "Whether or not TLSv1.1 is enabled",
-							ValidateFunc: validateSSLSupportOptions,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Default:     "use_default",
+							Description: "Whether or not TLSv1.1 is enabled",
+							ValidateFunc: validation.StringInSlice([]string{
+								"disabled",
+								"enabled",
+								"use_default",
+							}, false),
 						},
 						"ssl_support_tls1_2": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							Default:      false,
-							Description:  "Whether or not TLSv1.2 is enabled",
-							ValidateFunc: validateSSLSupportOptions,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether or not TLSv1.2 is enabled",
+							ValidateFunc: validation.StringInSlice([]string{
+								"disabled",
+								"enabled",
+								"use_default",
+							}, false),
 						},
 						"strict_verify": {
 							Type:        schema.TypeBool,
@@ -599,11 +639,16 @@ func resourcePool() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"accept_from": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							Default:      "dest_only",
-							Description:  "IP addresses and ports from which responses to UDP requests should be accepted",
-							ValidateFunc: validateUDPAcceptFrom,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Default:     "dest_only",
+							Description: "IP addresses and ports from which responses to UDP requests should be accepted",
+							ValidateFunc: validation.StringInSlice([]string{
+								"all",
+								"dest_ip_only",
+								"dest_only",
+								"ip_mask",
+							}, false),
 						},
 						"accept_from_mask": {
 							Type:         schema.TypeString,
@@ -624,62 +669,12 @@ func resourcePool() *schema.Resource {
 
 }
 
-// validateSSLSupportOptions : check the assigned SSL support choice is valid
-func validateSSLSupportOptions(v interface{}, k string) (ws []string, errors []error) {
-	ssl2Support := v.(string)
-	ssl2SupportOptions := regexp.MustCompile(`^(disabled|enabled|use_default)$`)
-	if !ssl2SupportOptions.MatchString(ssl2Support) {
-		errors = append(errors, fmt.Errorf("%q must be one of disabled, enabled or use_default", k))
-	}
-	return
-}
-
 // validateAcceptFromMask : check the assigned accept from mask is valid
 func validateAcceptFromMask(v interface{}, k string) (ws []string, errors []error) {
 	acceptFromMask := v.(string)
 	acceptFromPattern := regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$`)
 	if !acceptFromPattern.MatchString(acceptFromMask) {
 		errors = append(errors, fmt.Errorf("%q must be in the format xxx.xxx.xxx.xxx/xx e.g. 10.0.0.0/8", k))
-	}
-	return
-}
-
-// validateUDPAcceptFrom : checks the assigned UDP accept from choice is valid
-func validateUDPAcceptFrom(v interface{}, k string) (ws []string, errors []error) {
-	acceptFrom := v.(string)
-	acceptFromOptions := regexp.MustCompile(`^(all|dest_ip_only|dest_only|ip_mask)`)
-	if !acceptFromOptions.MatchString(acceptFrom) {
-		errors = append(errors, fmt.Errorf("%q must be one of all, dest_ip_only, dest_only or ip_mask", k))
-	}
-	return
-}
-
-// validateAutoScalingIPsToUse : check the assigned auto scaling IPs to use is a valid choice
-func validateAutoScalingIPsToUse(v interface{}, k string) (ws []string, errors []error) {
-	ipType := v.(string)
-	ipTypeOptions := regexp.MustCompile(`^(publicips|private_ips)`)
-	if !ipTypeOptions.MatchString(ipType) {
-		errors = append(errors, fmt.Errorf("%q must be one of publicips or private_ips", k))
-	}
-	return
-}
-
-// validateNodeDeleteBehaviour : check the assigned node delete behaviour is a valid choice
-func validateNodeDeleteBehaviour(v interface{}, k string) (ws []string, errors []error) {
-	behaviour := v.(string)
-	behvaiourOptions := regexp.MustCompile(`^(immediate|drain)$`)
-	if !behvaiourOptions.MatchString(behaviour) {
-		errors = append(errors, fmt.Errorf("%q must be one of immediate or drain", k))
-	}
-	return
-}
-
-// validatePoolLBAlgo : check the assigned algorithm is a valid choice
-func validatePoolLBAlgo(v interface{}, k string) (ws []string, errors []error) {
-	algo := v.(string)
-	algoOptions := regexp.MustCompile(`^(fastest_response_time|least_connections|perceptive|random|round_robin|weighted_least_connections|weighted_round_robin)$`)
-	if !algoOptions.MatchString(algo) {
-		errors = append(errors, fmt.Errorf("%q must be one of fastest_response_time, least_connections, perceptive, random, round_robin, weighted_least_connections, weighted_round_robin", k))
 	}
 	return
 }
@@ -694,517 +689,207 @@ func validateNode(v interface{}, k string) (ws []string, errors []error) {
 	return
 }
 
-// validateWeight : check the assigned weight is a valid choice
-func validateWeight(v interface{}, k string) (ws []string, errors []error) {
-	weight := v.(int)
+func getPoolMapAttributeList(mapName string) []string {
 
-	if weight < 1 || weight > 100 {
-		errors = append(errors, fmt.Errorf("%q must be between 1-100", k))
-	}
-	return
-}
+	var attributes []string
 
-// validateState : check the assigned state is a valid choice
-func validateState(v interface{}, k string) (ws []string, errors []error) {
-	state := v.(string)
-	stateOptions := regexp.MustCompile(`^(active|draining|disabled)$`)
-	if !stateOptions.MatchString(state) {
-		errors = append(errors, fmt.Errorf("%q must be one of active, draining, disabled", k))
-	}
-	return
-}
-
-// checkStringPrefix : check a string starts with a given prefix
-func checkStringPrefix(prefix string, list []string) error {
-	for _, item := range list {
-		checkFormat := regexp.MustCompile(`^` + prefix)
-		if !checkFormat.MatchString(item) {
-			return fmt.Errorf("one or more items in the list of strings doesn't match the prefix %s", prefix)
+	switch mapName {
+	case "basic":
+		attributes = []string{"bandwidth_class",
+			"failure_pool",
+			"max_connection_attempts",
+			"max_idle_connections_pernode",
+			"max_timed_out_connection_attempts",
+			"node_close_with_rst",
+			"node_connection_attempts",
+			"node_delete_behavior",
+			"node_drain_to_delete_timeout",
+			"note",
+			"passive_monitoring",
+			"persistence_class",
+			"transparent",
 		}
-	}
-	return nil
-}
-
-// buildNodesTable : builds the nodes table
-func buildNodesTable(nodesTable *schema.Set) []pool.MemberNode {
-
-	memberNodes := make([]pool.MemberNode, 0)
-	for _, item := range nodesTable.List() {
-		nodeItem := item.(map[string]interface{})
-		memberNode := pool.MemberNode{}
-		if node, ok := nodeItem["node"].(string); ok {
-			memberNode.Node = node
+	case "nodes_table":
+		attributes = []string{"node",
+			"priority",
+			"state",
+			"weight",
+			"source_ip",
 		}
-		if priority, ok := nodeItem["priority"].(int); ok {
-			nodePriority := uint(priority)
-			memberNode.Priority = &nodePriority
+	case "auto_scaling":
+		attributes = []string{"addnode_delaytime",
+			"addnode_delaytime",
+			"cloud_credentials",
+			"cluster",
+			"data_center",
+			"enabled",
+			"external",
+			"extraargs",
+			"hysteresis",
+			"imageid",
+			"ips_to_use",
+			"last_node_idle_time",
+			"max_nodes",
+			"min_nodes",
+			"name",
+			"port",
+			"refractory",
+			"response_time",
+			"scale_down_level",
+			"scale_up_level",
+			"securitygroupids",
+			"size_id",
+			"subnetids",
 		}
-		if state, ok := nodeItem["state"].(string); ok {
-			memberNode.State = state
+	case "pool_connection":
+		attributes = []string{"max_connect_time",
+			"max_connections_per_node",
+			"max_queue_size",
+			"max_reply_time",
+			"queue_timeout",
 		}
-		if weight, ok := nodeItem["weight"].(int); ok {
-			memberNode.Weight = &weight
+	case "dns_autoscale":
+		attributes = []string{"enabled", "hostnames", "port"}
+	case "ftp":
+		attributes = []string{"support_rfc_2428"}
+	case "http":
+		attributes = []string{"keepalive", "keepalive_non_idempotent"}
+	case "kerberos_protocol_transition":
+		attributes = []string{"principal", "target"}
+	case "load_balancing":
+		attributes = []string{"algorithm", "priority_enabled", "priority_nodes"}
+	case "node":
+		attributes = []string{"close_on_death", "retry_fail_time"}
+	case "smtp":
+		attributes = []string{"send_starttls"}
+	case "ssl":
+		attributes = []string{"client_auth",
+			"common_name_match",
+			"elliptic_curves",
+			"enable",
+			"send_close_alerts",
+			"server_name",
+			"signature_algorithms",
+			"ssl_ciphers",
+			"ssl_support_ssl2",
+			"ssl_support_ssl3",
+			"ssl_support_tls1",
+			"ssl_support_tls1_1",
+			"ssl_support_tls1_2",
+			"strict_verify",
 		}
-		if sourceIP, ok := nodeItem["source_ip"].(string); ok {
-			memberNode.SourceIP = sourceIP
-		}
-		memberNodes = append(memberNodes, memberNode)
+	case "tcp":
+		attributes = []string{"nagle"}
+	case "udp":
+		attributes = []string{"accept_from", "accept_from_mask", "response_timeout"}
+	default:
+		attributes = []string{}
 	}
-	return memberNodes
-}
-
-// buildAutoScaling : build the auto scaling object
-func buildAutoScaling(autoScalingBlock interface{}) (pool.AutoScaling, error) {
-
-	autoScalingObject := pool.AutoScaling{}
-	autoScalingList := autoScalingBlock.([]interface{})
-	autoScalingItem := autoScalingList[0].(map[string]interface{})
-
-	if addNodeDelayTime, ok := autoScalingItem["addnode_delaytime"].(int); ok {
-		autoScaleAddNodeDelayTime := uint(addNodeDelayTime)
-		autoScalingObject.AddNodeDelayTime = &autoScaleAddNodeDelayTime
-	}
-	if cloudCredentials, ok := autoScalingItem["cloud_credentials"].(string); ok {
-		autoScalingObject.CloudCredentials = cloudCredentials
-	}
-	if cluster, ok := autoScalingItem["cluster"].(string); ok {
-		autoScalingObject.Cluster = cluster
-	}
-	if dataCentre, ok := autoScalingItem["data_center"].(string); ok {
-		autoScalingObject.DataCenter = dataCentre
-	}
-	if enabled, ok := autoScalingItem["enabled"].(bool); ok {
-		autoScalingObject.Enabled = &enabled
-	}
-	if external, ok := autoScalingItem["external"].(bool); ok {
-		autoScalingObject.External = &external
-	}
-	if extraArgs, ok := autoScalingItem["extraargs"].(string); ok {
-		autoScalingObject.ExtraArgs = extraArgs
-	}
-	if hysteresis, ok := autoScalingItem["hysteresis"].(int); ok {
-		uintHysteresis := uint(hysteresis)
-		autoScalingObject.Hysteresis = &uintHysteresis
-	}
-	if imageID, ok := autoScalingItem["imageid"].(string); ok {
-		autoScalingObject.ImageID = imageID
-	}
-	if ipsToUse, ok := autoScalingItem["ips_to_use"].(string); ok {
-		autoScalingObject.IPsToUse = ipsToUse
-	}
-	if lastNodeIdleTime, ok := autoScalingItem["last_node_idle_time"].(int); ok {
-		uintLastNodeIdleTime := uint(lastNodeIdleTime)
-		autoScalingObject.LastNodeIdleTime = &uintLastNodeIdleTime
-	}
-	if maxNodes, ok := autoScalingItem["max_nodes"].(int); ok {
-		uintMaxNodes := uint(maxNodes)
-		autoScalingObject.MaxNodes = &uintMaxNodes
-	}
-	if minNodes, ok := autoScalingItem["min_nodes"].(int); ok {
-		uintMinNodes := uint(minNodes)
-		autoScalingObject.MinNodes = &uintMinNodes
-	}
-	if name, ok := autoScalingItem["name"].(string); ok {
-		autoScalingObject.Name = name
-	}
-	if port, ok := autoScalingItem["port"].(int); ok {
-		uintPort := uint(port)
-		autoScalingObject.Port = &uintPort
-	}
-	if refactory, ok := autoScalingItem["refactory"].(int); ok {
-		uintRefactory := uint(refactory)
-		autoScalingObject.Refractory = &uintRefactory
-	}
-	if responseTime, ok := autoScalingItem["response_time"].(int); ok {
-		uintResponseTime := uint(responseTime)
-		autoScalingObject.ResponseTime = &uintResponseTime
-	}
-	if scaleDownLevel, ok := autoScalingItem["scale_down_level"].(int); ok {
-		uintScaleDownLevel := uint(scaleDownLevel)
-		autoScalingObject.ScaleDownLevel = &uintScaleDownLevel
-	}
-	if scaleUpLevel, ok := autoScalingItem["scale_up_level"].(int); ok {
-		uintScaleUpLevel := uint(scaleUpLevel)
-		autoScalingObject.ScaleUpLevel = &uintScaleUpLevel
-	}
-	if securityGroupIDs, ok := autoScalingItem["securitygroupids"].(*schema.Set); ok {
-		securityGroupIDList := util.BuildStringListFromSet(securityGroupIDs)
-		err := checkStringPrefix("sg-", securityGroupIDList)
-		if err != nil {
-			return autoScalingObject, err
-		}
-		autoScalingObject.SecurityGroupIDs = securityGroupIDList
-	}
-	if sizeID, ok := autoScalingItem["size_id"].(string); ok {
-		autoScalingObject.SizeID = sizeID
-	}
-	if subnetIDs, ok := autoScalingItem["subnetids"].(*schema.Set); ok {
-		subnetIDList := util.BuildStringListFromSet(subnetIDs)
-		err := checkStringPrefix("subnet-", subnetIDList)
-		if err != nil {
-			return autoScalingObject, err
-		}
-		autoScalingObject.SubnetIDs = subnetIDList
-	}
-
-	return autoScalingObject, nil
-}
-
-// buildConnection : build the connection object
-func buildConnection(connectionBlock interface{}) pool.Connection {
-
-	connectionObject := pool.Connection{}
-	connectionList := connectionBlock.([]interface{})
-	connectionItem := connectionList[0].(map[string]interface{})
-
-	if maxConnectTime, ok := connectionItem["max_connect_time"].(int); ok {
-		maxConnectTimeUint := uint(maxConnectTime)
-		connectionObject.MaxConnectTime = &maxConnectTimeUint
-	}
-	if maxConnectionsPerNode, ok := connectionItem["max_connections_per_node"].(int); ok {
-		maxConnectionsPerNodeUint := uint(maxConnectionsPerNode)
-		connectionObject.MaxConnectionsPerNode = &maxConnectionsPerNodeUint
-	}
-
-	if maxQueueSize, ok := connectionItem["max_queue_size"].(int); ok {
-		maxQueueSizeUint := uint(maxQueueSize)
-		connectionObject.MaxQueueSize = &maxQueueSizeUint
-	}
-	if maxReplyTime, ok := connectionItem["max_reply_time"].(int); ok {
-		maxReplyTimeUint := uint(maxReplyTime)
-		connectionObject.MaxReplyTime = &maxReplyTimeUint
-	}
-	if queueTimeout, ok := connectionItem["queue_timeout"].(int); ok {
-		queueTimeoutUint := uint(queueTimeout)
-		connectionObject.QueueTimeout = &queueTimeoutUint
-	}
-	return connectionObject
-}
-
-// buildDNSAutoScale : build the DNS auto scale object
-func buildDNSAutoScale(dnsAutoScaleBlock interface{}) pool.DNSAutoScale {
-
-	dnsAutoScaleObject := pool.DNSAutoScale{}
-	dnsAutoScaleList := dnsAutoScaleBlock.([]interface{})
-	dnsAutoScaleItem := dnsAutoScaleList[0].(map[string]interface{})
-
-	if enabled, ok := dnsAutoScaleItem["enabled"].(bool); ok {
-		dnsAutoScaleObject.Enabled = &enabled
-	}
-	if hostnames, ok := dnsAutoScaleItem["hostnames"]; ok {
-		dnsAutoScaleObject.Hostnames = util.BuildStringListFromSet(hostnames.(*schema.Set))
-	}
-	if port, ok := dnsAutoScaleItem["port"].(int); ok {
-		portUint := uint(port)
-		dnsAutoScaleObject.Port = &portUint
-	}
-	return dnsAutoScaleObject
-}
-
-// buildFTP : build the FTP object
-func buildFTP(ftpBlock interface{}) pool.FTP {
-
-	ftpObject := pool.FTP{}
-	ftpList := ftpBlock.([]interface{})
-	ftpItem := ftpList[0].(map[string]interface{})
-
-	if supportRFC2428, ok := ftpItem["support_rfc_2428"].(bool); ok {
-		ftpObject.SupportRFC2428 = &supportRFC2428
-	}
-	return ftpObject
-}
-
-// buildHTTP : build the HTTP object
-func buildHTTP(httpBlock interface{}) pool.HTTP {
-
-	httpObject := pool.HTTP{}
-	httpList := httpBlock.([]interface{})
-	httpItem := httpList[0].(map[string]interface{})
-
-	if keepalive, ok := httpItem["keepalive"].(bool); ok {
-		httpObject.HTTPKeepAlive = &keepalive
-	}
-	if keepaliveNonIdempotent, ok := httpItem["keepalive_non_idempotent"].(bool); ok {
-		httpObject.HTTPKeepAlive = &keepaliveNonIdempotent
-	}
-	return httpObject
-}
-
-// buildKerberosProtocolTransition : build the kerberos protocol transitition object
-func buildKerberosProtocolTransition(kerberosBlock interface{}) pool.KerberosProtocolTransition {
-
-	kerberosObject := pool.KerberosProtocolTransition{}
-	kerberosList := kerberosBlock.([]interface{})
-	kerberosItem := kerberosList[0].(map[string]interface{})
-
-	if principle, ok := kerberosItem["principal"].(string); ok {
-		kerberosObject.Principal = principle
-	}
-	if target, ok := kerberosItem["target"].(string); ok {
-		kerberosObject.Target = target
-	}
-	return kerberosObject
-}
-
-// buildLoadBalancing : build the load balancing object
-func buildLoadBalancing(loadBalancingBlock interface{}) pool.LoadBalancing {
-
-	loadBalancingObject := pool.LoadBalancing{}
-	loadBalancingList := loadBalancingBlock.([]interface{})
-	loadBalancingItem := loadBalancingList[0].(map[string]interface{})
-
-	if algorithm, ok := loadBalancingItem["algorithm"].(string); ok {
-		loadBalancingObject.Algorithm = algorithm
-	}
-	if priorityEnabled, ok := loadBalancingItem["priority_enabled"].(bool); ok {
-		loadBalancingObject.PriorityEnabled = &priorityEnabled
-	}
-	if priorityNodes, ok := loadBalancingItem["priority_nodes"].(int); ok {
-		priorityNodesUint := uint(priorityNodes)
-		loadBalancingObject.PriorityNodes = &priorityNodesUint
-	}
-	return loadBalancingObject
-}
-
-// buildNode : build the Node object
-func buildNode(nodeBlock interface{}) pool.Node {
-
-	nodeObject := pool.Node{}
-	nodeList := nodeBlock.([]interface{})
-	nodeItem := nodeList[0].(map[string]interface{})
-
-	if closeOnDeath, ok := nodeItem["close_on_death"].(bool); ok {
-		nodeObject.CloseOnDeath = &closeOnDeath
-	}
-	if retryFailTime, ok := nodeItem["retry_fail_time"].(int); ok {
-		retryFailTimeUint := uint(retryFailTime)
-		nodeObject.RetryFailTime = &retryFailTimeUint
-	}
-	return nodeObject
-}
-
-// buildSMTP : build the SMTP object
-func buildSMTP(smtpBlock interface{}) pool.SMTP {
-
-	smtpObject := pool.SMTP{}
-	smtpList := smtpBlock.([]interface{})
-	smtpItem := smtpList[0].(map[string]interface{})
-
-	if sendStartTLS, ok := smtpItem["send_starttls"].(bool); ok {
-		smtpObject.SendSTARTTLS = &sendStartTLS
-	}
-	return smtpObject
-}
-
-// buildSSL : build the SSL object
-func buildSSL(sslBlock interface{}) pool.Ssl {
-
-	sslObject := pool.Ssl{}
-	sslList := sslBlock.([]interface{})
-	sslItem := sslList[0].(map[string]interface{})
-
-	if clientAuth, ok := sslItem["client_auth"].(bool); ok {
-		sslObject.ClientAuth = &clientAuth
-	}
-	if commonNameMatch, ok := sslItem["common_name_match"]; ok {
-		sslObject.CommonNameMatch = util.BuildStringListFromSet(commonNameMatch.(*schema.Set))
-	}
-	if ellipticCurves, ok := sslItem["elliptic_curves"].(*schema.Set); ok {
-		sslObject.EllipticCurves = util.BuildStringListFromSet(ellipticCurves)
-	}
-	if enable, ok := sslItem["enable"].(bool); ok {
-		sslObject.Enable = &enable
-	}
-	if sendCloseAlerts, ok := sslItem["send_close_alerts"].(bool); ok {
-		sslObject.SendCloseAlerts = &sendCloseAlerts
-	}
-	if serverName, ok := sslItem["server_name"].(bool); ok {
-		sslObject.ServerName = &serverName
-	}
-	if signatureAlgorithms, ok := sslItem["signature_algorithms"].(string); ok {
-		sslObject.SignatureAlgorithms = signatureAlgorithms
-	}
-	if sslCiphers, ok := sslItem["ssl_ciphers"].(string); ok {
-		sslObject.SslCiphers = sslCiphers
-	}
-	if sslSupportSSL2, ok := sslItem["ssl_support_ssl2"].(string); ok {
-		sslObject.SSLSupportSSL2 = sslSupportSSL2
-	}
-	if sslSupportSSL3, ok := sslItem["ssl_support_ssl3"].(string); ok {
-		sslObject.SSLSupportSSL3 = sslSupportSSL3
-	}
-	if sslSupportTLS1, ok := sslItem["ssl_support_tls1"].(string); ok {
-		sslObject.SSLSupportTLS1 = sslSupportTLS1
-	}
-	if sslSupportTLS1_1, ok := sslItem["ssl_support_tls1_1"].(string); ok {
-		sslObject.SSLSupportTLS1_1 = sslSupportTLS1_1
-	}
-	if sslSupportTLS1_2, ok := sslItem["ssl_support_tls1_2"].(string); ok {
-		sslObject.SSLSupportTLS1_2 = sslSupportTLS1_2
-	}
-	if strictVerify, ok := sslItem["strict_verify"].(bool); ok {
-		sslObject.StrictVerify = &strictVerify
-	}
-	return sslObject
-}
-
-// buildTCP : build the TCP object
-func buildTCP(tcpBlock interface{}) pool.TCP {
-
-	tcpObject := pool.TCP{}
-	tcpList := tcpBlock.([]interface{})
-	tcpItem := tcpList[0].(map[string]interface{})
-
-	if nagle, ok := tcpItem["nagle"].(bool); ok {
-		tcpObject.Nagle = &nagle
-	}
-	return tcpObject
-}
-
-// buildUDP : build the UDP object
-func buildUDP(udpBlock interface{}) pool.UDP {
-
-	udpObject := pool.UDP{}
-	udpList := udpBlock.([]interface{})
-	udpItem := udpList[0].(map[string]interface{})
-
-	if acceptFrom, ok := udpItem["accept_from"].(string); ok {
-		udpObject.AcceptFrom = acceptFrom
-	}
-	if acceptFromMask, ok := udpItem["accept_from_mask"].(string); ok {
-		udpObject.AcceptFromMask = acceptFromMask
-	}
-	if responseTimeout, ok := udpItem["response_timeout"].(int); ok {
-		responseTimeoutUint := uint(responseTimeout)
-		udpObject.ResponseTimeout = &responseTimeoutUint
-	}
-	return udpObject
+	return attributes
 }
 
 // resourcePoolCreate - Creates a  pool resource object
 func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 
+	//var nodesTableDefined, nodesListDefined bool
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
+	monitorConfiguration := make(map[string]interface{})
+	monitorPropertiesConfiguration := make(map[string]interface{})
 
-	var nodesTableDefined, nodesListDefined bool
+	poolName := d.Get("name").(string)
 
-	var createPool pool.Pool
-	var poolName string
-	if v, ok := d.GetOk("name"); ok && v != "" {
-		poolName = v.(string)
-	}
-	if v, ok := d.GetOk("bandwidth_class"); ok {
-		createPool.Properties.Basic.BandwidthClass = v.(string)
-	}
-	if v, ok := d.GetOk("failure_pool"); ok {
-		createPool.Properties.Basic.FailurePool = v.(string)
-	}
-	if v, ok := d.GetOk("max_connection_attempts"); ok {
-		maxConnectionAttempts := uint(v.(int))
-		createPool.Properties.Basic.MaxConnectionAttempts = &maxConnectionAttempts
-	}
-	if v, ok := d.GetOk("max_idle_connections_pernode"); ok {
-		maxIdleConnectionsPerNode := uint(v.(int))
-		createPool.Properties.Basic.MaxIdleConnectionsPerNode = &maxIdleConnectionsPerNode
-	}
-	if v, ok := d.GetOk("max_timed_out_connection_attempts"); ok {
-		maxTimedOutConnectionAttempts := uint(v.(int))
-		createPool.Properties.Basic.MaxTimeoutConnectionAttempts = &maxTimedOutConnectionAttempts
-	}
+	// basic section
+	monitorBasicConfiguration := make(map[string]interface{})
+	monitorBasicConfiguration = util.AddSimpleGetAttributesToMap(d, monitorBasicConfiguration, "", getPoolMapAttributeList("basic"))
+	monitorBasicConfiguration["monitors"] = util.BuildStringArrayFromInterface(d.Get("monitors"))
 
-	createPool.Properties.Basic.Monitors = util.BuildStringArrayFromInterface(d.Get("monitors"))
-
-	if v, ok := d.GetOk("node_close_with_rst"); ok {
-		nodeCloseWithRst := v.(bool)
-		createPool.Properties.Basic.NodeCloseWithReset = &nodeCloseWithRst
-	}
-	if v, ok := d.GetOk("node_connection_attempts"); ok {
-		nodeConnectionAttempts := uint(v.(int))
-		createPool.Properties.Basic.NodeConnectionAttempts = &nodeConnectionAttempts
-	}
-	if v, ok := d.GetOk("node_delete_behaviour"); ok {
-		createPool.Properties.Basic.NodeDeleteBehavior = v.(string)
-	}
-	if v, ok := d.GetOk("node_drain_to_delete_timeout"); ok {
-		nodeDrainDeleteTimeout := uint(v.(int))
-		createPool.Properties.Basic.NodeDrainDeleteTimeout = &nodeDrainDeleteTimeout
-	}
 	if v, ok := d.GetOk("nodes_table"); ok {
-		createPool.Properties.Basic.NodesTable = buildNodesTable(v.(*schema.Set))
-		nodesTableDefined = true
-	} else {
+		//monitorBasicConfiguration["nodes_table"] = buildNodesTable(v.(*schema.Set).List(), "nodes_table")
+		monitorBasicConfiguration["nodes_table"] = util.BuildListMaps(v.(*schema.Set).List(), getPoolMapAttributeList("nodes_table"))
+		//nodesTableDefined = true
+	} /*else {
 		if v, ok := d.GetOk("nodes_list"); ok {
 			addresses := v.(*schema.Set).List()
+
+
 			nodesTable := make([]pool.MemberNode, 0)
 			for _, ipAddr := range addresses {
 				var rec pool.MemberNode
 				rec.Node = ipAddr.(string)
 				nodesTable = append(nodesTable, rec)
 			}
-			createPool.Properties.Basic.NodesTable = nodesTable
+			monitorBasicConfiguration["nodes_table"] = nodesTable
 			nodesListDefined = true
 		}
 	}
 	if nodesTableDefined == false && nodesListDefined == false {
 		return fmt.Errorf("Error creating resource: no one of nodes_table or nodes_list attr has been defined")
-	}
-	if v, ok := d.GetOk("note"); ok {
-		createPool.Properties.Basic.Note = v.(string)
-	}
-	if v, ok := d.GetOk("passive_monitoring"); ok {
-		passiveMonitoring := v.(bool)
-		createPool.Properties.Basic.PassiveMonitoring = &passiveMonitoring
-	}
-	if v, ok := d.GetOk("persistence_class"); ok {
-		createPool.Properties.Basic.PersistenceClass = v.(string)
-	}
-	if v, ok := d.GetOk("transparent"); ok {
-		transparent := v.(bool)
-		createPool.Properties.Basic.Transparent = &transparent
-	}
+	}*/
+	monitorPropertiesConfiguration["basic"] = monitorBasicConfiguration
+
+	// auto_scaling section
 	if v, ok := d.GetOk("auto_scaling"); ok {
-		autoScaling, err := buildAutoScaling(v)
-		if err != nil {
-			return fmt.Errorf("BrocadeVTM Pool - auto_scaling error whilst creating %s: %v", poolName, err)
-		}
-		createPool.Properties.AutoScaling = autoScaling
-	}
-	if v, ok := d.GetOk("pool_connection"); ok {
-		createPool.Properties.Connection = buildConnection(v)
-	}
-	if v, ok := d.GetOk("dns_autoscale"); ok {
-		createPool.Properties.DNSAutoScale = buildDNSAutoScale(v)
-	}
-	if v, ok := d.GetOk("ftp"); ok {
-		createPool.Properties.FTP = buildFTP(v)
-	}
-	if v, ok := d.GetOk("http"); ok {
-		createPool.Properties.HTTP = buildHTTP(v)
-	}
-	if v, ok := d.GetOk("kerberos_protocol_transition"); ok {
-		createPool.Properties.KerberosProtocolTransition = buildKerberosProtocolTransition(v)
-	}
-	if v, ok := d.GetOk("load_balancing"); ok {
-		createPool.Properties.LoadBalancing = buildLoadBalancing(v)
-	}
-	if v, ok := d.GetOk("node"); ok {
-		createPool.Properties.Node = buildNode(v)
-	}
-	if v, ok := d.GetOk("smtp"); ok {
-		createPool.Properties.SMTP = buildSMTP(v)
-	}
-	if v, ok := d.GetOk("ssl"); ok {
-		createPool.Properties.Ssl = buildSSL(v)
-	}
-	if v, ok := d.GetOk("tcp"); ok {
-		createPool.Properties.TCP = buildTCP(v)
-	}
-	if v, ok := d.GetOk("udp"); ok {
-		createPool.Properties.UDP = buildUDP(v)
+		monitorPropertiesConfiguration["auto_scaling"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("auto_scaling"))[0]
 	}
 
-	err := client.Set("pools", poolName, createPool, nil)
+	// connection section
+	if v, ok := d.GetOk("pool_connection"); ok {
+		monitorPropertiesConfiguration["connection"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("pool_connection"))[0]
+	}
+
+	// dns_autoscale section
+	if v, ok := d.GetOk("dns_autoscale"); ok {
+		monitorPropertiesConfiguration["dns_autoscale"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("dns_autoscale"))[0]
+	}
+
+	// ftp section
+	if v, ok := d.GetOk("ftp"); ok {
+		monitorPropertiesConfiguration["ftp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("ftp"))[0]
+	}
+
+	// http section
+	if v, ok := d.GetOk("http"); ok {
+		monitorPropertiesConfiguration["http"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("http"))[0]
+	}
+
+	// kerberos_protocol_transition section
+	if v, ok := d.GetOk("kerberos_protocol_transition"); ok {
+		monitorPropertiesConfiguration["kerberos_protocol_transition"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("kerberos_protocol_transition"))[0]
+	}
+
+	// load_balancing section
+	if v, ok := d.GetOk("load_balancing"); ok {
+		monitorPropertiesConfiguration["load_balancing"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("load_balancing"))[0]
+	}
+
+	// node section
+	if v, ok := d.GetOk("node"); ok {
+		monitorPropertiesConfiguration["node"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("node"))[0]
+	}
+
+	// smtp section
+	if v, ok := d.GetOk("smtp"); ok {
+		monitorPropertiesConfiguration["smtp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("smtp"))[0]
+	}
+
+	// ssl section
+	if v, ok := d.GetOk("ssl"); ok {
+		monitorPropertiesConfiguration["ssl"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("ssl"))[0]
+	}
+
+	// tcp section
+	if v, ok := d.GetOk("tcp"); ok {
+		monitorPropertiesConfiguration["tcp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("tcp"))[0]
+	}
+
+	// udp section
+	if v, ok := d.GetOk("udp"); ok {
+		monitorPropertiesConfiguration["udp"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("udp"))[0]
+	}
+
+	monitorConfiguration["properties"] = monitorPropertiesConfiguration
+	err := client.Set("pools", poolName, monitorConfiguration, nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Pool error whilst creating %s: %s", poolName, err)
 	}
@@ -1323,21 +1008,23 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 		nodeDrainTimeout := uint(d.Get("node_drain_to_delete_timeout").(int))
 		updatePool.Properties.Basic.NodeDrainDeleteTimeout = &nodeDrainTimeout
 	}
-	if d.HasChange("nodes_table") {
-		updatePool.Properties.Basic.NodesTable = buildNodesTable(d.Get("nodes_table").(*schema.Set))
-	}
-	if d.HasChange("nodes_list") {
-		if v, ok := d.GetOk("nodes_list"); ok {
-			addresses := v.(*schema.Set).List()
-			nodesTable := make([]pool.MemberNode, 0)
-			for _, ipAddr := range addresses {
-				var rec pool.MemberNode
-				rec.Node = ipAddr.(string)
-				nodesTable = append(nodesTable, rec)
-			}
-			updatePool.Properties.Basic.NodesTable = nodesTable
+	/*
+		if d.HasChange("nodes_table") {
+			updatePool.Properties.Basic.NodesTable = buildNodesTable(d.Get("nodes_table").(*schema.Set))
 		}
-	}
+		if d.HasChange("nodes_list") {
+			if v, ok := d.GetOk("nodes_list"); ok {
+				addresses := v.(*schema.Set).List()
+				nodesTable := make([]pool.MemberNode, 0)
+				for _, ipAddr := range addresses {
+					var rec pool.MemberNode
+					rec.Node = ipAddr.(string)
+					nodesTable = append(nodesTable, rec)
+				}
+				updatePool.Properties.Basic.NodesTable = nodesTable
+			}
+		}
+	*/
 	if d.HasChange("note") {
 		if v, ok := d.GetOk("note"); ok {
 			updatePool.Properties.Basic.Note = v.(string)
@@ -1353,76 +1040,76 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 			updatePool.Properties.Basic.PersistenceClass = v.(string)
 		}
 	}
-
 	if d.HasChange("transparent") {
 		transparent := d.Get("transparent").(bool)
 		updatePool.Properties.Basic.Transparent = &transparent
 	}
-	if d.HasChange("auto_scaling") {
-		if v, ok := d.GetOk("auto_scaling"); ok {
-			autoScaling, err := buildAutoScaling(v)
-			if err != nil {
-				return fmt.Errorf("BrocadeVTM Pool - auto_scaling error whilst updating %s: %v", poolName, err)
+	/*
+		if d.HasChange("auto_scaling") {
+			if v, ok := d.GetOk("auto_scaling"); ok {
+				autoScaling, err := buildAutoScaling(v)
+				if err != nil {
+					return fmt.Errorf("BrocadeVTM Pool - auto_scaling error whilst updating %s: %v", poolName, err)
+				}
+				updatePool.Properties.AutoScaling = autoScaling
 			}
-			updatePool.Properties.AutoScaling = autoScaling
 		}
-	}
-	if d.HasChange("pool_connection") {
-		if v, ok := d.GetOk("pool_connection"); ok {
-			updatePool.Properties.Connection = buildConnection(v)
+		if d.HasChange("pool_connection") {
+			if v, ok := d.GetOk("pool_connection"); ok {
+				updatePool.Properties.Connection = buildConnection(v)
+			}
 		}
-	}
-	if d.HasChange("dns_autoscale") {
-		if v, ok := d.GetOk("dns_autoscale"); ok {
-			updatePool.Properties.DNSAutoScale = buildDNSAutoScale(v)
+		if d.HasChange("dns_autoscale") {
+			if v, ok := d.GetOk("dns_autoscale"); ok {
+				updatePool.Properties.DNSAutoScale = buildDNSAutoScale(v)
+			}
 		}
-	}
-	if d.HasChange("ftp") {
-		if v, ok := d.GetOk("ftp"); ok {
-			updatePool.Properties.FTP = buildFTP(v)
+		if d.HasChange("ftp") {
+			if v, ok := d.GetOk("ftp"); ok {
+				updatePool.Properties.FTP = buildFTP(v)
+			}
 		}
-	}
-	if d.HasChange("http") {
-		if v, ok := d.GetOk("http"); ok {
-			updatePool.Properties.HTTP = buildHTTP(v)
+		if d.HasChange("http") {
+			if v, ok := d.GetOk("http"); ok {
+				updatePool.Properties.HTTP = buildHTTP(v)
+			}
 		}
-	}
-	if d.HasChange("kerberos_protocol_transition") {
-		if v, ok := d.GetOk("kerberos_protocol_transition"); ok {
-			updatePool.Properties.KerberosProtocolTransition = buildKerberosProtocolTransition(v)
+		if d.HasChange("kerberos_protocol_transition") {
+			if v, ok := d.GetOk("kerberos_protocol_transition"); ok {
+				updatePool.Properties.KerberosProtocolTransition = buildKerberosProtocolTransition(v)
+			}
 		}
-	}
-	if d.HasChange("load_balancing") {
-		if v, ok := d.GetOk("load_balancing"); ok {
-			updatePool.Properties.LoadBalancing = buildLoadBalancing(v)
+		if d.HasChange("load_balancing") {
+			if v, ok := d.GetOk("load_balancing"); ok {
+				updatePool.Properties.LoadBalancing = buildLoadBalancing(v)
+			}
 		}
-	}
-	if d.HasChange("node") {
-		if v, ok := d.GetOk("node"); ok {
-			updatePool.Properties.Node = buildNode(v)
+		if d.HasChange("node") {
+			if v, ok := d.GetOk("node"); ok {
+				updatePool.Properties.Node = buildNode(v)
+			}
 		}
-	}
-	if d.HasChange("smtp") {
-		if v, ok := d.GetOk("smtp"); ok {
-			updatePool.Properties.SMTP = buildSMTP(v)
+		if d.HasChange("smtp") {
+			if v, ok := d.GetOk("smtp"); ok {
+				updatePool.Properties.SMTP = buildSMTP(v)
+			}
 		}
-	}
-	if d.HasChange("ssl") {
-		if v, ok := d.GetOk("ssl"); ok {
-			updatePool.Properties.Ssl = buildSSL(v)
+		if d.HasChange("ssl") {
+			if v, ok := d.GetOk("ssl"); ok {
+				updatePool.Properties.Ssl = buildSSL(v)
+			}
 		}
-	}
-	if d.HasChange("tcp") {
-		if v, ok := d.GetOk("tcp"); ok {
-			updatePool.Properties.TCP = buildTCP(v)
+		if d.HasChange("tcp") {
+			if v, ok := d.GetOk("tcp"); ok {
+				updatePool.Properties.TCP = buildTCP(v)
+			}
 		}
-	}
-	if d.HasChange("udp") {
-		if v, ok := d.GetOk("udp"); ok {
-			updatePool.Properties.UDP = buildUDP(v)
+		if d.HasChange("udp") {
+			if v, ok := d.GetOk("udp"); ok {
+				updatePool.Properties.UDP = buildUDP(v)
+			}
 		}
-	}
-
+	*/
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 	err := client.Set("pools", poolName, updatePool, nil)
