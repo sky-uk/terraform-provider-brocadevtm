@@ -5,7 +5,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/pool"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"net/http"
 	"regexp"
@@ -56,7 +55,7 @@ func resourcePool() *schema.Resource {
 				Description:  "Maxiumum failed connection attempts within the max_reply_time.",
 			},
 			"monitors": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Optional:    true,
 				Description: "List of monitors to associate with this pool",
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -168,8 +167,9 @@ func resourcePool() *schema.Resource {
 			},
 
 			"auto_scaling": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -304,8 +304,9 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"pool_connection": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -345,8 +346,9 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"dns_autoscale": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -373,8 +375,9 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"ftp": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -388,8 +391,9 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"http": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -409,8 +413,9 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"kerberos_protocol_transition": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -428,8 +433,9 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"load_balancing": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -462,8 +468,9 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"node": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -483,8 +490,9 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"smtp": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -498,8 +506,9 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"ssl": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -620,8 +629,9 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"tcp": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -635,8 +645,9 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"udp": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -702,6 +713,7 @@ func getPoolMapAttributeList(mapName string) []string {
 			"max_connection_attempts",
 			"max_idle_connections_pernode",
 			"max_timed_out_connection_attempts",
+			"monitors",
 			"node_close_with_rst",
 			"node_connection_attempts",
 			"node_drain_to_delete_timeout",
@@ -829,11 +841,11 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	// basic section
 	poolBasicConfiguration := make(map[string]interface{})
 	poolBasicConfiguration = util.AddSimpleGetAttributesToMap(d, poolBasicConfiguration, "", getPoolMapAttributeList("basic"))
-	poolBasicConfiguration["monitors"] = util.BuildStringArrayFromInterface(d.Get("monitors"))
 	poolBasicConfiguration["node_delete_behavior"] = d.Get("node_delete_behaviour").(string)
 
 	if v, ok := d.GetOk("nodes_table"); ok {
-		poolBasicConfiguration["nodes_table"] = util.BuildListMaps(v.(*schema.Set).List(), getPoolMapAttributeList("nodes_table"))
+		//poolBasicConfiguration["nodes_table"] = util.BuildListMaps(v.(*schema.Set).List(), getPoolMapAttributeList("nodes_table"))
+		poolBasicConfiguration["nodes_table"] = v.(*schema.Set).List()
 		nodesTableDefined = true
 	} else {
 		if v, ok := d.GetOk("nodes_list"); ok {
@@ -848,13 +860,13 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 
 	// connection section - we can't use "connection" as an attribute in the schema as it's reserved
 	if v, ok := d.GetOk("pool_connection"); ok {
-		poolPropertiesConfiguration["connection"] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList("pool_connection"))[0]
+		poolPropertiesConfiguration["connection"] = util.BuildListMaps(v.(*schema.Set), getPoolMapAttributeList("pool_connection"))[0]
 	}
 
 	// all other sections
 	for _, section := range getPoolMapAttributeList("sub_sections") {
 		if v, ok := d.GetOk(section); ok {
-			poolPropertiesConfiguration[section] = util.BuildListMaps(v.([]interface{}), getPoolMapAttributeList(section))[0]
+			poolPropertiesConfiguration[section] = util.BuildListMaps(v.(*schema.Set), getPoolMapAttributeList(section))[0]
 		}
 	}
 
@@ -874,10 +886,10 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 	poolName := d.Id()
+	poolConfiguration := make(map[string]interface{})
 
-	var poolObj pool.Pool
 	client.WorkWithConfigurationResources()
-	err := client.GetByName("pools", poolName, &poolObj)
+	err := client.GetByName("pools", poolName, &poolConfiguration)
 	if err != nil {
 		if client.StatusCode == http.StatusNotFound {
 			d.SetId("")
@@ -887,42 +899,52 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	d.Set("name", poolName)
-	d.Set("bandwidth_class", poolObj.Properties.Basic.BandwidthClass)
-	d.Set("failure_pool", poolObj.Properties.Basic.FailurePool)
-	d.Set("max_connection_attempts", *poolObj.Properties.Basic.MaxConnectionAttempts)
-	d.Set("max_idle_connections_pernode", *poolObj.Properties.Basic.MaxIdleConnectionsPerNode)
-	d.Set("max_timed_out_connection_attempts", *poolObj.Properties.Basic.MaxTimeoutConnectionAttempts)
-	d.Set("monitors", poolObj.Properties.Basic.Monitors)
-	d.Set("node_close_with_rst", *poolObj.Properties.Basic.NodeCloseWithReset)
-	d.Set("node_connection_attempts", *poolObj.Properties.Basic.NodeConnectionAttempts)
-	d.Set("node_delete_behaviour", poolObj.Properties.Basic.NodeDeleteBehavior)
-	d.Set("node_drain_to_delete_timeout", *poolObj.Properties.Basic.NodeDrainDeleteTimeout)
+	poolPropertiesConfiguration := poolConfiguration["properties"].(map[string]interface{})
+	poolBasicConfiguration := poolPropertiesConfiguration["basic"].(map[string]interface{})
+	util.SetSimpleAttributesFromMap(d, poolBasicConfiguration, "", getPoolMapAttributeList("basic"))
+	d.Set("node_delete_behaviour", poolBasicConfiguration["node_delete_behavior"])
 
 	if _, ok := d.GetOk("nodes_list"); ok {
-		var nodeList []string
-		for _, node := range poolObj.Properties.Basic.NodesTable {
-			nodeList = append(nodeList, node.Node)
+		var nodesList []string
+		for _, item := range poolBasicConfiguration["nodes_table"].([]interface{}) {
+			node := item.(map[string]interface{})
+			nodesList = append(nodesList, node["node"].(string))
 		}
-		d.Set("nodes_list", nodeList)
+		d.Set("nodes_list", nodesList)
 	}
-	d.Set("nodes_table", poolObj.Properties.Basic.NodesTable)
 
-	d.Set("note", poolObj.Properties.Basic.Note)
-	d.Set("passive_monitoring", *poolObj.Properties.Basic.PassiveMonitoring)
-	d.Set("persistence_class", poolObj.Properties.Basic.PersistenceClass)
-	d.Set("transparent", *poolObj.Properties.Basic.Transparent)
-	d.Set("auto_scaling", []pool.AutoScaling{poolObj.Properties.AutoScaling})
-	d.Set("pool_connection", []pool.Connection{poolObj.Properties.Connection})
-	d.Set("dns_autoscale", []pool.DNSAutoScale{poolObj.Properties.DNSAutoScale})
-	d.Set("ftp", []pool.FTP{poolObj.Properties.FTP})
-	d.Set("http", []pool.HTTP{poolObj.Properties.HTTP})
-	d.Set("kerberos_protocol_transition", []pool.KerberosProtocolTransition{poolObj.Properties.KerberosProtocolTransition})
-	d.Set("load_balancing", []pool.LoadBalancing{poolObj.Properties.LoadBalancing})
-	d.Set("node", []pool.Node{poolObj.Properties.Node})
-	d.Set("smtp", []pool.SMTP{poolObj.Properties.SMTP})
-	d.Set("ssl", []pool.Ssl{poolObj.Properties.Ssl})
-	d.Set("tcp", []pool.TCP{poolObj.Properties.TCP})
-	d.Set("udp", []pool.UDP{poolObj.Properties.UDP})
+	// This is broken!!!! order!!!
+	//d.Set("nodes_table", util.SetListMaps(poolBasicConfiguration["nodes_table"].([]interface{}), getPoolMapAttributeList("nodes_table")))
+	// nodes table in basic section
+	/*
+		nodesTableItems := make([]map[string]interface{}, 0)
+		for _, nodeItem := range poolBasicConfiguration["nodes_table"].([]interface{}) {
+			nodesTableItem := nodeItem.(map[string]interface{})
+			node := make(map[string]interface{})
+
+			node["node"] = nodesTableItem["node"]
+			node["priority"] = nodesTableItem["priority"]
+			node["state"] = nodesTableItem["state"]
+			node["weight"] = nodesTableItem["weight"]
+			node["source_ip"] = nodesTableItem["source_ip"]
+
+			nodesTableItems = append(nodesTableItems, node)
+		}
+		d.Set("nodes_table", nodesTableItems)
+	*/
+
+	// pool_connection section
+	poolSectionItems := make([]map[string]interface{}, 0)
+	poolSectionItems = append(poolSectionItems, poolPropertiesConfiguration["connection"].(map[string]interface{}))
+	d.Set("pool_connection", poolSectionItems)
+
+	// all other sections
+	for _, sectionName := range getPoolMapAttributeList("sub_sections") {
+		sectionItems := make([]map[string]interface{}, 0)
+		sectionItems = append(sectionItems, poolPropertiesConfiguration[sectionName].(map[string]interface{}))
+		d.Set(sectionName, sectionItems)
+	}
+
 	return nil
 }
 
@@ -941,35 +963,25 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	poolBasicConfiguration = util.AddChangedSimpleAttributesToMap(d, poolBasicConfiguration, "", getPoolMapAttributeList("basic"))
 	poolBasicConfiguration["node_delete_behavior"] = d.Get("node_delete_behaviour").(string)
 
-	if d.HasChange("monitors") {
-		poolBasicConfiguration["monitors"] = util.BuildStringArrayFromInterface(d.Get("monitors"))
-	}
-
 	if d.HasChange("nodes_table") {
-		poolBasicConfiguration["nodes_table"] = util.BuildListMaps(d.Get("nodes_table").(*schema.Set).List(), getPoolMapAttributeList("nodes_table"))
-		//nodesTableDefined = true
+		//poolBasicConfiguration["nodes_table"] = util.BuildListMaps(d.Get("nodes_table").(*schema.Set), getPoolMapAttributeList("nodes_table"))
+		poolBasicConfiguration["nodes_table"] = d.Get("nodes_table").(*schema.Set).List()
 	} else {
 		if v, ok := d.GetOk("nodes_list"); ok {
 			poolBasicConfiguration["nodes_table"] = buildNodesTableFromList(v)
-			//nodesListDefined = true
 		}
 	}
-	/*
-		if nodesTableDefined == false && nodesListDefined == false {
-			return fmt.Errorf("Error creating resource: no one of nodes_table or nodes_list attr has been defined")
-		}
-	*/
 	poolPropertiesConfiguration["basic"] = poolBasicConfiguration
 
 	// connection section
 	if d.HasChange("pool_connection") {
-		poolPropertiesConfiguration["connection"] = util.BuildListMaps(d.Get("pool_connection").([]interface{}), getPoolMapAttributeList("pool_connection"))[0]
+		poolPropertiesConfiguration["connection"] = util.BuildListMaps(d.Get("pool_connection").(*schema.Set), getPoolMapAttributeList("pool_connection"))[0]
 	}
 
 	// all other sections
 	for _, section := range getPoolMapAttributeList("sub_sections") {
 		if d.HasChange(section) {
-			poolPropertiesConfiguration[section] = util.BuildListMaps(d.Get(section).([]interface{}), getPoolMapAttributeList(section))[0]
+			poolPropertiesConfiguration[section] = util.BuildListMaps(d.Get(section).(*schema.Set), getPoolMapAttributeList(section))[0]
 		}
 	}
 

@@ -24,6 +24,7 @@ func TestAccPool_Basic(t *testing.T) {
 	sourceIPPattern := regexp.MustCompile(`nodes_table\.[0-9]+\.source_ip`)
 	statePattern := regexp.MustCompile(`nodes_table\.[0-9]+\.state`)
 	weightPattern := regexp.MustCompile(`nodes_table\.[0-9]+\.weight`)
+	monitorsPattern := regexp.MustCompile(`monitors\.[0-9]+`)
 	securityIDPattern := regexp.MustCompile(`auto_scaling\.[0-9]+\.securitygroupids\.[0-9]+`)
 	subnetIDPattern := regexp.MustCompile(`auto_scaling\.[0-9]+\.subnetids\.[0-9]+`)
 	dnsAutoScaleHostnamePattern := regexp.MustCompile(`dns_autoscale\.[0-9]+\.hostnames\.[0-9]+`)
@@ -89,7 +90,7 @@ func TestAccPool_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResourceName, "max_idle_connections_pernode", "10"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_timed_out_connection_attempts", "8"),
 					resource.TestCheckResourceAttr(poolResourceName, "monitors.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "monitors.0", "Full HTTP"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, monitorsPattern, "Full HTTP"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_connection_attempts", "6"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behaviour", "immediate"),
@@ -204,7 +205,7 @@ func TestAccPool_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResourceName, "max_idle_connections_pernode", "4"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_timed_out_connection_attempts", "5"),
 					resource.TestCheckResourceAttr(poolResourceName, "monitors.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "monitors.0", "Full HTTPS"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, monitorsPattern, "Full HTTPS"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "false"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_connection_attempts", "3"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behaviour", "drain"),
@@ -312,7 +313,7 @@ func TestAccPool_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResourceName, "max_idle_connections_pernode", "10"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_timed_out_connection_attempts", "8"),
 					resource.TestCheckResourceAttr(poolResourceName, "monitors.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "monitors.0", "Full HTTP"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, monitorsPattern, "Full HTTP"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_connection_attempts", "6"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behaviour", "immediate"),

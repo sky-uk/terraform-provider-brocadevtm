@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
+	"log"
 )
 
 // BuildStringArrayFromInterface : take an interface and convert it into an array of strings
@@ -36,6 +37,8 @@ func AddSimpleGetAttributesToMap(d *schema.ResourceData, mapItem map[string]inte
 			mapItem[item] = attributeValue.(string)
 		case int:
 			mapItem[item] = attributeValue.(int)
+		case *schema.Set:
+			mapItem[item] = attributeValue.(*schema.Set).List()
 		default:
 		}
 	}
@@ -69,6 +72,7 @@ func AddChangedSimpleAttributesToMap(d *schema.ResourceData, mapItem map[string]
 		attributeName := fmt.Sprintf("%s%s", attributeNamePrefix, item)
 		if d.HasChange(attributeName) {
 			attributeValue := d.Get(attributeName)
+
 			switch attributeValue.(type) {
 			case bool:
 				mapItem[item] = attributeValue.(bool)
@@ -76,6 +80,8 @@ func AddChangedSimpleAttributesToMap(d *schema.ResourceData, mapItem map[string]
 				mapItem[item] = attributeValue.(string)
 			case int:
 				mapItem[item] = attributeValue.(int)
+			case *schema.Set:
+				mapItem[item] = attributeValue.(*schema.Set).List()
 			default:
 			}
 		}
@@ -93,11 +99,11 @@ func SetSimpleAttributesFromMap(d *schema.ResourceData, mapItem map[string]inter
 }
 
 // BuildListMaps : builds a list of maps from a list of interfaces using a list of attributes
-func BuildListMaps(itemList []interface{}, attributeNames []string) []map[string]interface{} {
+func BuildListMaps(itemList *schema.Set, attributeNames []string) []map[string]interface{} {
 
 	listOfMaps := make([]map[string]interface{}, 0)
 
-	for _, item := range itemList {
+	for _, item := range itemList.List() {
 
 		definedItem := item.(map[string]interface{})
 		newMap := make(map[string]interface{})
@@ -123,4 +129,39 @@ func BuildListMaps(itemList []interface{}, attributeNames []string) []map[string
 		listOfMaps = append(listOfMaps, newMap)
 	}
 	return listOfMaps
+}
+
+// SetListMaps : sets a list of maps in the state
+func SetListMaps(mapItems []interface{}, attributeNames []string) []map[string]interface{} {
+
+	sectionMapList := make([]map[string]interface{}, 0)
+
+	for _, mapItem := range mapItems {
+
+		definedMapItem := mapItem.(map[string]interface{})
+		sectionMapListItem := make(map[string]interface{})
+
+		for _, attributeName := range attributeNames {
+
+			if mapItemValue, ok := definedMapItem[attributeName]; ok {
+				switch mapItemValue.(type) {
+				case bool:
+					sectionMapListItem[attributeName] = mapItemValue.(bool)
+				case string:
+					sectionMapListItem[attributeName] = mapItemValue.(string)
+				case int:
+					sectionMapListItem[attributeName] = mapItemValue.(int)
+				case []interface{}:
+					sectionMapListItem[attributeName] = mapItemValue
+				case *schema.Set:
+					sectionMapListItem[attributeName] = mapItemValue.(*schema.Set).List()
+				default:
+				}
+			} else {
+				log.Printf(fmt.Sprintf("[DEBUG] mapItemValue not found"))
+			}
+		}
+		sectionMapList = append(sectionMapList, sectionMapListItem)
+	}
+	return sectionMapList
 }
