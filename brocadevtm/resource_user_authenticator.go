@@ -246,17 +246,11 @@ func resourceUserAuthenticatorCreate(d *schema.ResourceData, m interface{}) erro
 
 	name := d.Get("name").(string)
 
-	util.AddSimpleGetAttributesToMap
-
-	if v, ok := d.GetOk("description"); ok {
-		basic["description"] = v.(string)
-	}
-	if v, ok := d.GetOk("enabled"); ok {
-		userAuthenticator.Properties.Basic.Enabled = v.(bool)
-	}
-	if v, ok := d.GetOk("type"); ok {
-		userAuthenticator.Properties.Basic.Type = v.(string)
-	}
+	util.AddSimpleGetOkAttributesToMap(d, basic, "", []string{
+		"description",
+		"enabled",
+		"type",
+	})
 
 	if v, ok := d.GetOk("ldap"); ok {
 		ldapList := []map[string]interface{}{}
