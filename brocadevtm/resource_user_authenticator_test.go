@@ -32,18 +32,6 @@ func TestAccBrocadeVTMUserAuthenticatorBasic(t *testing.T) {
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
-				Config:      testAccBrocadeUserAuthenticatorInvalidType(),
-				ExpectError: regexp.MustCompile(`Access level must be one of ldap, radius or tacacs_plus`),
-			},
-			{
-				Config:      testAccBrocadeUserAuthenticatorInvalidDNMethod(),
-				ExpectError: regexp.MustCompile(`Access level must be one of construct, none or search`),
-			},
-			{
-				Config:      testAccBrocadeUserAuthenticatorInvalidTacacsAuthType(),
-				ExpectError: regexp.MustCompile(`Access level must be one of ascii or pap`),
-			},
-			{
 				Config:      testAccBrocadeUserAuthenticatorTooManyTacacs(),
 				ExpectError: regexp.MustCompile(`tacacs_plus: attribute supports 1 item maximum, config has 2 declared`),
 			},
@@ -303,64 +291,6 @@ func testAccBrocadeUserAuthenticatorNoName() string {
 		  dn_method = "search"
 		  port = 180
 		  timeout = 132
-	       }
-	}
-`)
-}
-
-func testAccBrocadeUserAuthenticatorInvalidType() string {
-	return fmt.Sprintf(`
-       resource "brocadevtm_user_authenticator" "acctest" {
-       	       name = "invalidTypeUA"
-	       description = "Invalid Type Acceptance Test"
-	       enabled = false
-	       type = "invalidtype"
-
-	       ldap = {
-		  base_dn = "testdn"
-		  dn_method = "search"
-		  port = 180
-		  timeout = 132
-	       }
-	}
-`)
-}
-
-func testAccBrocadeUserAuthenticatorInvalidDNMethod() string {
-	return fmt.Sprintf(`
-       resource "brocadevtm_user_authenticator" "acctest" {
-       	       name = "invalidTypeUA"
-	       description = "Invalid Type Acceptance Test"
-	       enabled = false
-	       type = "ldap"
-
-	       ldap = {
-		  base_dn = "testdn"
-		  dn_method = "kmkm"
-		  port = 180
-		  timeout = 132
-	       }
-	}
-`)
-}
-
-func testAccBrocadeUserAuthenticatorInvalidTacacsAuthType() string {
-	return fmt.Sprintf(`
-       resource "brocadevtm_user_authenticator" "acctest" {
-       	       name = "invalidTypeUA"
-	       description = "Invalid Type Acceptance Test"
-	       enabled = false
-	       type = "tacacs_plus"
-
-	       tacacs_plus = {
-		  auth_type = "invalid"
-		  fallback_group = "test-fallback-group"
-		  group_field = "test-group"
-		  group_service = "zeus"
-		  port = 80
-		  secret = "testsecret"
-		  server = "127.0.0.1"
-		  timeout = 120
 	       }
 	}
 `)

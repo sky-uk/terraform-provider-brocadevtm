@@ -2,18 +2,19 @@ package brocadevtm
 
 import (
 	"fmt"
-	"strings"
+
+	"net/http"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/user_authenticator"
-	"net/http"
+	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 )
 
 func resourceUserAuthenticator() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceUserAuthenticatorCreate,
-		Update: resourceUserAuthenticatorUpdate,
+		Create: resourceUserAuthenticatorSet,
+		Update: resourceUserAuthenticatorSet,
 		Read:   resourceUserAuthenticatorRead,
 		Delete: resourceUserAuthenticatorDelete,
 		Schema: map[string]*schema.Schema{
@@ -35,7 +36,7 @@ func resourceUserAuthenticator() *schema.Resource {
 			"type": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validateAuthenticationType,
+				ValidateFunc: validation.StringInSlice([]string{"ldap", "radius", "tacacs_plus"}, false),
 			},
 			"ldap": {
 				Type:     schema.TypeList,
@@ -57,7 +58,7 @@ func resourceUserAuthenticator() *schema.Resource {
 							Type:         schema.TypeString,
 							Description:  "FQDN of the member pair",
 							Optional:     true,
-							ValidateFunc: validateDistinguishedNameMethod,
+							ValidateFunc: validation.StringInSlice([]string{"construct", "none", "search"}, false),
 						},
 						"fallback_group": {
 							Type:        schema.TypeString,
@@ -185,7 +186,7 @@ func resourceUserAuthenticator() *schema.Resource {
 							Description:  "Authentication type to use",
 							Optional:     true,
 							Default:      "pap",
-							ValidateFunc: validateTACACSPlusAuthenticationType,
+							ValidateFunc: validation.StringInSlice([]string{"ascii", "pap"}, false),
 						},
 						"fallback_group": {
 							Type:        schema.TypeString,
@@ -234,163 +235,50 @@ func resourceUserAuthenticator() *schema.Resource {
 	}
 }
 
-// validateAuthenticationType : Validates that the authentication type entered is supported
-func validateAuthenticationType(v interface{}, k string) (ws []string, errors []error) {
-	switch strings.ToLower(v.(string)) {
-	case
-		"ldap",
-		"radius",
-		"tacacs_plus":
-		return
-	}
-	errors = append(errors, fmt.Errorf("Access level must be one of ldap, radius or tacacs_plus"))
-	return
-}
-
-// validateTACACSPlusAuthenticationType : Validates that the authentication type entered is supported
-func validateTACACSPlusAuthenticationType(v interface{}, k string) (ws []string, errors []error) {
-	switch strings.ToLower(v.(string)) {
-	case
-		"ascii",
-		"pap":
-		return
-	}
-	errors = append(errors, fmt.Errorf("Access level must be one of ascii or pap"))
-	return
-}
-
-// validateDistinguishedNameMethod : Validates that the Distinguished Name method entered is supported
-func validateDistinguishedNameMethod(v interface{}, k string) (ws []string, errors []error) {
-	switch strings.ToLower(v.(string)) {
-	case
-		"construct",
-		"none",
-		"search":
-		return
-	}
-	errors = append(errors, fmt.Errorf("Access level must be one of construct, none or search"))
-	return
-}
-
-func resourceUserAuthenticatorCreate(d *schema.ResourceData, m interface{}) error {
-	var userAuthenticator userAuthenticator.UserAuthenticator
+func resourceUserAuthenticatorSet(d *schema.ResourceData, m interface{}) error {
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 
-	userAuthenticatorName := d.Get("name").(string)
+	res := make(map[string]interface{})
+	props := make(map[string]interface{})
+	basic := make(map[string]interface{})
 
-	if v, ok := d.GetOk("description"); ok {
-		userAuthenticator.Properties.Basic.Description = v.(string)
-	}
-	if v, ok := d.GetOk("enabled"); ok {
-		userAuthenticator.Properties.Basic.Enabled = v.(bool)
-	}
-	if v, ok := d.GetOk("type"); ok {
-		userAuthenticator.Properties.Basic.Type = v.(string)
-	}
+	name := d.Get("name").(string)
 
-	if v, ok := d.GetOk("ldap"); ok {
-		ldapList := []map[string]interface{}{}
-		for _, ldap := range v.([]interface{}) {
-			ldapList = append(ldapList, ldap.(map[string]interface{}))
-		}
-		userAuthenticator.LDAP = assignLDAPValues(ldapList)
-	}
-
-	if v, ok := d.GetOk("radius"); ok {
-		radiusList := []map[string]interface{}{}
-		for _, radius := range v.([]interface{}) {
-			radiusList = append(radiusList, radius.(map[string]interface{}))
-		}
-		userAuthenticator.Radius = assignRadiusValues(radiusList)
-	}
-
-	if v, ok := d.GetOk("tacacs_plus"); ok {
-		tacacsPlusList := []map[string]interface{}{}
-		for _, tacacsPlus := range v.([]interface{}) {
-			tacacsPlusList = append(tacacsPlusList, tacacsPlus.(map[string]interface{}))
-		}
-		userAuthenticator.TACACSPlus = assignTACACSPlusValues(tacacsPlusList)
-	}
-
-	err := client.Set("user_authenticators", userAuthenticatorName, &userAuthenticator, nil)
-	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst creating user authenticator %s: %v", userAuthenticatorName, err)
-	}
-	d.SetId(userAuthenticatorName)
-	return resourceUserAuthenticatorRead(d, m)
-}
-
-func resourceUserAuthenticatorUpdate(d *schema.ResourceData, m interface{}) error {
-	var updatedUserAuthenticator userAuthenticator.UserAuthenticator
-	hasChanges := false
-
-	if d.HasChange("description") {
-		updatedUserAuthenticator.Properties.Basic.Description = d.Get("description").(string)
-		hasChanges = true
-	}
-
-	oldEnabled, newEnabled := d.GetChange("enabled")
-	if oldEnabled.(bool) != newEnabled.(bool) {
-		updatedUserAuthenticator.Properties.Basic.Enabled = newEnabled.(bool)
-		hasChanges = true
-	} else {
-		updatedUserAuthenticator.Properties.Basic.Enabled = oldEnabled.(bool)
-	}
-
-	if d.HasChange("type") {
-		updatedUserAuthenticator.Properties.Basic.Type = d.Get("type").(string)
-		hasChanges = true
-	}
+	util.AddChangedSimpleAttributesToMap(d, basic, "", []string{
+		"description",
+		"enabled",
+		"type",
+	})
+	props["basic"] = basic
 
 	if d.HasChange("ldap") {
-		ldaps := []map[string]interface{}{}
-		for _, ldap := range d.Get("ldap").([]interface{}) {
-			ldaps = append(ldaps, ldap.(map[string]interface{}))
-		}
-		updatedUserAuthenticator.LDAP = assignLDAPValues(ldaps)
-		hasChanges = true
+		props["ldap"] = d.Get("ldap").([]interface{})[0]
 	}
-
 	if d.HasChange("radius") {
-		radiusList := []map[string]interface{}{}
-		for _, radius := range d.Get("radius").([]interface{}) {
-			radiusList = append(radiusList, radius.(map[string]interface{}))
-		}
-		updatedUserAuthenticator.Radius = assignRadiusValues(radiusList)
-		hasChanges = true
+		props["radius"] = d.Get("radius").([]interface{})[0]
 	}
-
 	if d.HasChange("tacacs_plus") {
-		tacacsPlusList := []map[string]interface{}{}
-		for _, tacacsPlus := range d.Get("tacacs_plus").([]interface{}) {
-			tacacsPlusList = append(tacacsPlusList, tacacsPlus.(map[string]interface{}))
-		}
-		updatedUserAuthenticator.Properties.TACACSPlus = assignTACACSPlusValues(tacacsPlusList)
-		hasChanges = true
+		props["tacacs_plus"] = d.Get("tacacs_plus").([]interface{})[0]
 	}
+	res["properties"] = props
 
-	if hasChanges {
-		config := m.(map[string]interface{})
-		client := config["jsonClient"].(*api.Client)
-
-		err := client.Set("user_authenticators", d.Id(), &updatedUserAuthenticator, nil)
-		if err != nil {
-			return fmt.Errorf("BrocadeVTM error whilst updating user authenticator %s: %v", d.Id(), err)
-		}
-		return resourceUserAuthenticatorRead(d, m)
+	err := client.Set("user_authenticators", name, res, nil)
+	if err != nil {
+		return fmt.Errorf("BrocadeVTM error whilst creating user authenticator %s: %v", name, err)
 	}
-
-	return nil
+	d.SetId(name)
+	return resourceUserAuthenticatorRead(d, m)
 }
 
 func resourceUserAuthenticatorRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	client.WorkWithConfigurationResources()
-	var userGroupAuthenticator userAuthenticator.UserAuthenticator
 
-	err := client.GetByName("user_authenticators", d.Id(), &userGroupAuthenticator)
+	res := make(map[string]interface{})
+
+	client.WorkWithConfigurationResources()
+	err := client.GetByName("user_authenticators", d.Id(), &res)
 	if client.StatusCode == http.StatusNotFound {
 		d.SetId("")
 		return nil
@@ -399,126 +287,18 @@ func resourceUserAuthenticatorRead(d *schema.ResourceData, m interface{}) error 
 		return fmt.Errorf("BrocadeVTM error whilst retrieving user authenticator %s: %v", d.Id(), err)
 	}
 
-	d.Set("description", userGroupAuthenticator.Properties.Basic.Description)
-	d.Set("enabled", userGroupAuthenticator.Properties.Basic.Enabled)
-	d.Set("type", userGroupAuthenticator.Properties.Basic.Type)
-	ldapList := []userAuthenticator.LDAP{userGroupAuthenticator.Properties.LDAP}
-	d.Set("ldap", ldapList)
-	radiusList := []userAuthenticator.Radius{userGroupAuthenticator.Properties.Radius}
-	d.Set("radius", radiusList)
-	tacacsPlusList := []userAuthenticator.TACACSPlus{userGroupAuthenticator.Properties.TACACSPlus}
-	d.Set("tacacs_plus", tacacsPlusList)
+	props := res["properties"].(map[string]interface{})
+	basic := props["basic"].(map[string]interface{})
+
+	d.Set("description", basic["description"])
+	d.Set("enabled", basic["enabled"])
+	d.Set("type", basic["type"])
+	d.Set("ldap", props["ldap"])
+	d.Set("radius", props["radius"])
+	d.Set("tacacs_plus", props["tacacs_plus"])
 	return nil
 }
 
 func resourceUserAuthenticatorDelete(d *schema.ResourceData, m interface{}) error {
 	return DeleteResource("user_authenticators", d, m)
-}
-
-func assignLDAPValues(ldapList []map[string]interface{}) (ldapStruct userAuthenticator.LDAP) {
-
-	if v, ok := ldapList[0]["base_dn"].(string); ok && v != "" {
-		ldapStruct.BaseDN = v
-	}
-	if v, ok := ldapList[0]["bind_dn"].(string); ok && v != "" {
-		ldapStruct.BindDN = v
-	}
-	if v, ok := ldapList[0]["dn_method"].(string); ok && v != "" {
-		ldapStruct.DNMethod = strings.ToLower(v)
-	}
-	if v, ok := ldapList[0]["fallback_group"].(string); ok && v != "" {
-		ldapStruct.FallbackGroup = v
-	}
-	if v, ok := ldapList[0]["filter"].(string); ok && v != "" {
-		ldapStruct.Filter = v
-	}
-	if v, ok := ldapList[0]["group_attribute"].(string); ok && v != "" {
-		ldapStruct.GroupAttribute = v
-	}
-	if v, ok := ldapList[0]["group_field"].(string); ok && v != "" {
-		ldapStruct.GroupField = v
-	}
-	if v, ok := ldapList[0]["group_filter"].(string); ok && v != "" {
-		ldapStruct.GroupFilter = v
-	}
-	if v, ok := ldapList[0]["port"].(int); ok {
-		ldapStruct.Port = uint(v)
-	}
-	if v, ok := ldapList[0]["search_dn"].(string); ok && v != "" {
-		ldapStruct.SearchDN = v
-	}
-	if v, ok := ldapList[0]["search_password"].(string); ok && v != "" {
-		ldapStruct.SearchPassword = v
-	}
-	if v, ok := ldapList[0]["server"].(string); ok && v != "" {
-		ldapStruct.Server = v
-	}
-	if v, ok := ldapList[0]["timeout"].(int); ok {
-		ldapStruct.Timeout = uint(v)
-	}
-
-	return
-}
-
-func assignRadiusValues(radiusList []map[string]interface{}) (radiusStruct userAuthenticator.Radius) {
-
-	if v, ok := radiusList[0]["fallback_group"].(string); ok {
-		radiusStruct.FallbackGroup = v
-	}
-	if v, ok := radiusList[0]["group_attribute"].(int); ok {
-		radiusStruct.GroupAttribute = uint(v)
-	}
-	if v, ok := radiusList[0]["group_vendor"].(int); ok {
-		radiusStruct.GroupVendor = uint(v)
-	}
-	if v, ok := radiusList[0]["nas_identifier"].(string); ok {
-		radiusStruct.NasIdentifier = v
-	}
-	if v, ok := radiusList[0]["nas_ip_address"].(string); ok {
-		radiusStruct.NasIPAddress = v
-	}
-	if v, ok := radiusList[0]["port"].(int); ok {
-		radiusStruct.Port = uint(v)
-	}
-	if v, ok := radiusList[0]["secret"].(string); ok {
-		radiusStruct.Secret = v
-	}
-	if v, ok := radiusList[0]["server"].(string); ok {
-		radiusStruct.Server = v
-	}
-	if v, ok := radiusList[0]["timeout"].(int); ok {
-		radiusStruct.Timeout = uint(v)
-	}
-
-	return
-}
-
-func assignTACACSPlusValues(tacacsPlusList []map[string]interface{}) (tacacsPlusStruct userAuthenticator.TACACSPlus) {
-
-	if v, ok := tacacsPlusList[0]["auth_type"].(string); ok {
-		tacacsPlusStruct.AuthType = v
-	}
-	if v, ok := tacacsPlusList[0]["fallback_group"].(string); ok {
-		tacacsPlusStruct.FallbackGroup = v
-	}
-	if v, ok := tacacsPlusList[0]["group_field"].(string); ok {
-		tacacsPlusStruct.GroupField = v
-	}
-	if v, ok := tacacsPlusList[0]["group_service"].(string); ok {
-		tacacsPlusStruct.GroupService = v
-	}
-	if v, ok := tacacsPlusList[0]["port"].(int); ok {
-		tacacsPlusStruct.Port = uint(v)
-	}
-	if v, ok := tacacsPlusList[0]["secret"].(string); ok {
-		tacacsPlusStruct.Secret = v
-	}
-	if v, ok := tacacsPlusList[0]["server"].(string); ok {
-		tacacsPlusStruct.Server = v
-	}
-	if v, ok := tacacsPlusList[0]["timeout"].(int); ok {
-		tacacsPlusStruct.Port = uint(v)
-	}
-
-	return
 }
