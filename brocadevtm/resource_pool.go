@@ -127,12 +127,6 @@ func resourcePool() *schema.Resource {
 							ValidateFunc: validation.IntBetween(1, 100),
 							Description:  "Weight assigned to the node. Valid values are between 1 and 100",
 						},
-						"source_ip": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							ValidateFunc: util.ValidateIP,
-							Description:  "Source IP the Traffic Manager uses to connect to this node",
-						},
 					},
 				},
 			},
@@ -933,17 +927,19 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 		d.Set("nodes_table", nodesTableItems)
 	*/
 
-	// pool_connection section
-	poolSectionItems := make([]map[string]interface{}, 0)
-	poolSectionItems = append(poolSectionItems, poolPropertiesConfiguration["connection"].(map[string]interface{}))
-	d.Set("pool_connection", poolSectionItems)
+	/*
+		// pool_connection section
+		poolSectionItems := make([]map[string]interface{}, 0)
+		poolSectionItems = append(poolSectionItems, poolPropertiesConfiguration["connection"].(map[string]interface{}))
+		d.Set("pool_connection", poolSectionItems)
 
-	// all other sections
-	for _, sectionName := range getPoolMapAttributeList("sub_sections") {
-		sectionItems := make([]map[string]interface{}, 0)
-		sectionItems = append(sectionItems, poolPropertiesConfiguration[sectionName].(map[string]interface{}))
-		d.Set(sectionName, sectionItems)
-	}
+		// all other sections
+		for _, sectionName := range getPoolMapAttributeList("sub_sections") {
+			sectionItems := make([]map[string]interface{}, 0)
+			sectionItems = append(sectionItems, poolPropertiesConfiguration[sectionName].(map[string]interface{}))
+			d.Set(sectionName, sectionItems)
+		}
+	*/
 
 	return nil
 }
