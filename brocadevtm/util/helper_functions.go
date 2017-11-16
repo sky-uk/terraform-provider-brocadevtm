@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 	"log"
+	"reflect"
 )
 
 // BuildStringArrayFromInterface : take an interface and convert it into an array of strings
@@ -131,37 +132,36 @@ func BuildListMaps(itemList *schema.Set, attributeNames []string) []map[string]i
 	return listOfMaps
 }
 
-// SetListMaps : sets a list of maps in the state
-func SetListMaps(mapItems []interface{}, attributeNames []string) []map[string]interface{} {
+// SetListMaps : creates a one item list of maps for use by d.Set
+func MakeListMaps(mapItem map[string]interface{}, attributeNames []string) []map[string]interface{} {
 
-	sectionMapList := make([]map[string]interface{}, 0)
+	mapList := make([]map[string]interface{}, 0)
+	mapListItem := make(map[string]interface{})
 
-	for _, mapItem := range mapItems {
+	for _, attributeName := range attributeNames {
 
-		definedMapItem := mapItem.(map[string]interface{})
-		sectionMapListItem := make(map[string]interface{})
+		value := mapItem[attributeName]
 
-		for _, attributeName := range attributeNames {
+		log.Printf(fmt.Sprintf("[DEBUG] Attribute %s has value %+v and is a type %v", attributeName, value, reflect.TypeOf(value)))
 
-			if mapItemValue, ok := definedMapItem[attributeName]; ok {
-				switch mapItemValue.(type) {
-				case bool:
-					sectionMapListItem[attributeName] = mapItemValue.(bool)
-				case string:
-					sectionMapListItem[attributeName] = mapItemValue.(string)
-				case int:
-					sectionMapListItem[attributeName] = mapItemValue.(int)
-				case []interface{}:
-					sectionMapListItem[attributeName] = mapItemValue
-				case *schema.Set:
-					sectionMapListItem[attributeName] = mapItemValue.(*schema.Set).List()
-				default:
-				}
-			} else {
-				log.Printf(fmt.Sprintf("[DEBUG] mapItemValue not found"))
-			}
+		switch value.(type) {
+		case bool:
+			mapListItem[attributeName] = value.(bool)
+		case string:
+			mapListItem[attributeName] = value.(string)
+		case int:
+			mapListItem[attributeName] = value.(int)
+		case float64:
+			mapListItem[attributeName] = value.(float64)
+		case []interface{}:
+			mapListItem[attributeName] = value
+		case *schema.Set:
+			mapListItem[attributeName] = value.(*schema.Set).List()
+		default:
 		}
-		sectionMapList = append(sectionMapList, sectionMapListItem)
+
 	}
-	return sectionMapList
+	mapList = append(mapList, mapListItem)
+	log.Printf(fmt.Sprintf("[DEBUG] List of maps is %+v", mapList))
+	return mapList
 }
