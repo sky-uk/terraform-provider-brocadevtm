@@ -3,8 +3,6 @@ package util
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
-	"log"
-	"reflect"
 )
 
 // BuildStringArrayFromInterface : take an interface and convert it into an array of strings
@@ -142,8 +140,6 @@ func MakeListMaps(mapItem map[string]interface{}, attributeNames []string) []map
 
 		value := mapItem[attributeName]
 
-		log.Printf(fmt.Sprintf("[DEBUG] Attribute %s has value %+v and is a type %v", attributeName, value, reflect.TypeOf(value)))
-
 		switch value.(type) {
 		case bool:
 			mapListItem[attributeName] = value.(bool)
@@ -162,6 +158,5 @@ func MakeListMaps(mapItem map[string]interface{}, attributeNames []string) []map
 
 	}
 	mapList = append(mapList, mapListItem)
-	log.Printf(fmt.Sprintf("[DEBUG] List of maps is %+v", mapList))
 	return mapList
 }
