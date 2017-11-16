@@ -24,3 +24,18 @@ func AccTestCheckValueInKeyPattern(resourceName string, keyPattern *regexp.Regex
 		return fmt.Errorf("value %s not found in resource %s", checkValue, resourceName)
 	}
 }
+
+// AccTestCreateRegexPatternForSet : generates a pattern for a list of items in a set
+func AccTestCreateRegexPatternForSet(basePattern string) *regexp.Regexp {
+	return regexp.MustCompile(basePattern + `\.[0-9]+`)
+}
+
+// AccTestCreateRegexPatternForSetItems : generates a pattern for a set with items
+func AccTestCreateRegexPatternForSetItems(basePattern, appendPattern string) *regexp.Regexp {
+	return regexp.MustCompile(basePattern + `\.[0-9]+\.` + appendPattern)
+}
+
+// AccTestCreateRegexPatternForNestedSets : generates a pattern for a set within a set
+func AccTestCreateRegexPatternForNestedSets(basePattern, appendPattern string) *regexp.Regexp {
+	return regexp.MustCompile(basePattern + `\.[0-9]+\.` + appendPattern + `\.[0-9]+`)
+}
