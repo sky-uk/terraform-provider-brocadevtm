@@ -275,12 +275,14 @@ func resourcePool() *schema.Resource {
 							Default:     40,
 							Description: "Percentage of conforming requests below which the pool size is increased",
 						},
+
 						"securitygroupids": {
 							Type:        schema.TypeSet,
 							Optional:    true,
 							Description: "List of security group IDs to assciate with a new ec2 instance",
 							// When we're able to validate a list we should check each subnet ID starts with 'sg-'
 							Elem: &schema.Schema{Type: schema.TypeString},
+							Set:  schema.HashString,
 						},
 						"size_id": {
 							Type:        schema.TypeString,
@@ -293,6 +295,7 @@ func resourcePool() *schema.Resource {
 							Description: "List of VPC subnet IDs where the new ec2 instances will be launched",
 							// When we're able to validate a list we should check each subnet ID starts with 'subnet-'
 							Elem: &schema.Schema{Type: schema.TypeString},
+							Set:  schema.HashString,
 						},
 					},
 				},
@@ -854,6 +857,7 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("pool_connection"); ok {
 		poolPropertiesConfiguration["connection"] = v.(*schema.Set).List()[0]
 	}
+
 	// all other sections
 	for _, section := range getPoolMapAttributeList("sub_sections") {
 		if v, ok := d.GetOk(section); ok {
@@ -910,19 +914,19 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	poolSection = append(poolSection, poolPropertiesConfiguration["connection"].(map[string]interface{}))
 	d.Set("pool_connection", poolSection)
 
-	// all other sections - works for section which don't have a sub-section (set)
+	// all other sections - works for sections which don't have a sub-section (set) - only one not working is auto_scaling
+	for _, sectionName := range getPoolMapAttributeList("sub_sections") {
+		section := make([]map[string]interface{}, 0)
+		section = append(section, poolPropertiesConfiguration[sectionName].(map[string]interface{}))
+		d.Set(sectionName, section)
+	}
+
+	//d.Set("auto_scaling", poolPropertiesConfiguration["auto_scaling"])
 	/*
 		for _, sectionName := range getPoolMapAttributeList("sub_sections") {
-		 /*
-			section := make([]map[string]interface{}, 0)
-			section = append(section, poolPropertiesConfiguration[sectionName].(map[string]interface{}))
-			d.Set(sectionName, section)
+			d.Set(sectionName, util.MakeListMaps(poolPropertiesConfiguration[sectionName].(map[string]interface{}), getPoolMapAttributeList(sectionName)))
 		}
 	*/
-
-	for _, sectionName := range getPoolMapAttributeList("sub_sections") {
-		d.Set(sectionName, util.MakeListMaps(poolPropertiesConfiguration[sectionName].(map[string]interface{}), getPoolMapAttributeList(sectionName)))
-	}
 	return nil
 }
 
