@@ -731,7 +731,6 @@ func getPoolMapAttributeList(mapName string) []string {
 			"data_center",
 			"enabled",
 			"external",
-			"extraargs",
 			"hysteresis",
 			"imageid",
 			"ips_to_use",
@@ -838,7 +837,6 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	poolBasicConfiguration["node_delete_behavior"] = d.Get("node_delete_behaviour").(string)
 
 	if v, ok := d.GetOk("nodes_table"); ok {
-		//poolBasicConfiguration["nodes_table"] = util.BuildListMaps(v.(*schema.Set).List(), getPoolMapAttributeList("nodes_table"))
 		poolBasicConfiguration["nodes_table"] = v.(*schema.Set).List()
 		nodesTableDefined = true
 	} else {
@@ -854,9 +852,8 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 
 	// connection section - we can't use "connection" as an attribute in the schema as it's reserved
 	if v, ok := d.GetOk("pool_connection"); ok {
-		poolPropertiesConfiguration["connection"] = util.BuildListMaps(v.(*schema.Set), getPoolMapAttributeList("pool_connection"))[0]
+		poolPropertiesConfiguration["connection"] = v.(*schema.Set).List()[0]
 	}
-
 	// all other sections
 	for _, section := range getPoolMapAttributeList("sub_sections") {
 		if v, ok := d.GetOk(section); ok {
@@ -906,51 +903,35 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 		}
 		d.Set("nodes_list", nodesList)
 	}
+	d.Set("nodes_table", poolBasicConfiguration["nodes_table"])
 
-	// This is broken!!!! order!!!
-	//d.Set("nodes_table", util.SetListMaps(poolBasicConfiguration["nodes_table"].([]interface{}), getPoolMapAttributeList("nodes_table")))
-	// nodes table in basic section
+	// pool_connection section
+	poolSection := make([]map[string]interface{}, 0)
+	poolSection = append(poolSection, poolPropertiesConfiguration["connection"].(map[string]interface{}))
+	d.Set("pool_connection", poolSection)
+
+	// all other sections - works for section which don't have a sub-section (set)
 	/*
-		nodesTableItems := make([]map[string]interface{}, 0)
-		for _, nodeItem := range poolBasicConfiguration["nodes_table"].([]interface{}) {
-			nodesTableItem := nodeItem.(map[string]interface{})
-			node := make(map[string]interface{})
-
-			node["node"] = nodesTableItem["node"]
-			node["priority"] = nodesTableItem["priority"]
-			node["state"] = nodesTableItem["state"]
-			node["weight"] = nodesTableItem["weight"]
-			node["source_ip"] = nodesTableItem["source_ip"]
-
-			nodesTableItems = append(nodesTableItems, node)
-		}
-		d.Set("nodes_table", nodesTableItems)
-	*/
-
-	/*
-		// pool_connection section
-		poolSectionItems := make([]map[string]interface{}, 0)
-		poolSectionItems = append(poolSectionItems, poolPropertiesConfiguration["connection"].(map[string]interface{}))
-		d.Set("pool_connection", poolSectionItems)
-
-		// all other sections
 		for _, sectionName := range getPoolMapAttributeList("sub_sections") {
-			sectionItems := make([]map[string]interface{}, 0)
-			sectionItems = append(sectionItems, poolPropertiesConfiguration[sectionName].(map[string]interface{}))
-			d.Set(sectionName, sectionItems)
+		 /*
+			section := make([]map[string]interface{}, 0)
+			section = append(section, poolPropertiesConfiguration[sectionName].(map[string]interface{}))
+			d.Set(sectionName, section)
 		}
 	*/
 
+	for _, sectionName := range getPoolMapAttributeList("sub_sections") {
+		d.Set(sectionName, util.MakeListMaps(poolPropertiesConfiguration[sectionName].(map[string]interface{}), getPoolMapAttributeList(sectionName)))
+	}
 	return nil
 }
 
 // resourcePoolUpdate - Updates an existing pool resource
 func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 
-	//var nodesTableDefined, nodesListDefined bool
+	poolName := d.Id()
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	poolName := d.Id()
 	poolConfiguration := make(map[string]interface{})
 	poolPropertiesConfiguration := make(map[string]interface{})
 
@@ -960,7 +941,6 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	poolBasicConfiguration["node_delete_behavior"] = d.Get("node_delete_behaviour").(string)
 
 	if d.HasChange("nodes_table") {
-		//poolBasicConfiguration["nodes_table"] = util.BuildListMaps(d.Get("nodes_table").(*schema.Set), getPoolMapAttributeList("nodes_table"))
 		poolBasicConfiguration["nodes_table"] = d.Get("nodes_table").(*schema.Set).List()
 	} else {
 		if v, ok := d.GetOk("nodes_list"); ok {
@@ -971,7 +951,7 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 
 	// connection section
 	if d.HasChange("pool_connection") {
-		poolPropertiesConfiguration["connection"] = util.BuildListMaps(d.Get("pool_connection").(*schema.Set), getPoolMapAttributeList("pool_connection"))[0]
+		poolPropertiesConfiguration["connection"] = d.Get("pool_connection").(*schema.Set).List()[0]
 	}
 
 	// all other sections
