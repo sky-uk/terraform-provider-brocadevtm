@@ -132,7 +132,7 @@ func BuildListMaps(itemList *schema.Set, attributeNames []string) []map[string]i
 	return listOfMaps
 }
 
-// SetListMaps : creates a one item list of maps for use by d.Set
+// MakeListMaps : creates a one item list of maps for use by d.Set
 func MakeListMaps(mapItem map[string]interface{}, attributeNames []string) []map[string]interface{} {
 
 	mapList := make([]map[string]interface{}, 0)
