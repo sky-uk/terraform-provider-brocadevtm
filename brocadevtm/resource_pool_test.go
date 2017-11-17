@@ -60,67 +60,67 @@ func TestAccPool_Basic(t *testing.T) {
 				ExpectError: regexp.MustCompile(`attribute supports 1 item maximum, config has 2 declared`),
 			},
 			{
-				Config: testAccPoolInvalidIpsToUse(poolName),
+				Config:      testAccPoolInvalidIpsToUse(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[publicips private_ips\]`),
 			},
 			{
-				Config: testAccPoolInvalidAddNodeDelayTime(poolName),
+				Config:      testAccPoolInvalidAddNodeDelayTime(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
 			{
-				Config: testAccPoolInvalidPort(poolName),
+				Config:      testAccPoolInvalidPort(poolName),
 				ExpectError: regexp.MustCompile(`must be a valid port number in the range 1 to 65535`),
 			},
 			{
-				Config: testAccPoolInvalidMaxConnectTime(poolName),
+				Config:      testAccPoolInvalidMaxConnectTime(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
 			{
-				Config: testAccPoolInvalidMaxConnections(poolName),
+				Config:      testAccPoolInvalidMaxConnections(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
 			{
-				Config: testAccPoolInvalidMaxQueue(poolName),
+				Config:      testAccPoolInvalidMaxQueue(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
 			{
-				Config: testAccPoolInvalidMaxReply(poolName),
+				Config:      testAccPoolInvalidMaxReply(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
 			{
-				Config: testAccPoolInvalidQueueTimeout(poolName),
+				Config:      testAccPoolInvalidQueueTimeout(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
 			{
-				Config: testAccPoolInvalidDNSAutoScalePort(poolName),
+				Config:      testAccPoolInvalidDNSAutoScalePort(poolName),
 				ExpectError: regexp.MustCompile(`must be a valid port number in the range 1 to 65535`),
 			},
 			{
-				Config: testAccPoolInvalidSSL2Option(poolName),
+				Config:      testAccPoolInvalidSSL2Option(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
 			},
 			{
-				Config: testAccPoolInvalidSSL3Option(poolName),
+				Config:      testAccPoolInvalidSSL3Option(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
 			},
 			{
-				Config: testAccPoolInvalidTLS1Option(poolName),
+				Config:      testAccPoolInvalidTLS1Option(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
 			},
 			{
-				Config: testAccPoolInvalidTLS1_1Option(poolName),
+				Config:      testAccPoolInvalidTLS1_1Option(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
 			},
 			{
-				Config: testAccPoolInvalidTLS1_2Option(poolName),
+				Config:      testAccPoolInvalidTLS1_2Option(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
 			},
 			{
-				Config: testAccPoolInvalidUDPAcceptFrom(poolName),
+				Config:      testAccPoolInvalidUDPAcceptFrom(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[all dest_ip_only dest_only ip_mask\]`),
 			},
 			{
-				Config: testAccPoolInvalidUDPAcceptFromMask(poolName),
+				Config:      testAccPoolInvalidUDPAcceptFromMask(poolName),
 				ExpectError: regexp.MustCompile(`must be in the format xxx.xxx.xxx.xxx/xx e.g. 10.0.0.0/8`),
 			},
 			{
@@ -603,7 +603,6 @@ resource "brocadevtm_pool" "acctest" {
   ]
 }`, poolName)
 }
-
 
 func testAccPoolNodeUnsignedInt(poolName string) string {
 	return fmt.Sprintf(`
