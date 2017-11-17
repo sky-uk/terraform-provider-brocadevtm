@@ -121,7 +121,12 @@ func BuildListMaps(itemList *schema.Set, attributeNames []string) []map[string]i
 					newMap[attributeName] = attributeValue
 				case *schema.Set:
 					newMap[attributeName] = attributeValue.(*schema.Set).List()
+				case map[string]interface{}:
+					newMap[attributeName] = attributeValue.(map[string]interface{})
+				case []map[string]interface{}:
+					newMap[attributeName] = attributeValue.([]map[string]interface{})
 				default:
+					// return error
 				}
 			}
 		}
@@ -153,7 +158,12 @@ func MakeListMaps(mapItem map[string]interface{}, attributeNames []string) []map
 			mapListItem[attributeName] = value
 		case *schema.Set:
 			mapListItem[attributeName] = value.(*schema.Set).List()
+		case map[string]interface{}:
+			mapListItem[attributeName] = value.(map[string]interface{})
+		case []map[string]interface{}:
+			mapListItem[attributeName] = value.([]map[string]interface{})
 		default:
+			// return error
 		}
 
 	}
