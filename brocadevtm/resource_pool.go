@@ -782,6 +782,7 @@ func getPoolMapAttributeList(mapName string) []string {
 			"common_name_match",
 			"elliptic_curves",
 			"enable",
+			"enhance",
 			"send_close_alerts",
 			"server_name",
 			"signature_algorithms",
