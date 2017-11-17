@@ -89,6 +89,7 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "cloud_credentials"), "example"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "cluster"), "10.0.0.1"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "data_center"), "vCentre server"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "data_store"), "data_store1"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "enabled"), "true"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "external"), "true"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "hysteresis"), "100"),
@@ -202,6 +203,7 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "cloud_credentials"), "another-example"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "cluster"), "10.0.2.100"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "data_center"), "another vCentre server"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "data_store"), "data_store2"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "enabled"), "false"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "external"), "false"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "hysteresis"), "200"),
@@ -309,6 +311,7 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "cloud_credentials"), "example"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "cluster"), "10.0.0.1"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "data_center"), "vCentre server"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "data_store"), "data_store1"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "enabled"), "true"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "external"), "true"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "hysteresis"), "100"),
@@ -628,6 +631,7 @@ resource "brocadevtm_pool" "acctest" {
       cloud_credentials = "example"
       cluster = "10.0.0.1"
       data_center = "vCentre server"
+      data_store = "data_store1"
       enabled = true
       external = true
       hysteresis = 100
@@ -773,6 +777,7 @@ resource "brocadevtm_pool" "acctest" {
       cloud_credentials = "another-example"
       cluster = "10.0.2.100"
       data_center = "another vCentre server"
+      data_store = "data_store2"
       enabled = false
       external = false
       hysteresis = 200
@@ -905,6 +910,7 @@ resource "brocadevtm_pool" "acctest" {
       cloud_credentials = "example"
       cluster = "10.0.0.1"
       data_center = "vCentre server"
+      data_store = "data_store1"
       enabled = true
       external = true
       hysteresis = 100
@@ -1037,6 +1043,7 @@ resource "brocadevtm_pool" "acctest" {
       cloud_credentials = "example"
       cluster = "10.0.0.1"
       data_center = "vCentre server"
+      data_store = "data_store2"
       enabled = true
       external = true
       hysteresis = 100

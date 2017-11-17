@@ -188,6 +188,11 @@ func resourcePool() *schema.Resource {
 							Optional:    true,
 							Description: "Name of logical vCenter server",
 						},
+						"data_store": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Name of VMWare data store",
+						},
 						"enabled": {
 							Type:        schema.TypeBool,
 							Optional:    true,
@@ -732,6 +737,7 @@ func getPoolMapAttributeList(mapName string) []string {
 			"cloud_credentials",
 			"cluster",
 			"data_center",
+			"data_store",
 			"enabled",
 			"external",
 			"hysteresis",
@@ -861,7 +867,11 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	// all other sections
 	for _, section := range getPoolMapAttributeList("sub_sections") {
 		if v, ok := d.GetOk(section); ok {
-			poolPropertiesConfiguration[section] = util.BuildListMaps(v.(*schema.Set), getPoolMapAttributeList(section))[0]
+			builtList, err := util.BuildListMaps(v.(*schema.Set), getPoolMapAttributeList(section))
+			if err != nil {
+				return err
+			}
+			poolPropertiesConfiguration[section] = builtList[0]
 		}
 	}
 
@@ -914,19 +924,21 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	poolSection = append(poolSection, poolPropertiesConfiguration["connection"].(map[string]interface{}))
 	d.Set("pool_connection", poolSection)
 
-	// all other sections - works for sections which don't have a sub-section (set) - only one not working is auto_scaling
+	// all other sections
 	for _, sectionName := range getPoolMapAttributeList("sub_sections") {
 		section := make([]map[string]interface{}, 0)
-		section = append(section, poolPropertiesConfiguration[sectionName].(map[string]interface{}))
+		// auto_scaling needs to be handled differently as it contains sets
+		if sectionName == "auto_scaling" {
+			autoScalingMapList, err := util.BuildReadListMaps(poolPropertiesConfiguration[sectionName].(map[string]interface{}), sectionName)
+			if err != nil {
+				return err
+			}
+			section = append(section, autoScalingMapList)
+		} else {
+			section = append(section, poolPropertiesConfiguration[sectionName].(map[string]interface{}))
+		}
 		d.Set(sectionName, section)
 	}
-
-	//d.Set("auto_scaling", poolPropertiesConfiguration["auto_scaling"])
-	/*
-		for _, sectionName := range getPoolMapAttributeList("sub_sections") {
-			d.Set(sectionName, util.MakeListMaps(poolPropertiesConfiguration[sectionName].(map[string]interface{}), getPoolMapAttributeList(sectionName)))
-		}
-	*/
 	return nil
 }
 
@@ -958,10 +970,24 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 		poolPropertiesConfiguration["connection"] = d.Get("pool_connection").(*schema.Set).List()[0]
 	}
 
+	for _, section := range getPoolMapAttributeList("sub_sections") {
+		if v, ok := d.GetOk(section); ok {
+			builtList, err := util.BuildListMaps(v.(*schema.Set), getPoolMapAttributeList(section))
+			if err != nil {
+				return err
+			}
+			poolPropertiesConfiguration[section] = builtList[0]
+		}
+	}
+
 	// all other sections
 	for _, section := range getPoolMapAttributeList("sub_sections") {
 		if d.HasChange(section) {
-			poolPropertiesConfiguration[section] = util.BuildListMaps(d.Get(section).(*schema.Set), getPoolMapAttributeList(section))[0]
+			builtList, err := util.BuildListMaps(d.Get(section).(*schema.Set), getPoolMapAttributeList(section))
+			if err != nil {
+				return err
+			}
+			poolPropertiesConfiguration[section] = builtList[0]
 		}
 	}
 
