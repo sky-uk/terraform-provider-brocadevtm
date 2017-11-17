@@ -972,16 +972,6 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 		poolPropertiesConfiguration["connection"] = d.Get("pool_connection").(*schema.Set).List()[0]
 	}
 
-	for _, section := range getPoolMapAttributeList("sub_sections") {
-		if v, ok := d.GetOk(section); ok {
-			builtList, err := util.BuildListMaps(v.(*schema.Set), getPoolMapAttributeList(section))
-			if err != nil {
-				return err
-			}
-			poolPropertiesConfiguration[section] = builtList[0]
-		}
-	}
-
 	// all other sections
 	for _, section := range getPoolMapAttributeList("sub_sections") {
 		if d.HasChange(section) {
