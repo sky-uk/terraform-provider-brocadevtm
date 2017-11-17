@@ -343,6 +343,7 @@ func resourcePool() *schema.Resource {
 							Optional:    true,
 							Default:     10,
 							Description: "Max time to keep a connection queued",
+							ValidateFunc: util.ValidateUnsignedInteger,
 						},
 					},
 				},

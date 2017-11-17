@@ -60,6 +60,70 @@ func TestAccPool_Basic(t *testing.T) {
 				ExpectError: regexp.MustCompile(`attribute supports 1 item maximum, config has 2 declared`),
 			},
 			{
+				Config: testAccPoolInvalidIpsToUse(poolName),
+				ExpectError: regexp.MustCompile(`to be one of \[publicips private_ips\]`),
+			},
+			{
+				Config: testAccPoolInvalidAddNodeDelayTime(poolName),
+				ExpectError: regexp.MustCompile(`can't be negative`),
+			},
+			{
+				Config: testAccPoolInvalidPort(poolName),
+				ExpectError: regexp.MustCompile(`must be a valid port number in the range 1 to 65535`),
+			},
+			{
+				Config: testAccPoolInvalidMaxConnectTime(poolName),
+				ExpectError: regexp.MustCompile(`can't be negative`),
+			},
+			{
+				Config: testAccPoolInvalidMaxConnections(poolName),
+				ExpectError: regexp.MustCompile(`can't be negative`),
+			},
+			{
+				Config: testAccPoolInvalidMaxQueue(poolName),
+				ExpectError: regexp.MustCompile(`can't be negative`),
+			},
+			{
+				Config: testAccPoolInvalidMaxReply(poolName),
+				ExpectError: regexp.MustCompile(`can't be negative`),
+			},
+			{
+				Config: testAccPoolInvalidQueueTimeout(poolName),
+				ExpectError: regexp.MustCompile(`can't be negative`),
+			},
+			{
+				Config: testAccPoolInvalidDNSAutoScalePort(poolName),
+				ExpectError: regexp.MustCompile(`must be a valid port number in the range 1 to 65535`),
+			},
+			{
+				Config: testAccPoolInvalidSSL2Option(poolName),
+				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
+			},
+			{
+				Config: testAccPoolInvalidSSL3Option(poolName),
+				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
+			},
+			{
+				Config: testAccPoolInvalidTLS1Option(poolName),
+				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
+			},
+			{
+				Config: testAccPoolInvalidTLS1_1Option(poolName),
+				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
+			},
+			{
+				Config: testAccPoolInvalidTLS1_2Option(poolName),
+				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
+			},
+			{
+				Config: testAccPoolInvalidUDPAcceptFrom(poolName),
+				ExpectError: regexp.MustCompile(`to be one of \[all dest_ip_only dest_only ip_mask\]`),
+			},
+			{
+				Config: testAccPoolInvalidUDPAcceptFromMask(poolName),
+				ExpectError: regexp.MustCompile(`must be in the format xxx.xxx.xxx.xxx/xx e.g. 10.0.0.0/8`),
+			},
+			{
 				Config: testAccPoolCreateTemplate(poolName),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckPoolExists(poolResourceName),
@@ -477,6 +541,70 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
+func testAccPoolInvalidAddNodeDelayTime(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  auto_scaling = [
+    {
+      enabled = true
+      addnode_delaytime = -1
+    },
+  ]
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidPort(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  auto_scaling = [
+    {
+      enabled = true
+      port = "-80"
+    },
+  ]
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidIpsToUse(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  auto_scaling = [
+    {
+      enabled = true
+      ips_to_use = "INVALID_IPS"
+    },
+  ]
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+}`, poolName)
+}
+
+
 func testAccPoolNodeUnsignedInt(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
@@ -593,6 +721,271 @@ resource "brocadevtm_pool" "acctest" {
     },
     {
       addnode_delaytime = 10
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidMaxConnectTime(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  pool_connection = [
+    {
+    	max_connect_time = -1
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidMaxConnections(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  pool_connection = [
+    {
+    	max_connections_per_node = -1
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidMaxQueue(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  pool_connection = [
+    {
+    	max_queue_size = -1
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidMaxReply(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  pool_connection = [
+    {
+    	max_reply_time = -1
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidQueueTimeout(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  pool_connection = [
+    {
+    	queue_timeout = -1
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidDNSAutoScalePort(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  dns_autoscale = [
+    {
+    	port = -1
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidSSL2Option(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  ssl = [
+    {
+    	enabled = true
+    	ssl_support_ssl2 = "INVALID"
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidSSL3Option(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  ssl = [
+    {
+    	enabled = true
+    	ssl_support_ssl3 = "INVALID"
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidTLS1Option(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  ssl = [
+    {
+    	enabled = true
+    	ssl_support_tls1 = "INVALID"
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidTLS1_1Option(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  ssl = [
+    {
+    	enabled = true
+    	ssl_support_tls1_1 = "INVALID"
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidTLS1_2Option(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  ssl = [
+    {
+    	enabled = true
+    	ssl_support_tls1_2 = "INVALID"
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidUDPAcceptFrom(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  udp = [
+    {
+    	accept_from = "INVALID"
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidUDPAcceptFromMask(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  udp = [
+    {
+    	accept_from_mask = "INVALID"
     },
   ]
 }`, poolName)
