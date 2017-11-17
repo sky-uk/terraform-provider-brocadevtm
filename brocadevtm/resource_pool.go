@@ -927,8 +927,8 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	// all other sections
 	for _, sectionName := range getPoolMapAttributeList("sub_sections") {
 		section := make([]map[string]interface{}, 0)
-		// auto_scaling needs to be handled differently as it contains sets
-		if sectionName == "auto_scaling" {
+		// sections with more complex structures need to be handled differently
+		if sectionName == "auto_scaling" || sectionName == "ssl" || sectionName == "dns_autoscale" {
 			autoScalingMapList, err := util.BuildReadListMaps(poolPropertiesConfiguration[sectionName].(map[string]interface{}), sectionName)
 			if err != nil {
 				return err
