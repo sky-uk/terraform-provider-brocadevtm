@@ -132,6 +132,10 @@ func BuildListMaps(itemList *schema.Set, attributeNames []string) ([]map[string]
 		}
 		listOfMaps = append(listOfMaps, newMap)
 	}
+	if len(listOfMaps) == 0 {
+		emptyMap := make(map[string]interface{})
+		listOfMaps = append(listOfMaps, emptyMap)
+	}
 	return listOfMaps, nil
 }
 
