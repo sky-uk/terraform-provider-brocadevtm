@@ -135,10 +135,11 @@ func BuildListMaps(itemList *schema.Set, attributeNames []string) ([]map[string]
 	return listOfMaps, nil
 }
 
-// BuildReadListMaps : used by a read to build a list of maps which contain attributes which are sets of strings
+// BuildReadListMaps : used by a read to build a list of maps which contain bools, strings, ints, float64s and lists of strings
 func BuildReadListMaps(inputMap map[string]interface{}, attributeName string) (map[string]interface{}, error) {
 
 	builtMap := make(map[string]interface{})
+
 	for key, value := range inputMap {
 
 		switch value.(type) {
