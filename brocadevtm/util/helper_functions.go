@@ -98,7 +98,7 @@ func SetSimpleAttributesFromMap(d *schema.ResourceData, mapItem map[string]inter
 }
 
 // BuildListMaps : builds a list of maps from a list of interfaces using a list of attributes
-func BuildListMaps(itemList *schema.Set, attributeNames []string) []map[string]interface{} {
+func BuildListMaps(itemList *schema.Set, attributeNames []string) ([]map[string]interface{}, error) {
 
 	listOfMaps := make([]map[string]interface{}, 0)
 
@@ -126,47 +126,36 @@ func BuildListMaps(itemList *schema.Set, attributeNames []string) []map[string]i
 				case []map[string]interface{}:
 					newMap[attributeName] = attributeValue.([]map[string]interface{})
 				default:
-					// return error
+					return listOfMaps, fmt.Errorf("util.BuildListMaps doesn't understand type for %+v", attributeValue)
 				}
 			}
 		}
 		listOfMaps = append(listOfMaps, newMap)
 	}
-	return listOfMaps
+	return listOfMaps, nil
 }
 
-// MakeListMaps : creates a one item list of maps for use by d.Set
-func MakeListMaps(mapItem map[string]interface{}, attributeNames []string) []map[string]interface{} {
+// BuildReadListMaps : used by a read to build a list of maps which contain attributes which are sets of strings
+func BuildReadListMaps(inputMap map[string]interface{}, attributeName string) (map[string]interface{}, error) {
 
-	mapList := make([]map[string]interface{}, 0)
-	mapListItem := make(map[string]interface{})
-
-	for _, attributeName := range attributeNames {
-
-		value := mapItem[attributeName]
+	builtMap := make(map[string]interface{})
+	for key, value := range inputMap {
 
 		switch value.(type) {
 		case bool:
-			mapListItem[attributeName] = value.(bool)
+			builtMap[key] = value.(bool)
 		case string:
-			mapListItem[attributeName] = value.(string)
+			builtMap[key] = value.(string)
 		case int:
-			mapListItem[attributeName] = value.(int)
+			builtMap[key] = value.(int)
 		case float64:
-			mapListItem[attributeName] = value.(float64)
+			builtMap[key] = value.(float64)
+		// []interface{} only configured / tested for a list of strings
 		case []interface{}:
-			mapListItem[attributeName] = value
-		case *schema.Set:
-			mapListItem[attributeName] = value.(*schema.Set).List()
-		case map[string]interface{}:
-			mapListItem[attributeName] = value.(map[string]interface{})
-		case []map[string]interface{}:
-			mapListItem[attributeName] = value.([]map[string]interface{})
+			builtMap[key] = schema.NewSet(schema.HashString, value.([]interface{}))
 		default:
-			// return error
+			return builtMap, fmt.Errorf("util.BuildReadListMaps doesn't understand %+v", value)
 		}
-
 	}
-	mapList = append(mapList, mapListItem)
-	return mapList
+	return builtMap, nil
 }
