@@ -241,12 +241,12 @@ func resourcePool() *schema.Resource {
 						"min_nodes": {
 							Type:        schema.TypeInt,
 							Optional:    true,
+							Default:     1,
 							Description: "Minimum nodes in auto-scaled pool",
 						},
 						"name": {
 							Type:        schema.TypeString,
 							Optional:    true,
-							Default:     1,
 							Description: "The name prefix of the nodes in the auto-scaling group",
 						},
 						"port": {
