@@ -861,7 +861,7 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	}
 	poolPropertiesConfiguration["basic"] = poolBasicConfiguration
 
-	// connection section - we can't use "connection" as an attribute in the schema as it's reserved
+	// pool_connection section - we can't use "connection" as an attribute in the schema as it's reserved
 	if v, ok := d.GetOk("pool_connection"); ok {
 		poolPropertiesConfiguration["connection"] = v.(*schema.Set).List()[0]
 	}
@@ -908,6 +908,8 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("name", poolName)
 	poolPropertiesConfiguration := poolConfiguration["properties"].(map[string]interface{})
 	poolBasicConfiguration := poolPropertiesConfiguration["basic"].(map[string]interface{})
+
+	// basic section
 	util.SetSimpleAttributesFromMap(d, poolBasicConfiguration, "", getPoolMapAttributeList("basic"))
 	d.Set("node_delete_behaviour", poolBasicConfiguration["node_delete_behavior"])
 
@@ -929,7 +931,7 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	// all other sections
 	for _, sectionName := range getPoolMapAttributeList("sub_sections") {
 		section := make([]map[string]interface{}, 0)
-		// sections with more complex structures need to be handled differently
+		// sections with more complex structures need to be handled differently - eventually we should merge this into one function.
 		if sectionName == "auto_scaling" || sectionName == "ssl" || sectionName == "dns_autoscale" {
 			autoScalingMapList, err := util.BuildReadListMaps(poolPropertiesConfiguration[sectionName].(map[string]interface{}), sectionName)
 			if err != nil {
