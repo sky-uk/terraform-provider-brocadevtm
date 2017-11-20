@@ -159,7 +159,7 @@ func BuildReadListMaps(inputMap map[string]interface{}, attributeName string) (m
 		case []interface{}:
 			builtMap[key] = schema.NewSet(schema.HashString, value.([]interface{}))
 		default:
-			return builtMap, fmt.Errorf("util.BuildReadListMaps doesn't understand %+v", value)
+			return builtMap, fmt.Errorf("util.BuildReadListMaps doesn't understand type for %+v", value)
 		}
 	}
 	return builtMap, nil
