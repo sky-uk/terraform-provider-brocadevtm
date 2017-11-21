@@ -302,12 +302,8 @@ func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 	trafficIPGroupBasicConfiguration := trafficIPGroupPropertiesConfiguration["basic"].(map[string]interface{})
 	util.SetSimpleAttributesFromMap(d, trafficIPGroupBasicConfiguration, "", getMonitorMapAttributeList("basic"))
 	util.SetSimpleAttributesFromMap(d, trafficIPGroupBasicConfiguration, "", []string{"machines"})
+	d.Set("ip_mapping", trafficIPGroupBasicConfiguration["ip_mapping"].([]interface{}))
 
-	ipMappings, err := util.BuildReadListMaps(trafficIPGroupBasicConfiguration["ip_mapping"].(map[string]interface{}), "ip_mapping")
-	if err != nil {
-		return err
-	}
-	d.Set("ip_mapping", ipMappings)
 	return nil
 }
 
