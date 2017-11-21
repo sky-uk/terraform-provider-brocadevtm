@@ -73,11 +73,11 @@ func resourcePool() *schema.Resource {
 				Description:  "Number of times an attempt to connect to the same node before marking it as failed. Only used when passive_monitoring is enabled",
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
-			"node_delete_behaviour": {
+			"node_delete_behavior": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "immediate",
-				Description: "Node deletion behaviour for this pool",
+				Description: "Node deletion behavior for this pool",
 				ValidateFunc: validation.StringInSlice([]string{
 					"drain",
 					"immediate",
@@ -719,6 +719,7 @@ func getPoolMapAttributeList(mapName string) []string {
 			"monitors",
 			"node_close_with_rst",
 			"node_connection_attempts",
+			"node_delete_behavior",
 			"node_drain_to_delete_timeout",
 			"note",
 			"passive_monitoring",
@@ -845,7 +846,6 @@ func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
 	// basic section
 	poolBasicConfiguration := make(map[string]interface{})
 	poolBasicConfiguration = util.AddSimpleGetAttributesToMap(d, poolBasicConfiguration, "", getPoolMapAttributeList("basic"))
-	poolBasicConfiguration["node_delete_behavior"] = d.Get("node_delete_behaviour").(string)
 
 	if v, ok := d.GetOk("nodes_table"); ok {
 		poolBasicConfiguration["nodes_table"] = v.(*schema.Set).List()
@@ -911,7 +911,6 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 
 	// basic section
 	util.SetSimpleAttributesFromMap(d, poolBasicConfiguration, "", getPoolMapAttributeList("basic"))
-	d.Set("node_delete_behaviour", poolBasicConfiguration["node_delete_behavior"])
 
 	if _, ok := d.GetOk("nodes_list"); ok {
 		var nodesList []string
@@ -958,7 +957,6 @@ func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
 	// basic section
 	poolBasicConfiguration := make(map[string]interface{})
 	poolBasicConfiguration = util.AddChangedSimpleAttributesToMap(d, poolBasicConfiguration, "", getPoolMapAttributeList("basic"))
-	poolBasicConfiguration["node_delete_behavior"] = d.Get("node_delete_behaviour").(string)
 
 	if d.HasChange("nodes_table") {
 		poolBasicConfiguration["nodes_table"] = d.Get("nodes_table").(*schema.Set).List()

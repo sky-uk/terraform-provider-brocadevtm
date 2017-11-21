@@ -151,8 +151,6 @@ func BuildReadListMaps(inputMap map[string]interface{}, attributeName string) (m
 			builtMap[key] = value.(bool)
 		case string:
 			builtMap[key] = value.(string)
-		case int:
-			builtMap[key] = value.(int)
 		case float64:
 			builtMap[key] = value.(float64)
 		// []interface{} only configured / tested for a list of strings

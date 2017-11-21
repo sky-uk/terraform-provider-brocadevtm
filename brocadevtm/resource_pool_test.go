@@ -52,8 +52,8 @@ func TestAccPool_Basic(t *testing.T) {
 				ExpectError: regexp.MustCompile(`must be a valid IP/Hostname and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 			{
-				Config:      testAccPoolInvalidNodeDeleteBehaviour(poolName),
-				ExpectError: regexp.MustCompile(`expected node_delete_behaviour to be one of \[drain immediate\]`),
+				Config:      testAccPoolInvalidNodeDeleteBehavior(poolName),
+				ExpectError: regexp.MustCompile(`expected node_delete_behavior to be one of \[drain immediate\]`),
 			},
 			{
 				Config:      testAccPoolOneItemList(poolName),
@@ -142,7 +142,7 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("monitors"), "Full HTTP"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_connection_attempts", "6"),
-					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behaviour", "immediate"),
+					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behavior", "immediate"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_drain_to_delete_timeout", "10"),
 					resource.TestCheckResourceAttr(poolResourceName, "note", "example test pool"),
 					resource.TestCheckResourceAttr(poolResourceName, "passive_monitoring", "true"),
@@ -257,7 +257,7 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("monitors"), "Full HTTPS"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "false"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_connection_attempts", "3"),
-					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behaviour", "drain"),
+					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behavior", "drain"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_drain_to_delete_timeout", "4"),
 					resource.TestCheckResourceAttr(poolResourceName, "note", "example test pool - updated"),
 					resource.TestCheckResourceAttr(poolResourceName, "passive_monitoring", "false"),
@@ -365,7 +365,7 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("monitors"), "Full HTTP"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_connection_attempts", "6"),
-					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behaviour", "immediate"),
+					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behavior", "immediate"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_drain_to_delete_timeout", "10"),
 					resource.TestCheckResourceAttr(poolResourceName, "note", "example test pool"),
 					resource.TestCheckResourceAttr(poolResourceName, "passive_monitoring", "true"),
@@ -686,7 +686,7 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
-func testAccPoolInvalidNodeDeleteBehaviour(poolName string) string {
+func testAccPoolInvalidNodeDeleteBehavior(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
   name = "%s"
@@ -698,7 +698,7 @@ resource "brocadevtm_pool" "acctest" {
       weight = 2
     },
   ]
-  node_delete_behaviour = "INVALID_BEHAVIOUR"
+  node_delete_behavior = "INVALID_BEHAVIOR"
 }`, poolName)
 }
 
@@ -1010,7 +1010,7 @@ resource "brocadevtm_pool" "acctest" {
   monitors = [ "Full HTTP" ]
   node_close_with_rst = true
   node_connection_attempts = 6
-  node_delete_behaviour = "immediate"
+  node_delete_behavior = "immediate"
   node_drain_to_delete_timeout = 10
   note = "example test pool"
   passive_monitoring = true
@@ -1156,7 +1156,7 @@ resource "brocadevtm_pool" "acctest" {
   monitors = [ "Full HTTPS" ]
   node_close_with_rst = false
   node_connection_attempts = 3
-  node_delete_behaviour = "drain"
+  node_delete_behavior = "drain"
   node_drain_to_delete_timeout = 4
   note = "example test pool - updated"
   passive_monitoring = false
@@ -1289,7 +1289,7 @@ resource "brocadevtm_pool" "acctest" {
   monitors = [ "Full HTTP" ]
   node_close_with_rst = true
   node_connection_attempts = 6
-  node_delete_behaviour = "immediate"
+  node_delete_behavior = "immediate"
   node_drain_to_delete_timeout = 10
   note = "example test pool"
   passive_monitoring = true
@@ -1422,7 +1422,7 @@ resource "brocadevtm_pool" "acctest" {
   monitors = [ "Full HTTP" ]
   node_close_with_rst = true
   node_connection_attempts = 6
-  node_delete_behaviour = "immediate"
+  node_delete_behavior = "immediate"
   node_drain_to_delete_timeout = 10
   note = "example test pool"
   passive_monitoring = true
