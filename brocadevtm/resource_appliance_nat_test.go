@@ -453,9 +453,12 @@ resource "brocadevtm_virtual_server" "acctest" {
 	connection_errors = {
 		error_file = "testErrorFileUpdate"
 	}
-	expect_starttls = false
-	proxy_close = false
-
+	smtp = {
+		expect_starttls = false
+	}
+	tcp = {
+		proxy_close = false
+	}
 	aptimizer = {
 		enabled = true
 		profile = [{
@@ -718,9 +721,12 @@ resource "brocadevtm_virtual_server" "acctest" {
 	connection_errors = {
 		error_file = "testErrorFileUpdate"
 	}
-	expect_starttls = false
-	proxy_close = false
-
+	smtp = {
+		expect_starttls = false
+	}
+	tcp = {
+		proxy_close = false
+	}
 	aptimizer = {
 		enabled = true
 		profile = [{
