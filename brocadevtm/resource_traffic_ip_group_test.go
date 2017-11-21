@@ -39,11 +39,11 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 			},
 			{
 				Config:      testAccBrocadeVTMTrafficIPGroupInvalidIPAssignmentMode(trafficIPGroupName),
-				ExpectError: regexp.MustCompile(`must be one of alphabetic or balanced`),
+				ExpectError: regexp.MustCompile(`expected ip_assignment_mode to be one of \[alphabetic balanced\], got SOME_INVALID_MODE`),
 			},
 			{
 				Config:      testAccBrocadeVTMTrafficIPGroupInvalidMode(trafficIPGroupName),
-				ExpectError: regexp.MustCompile(`must be one of singlehosted, ec2elastic, ec2vpcelastic, ec2vpcprivate, multihosted or rhi`),
+				ExpectError: regexp.MustCompile(`expected mode to be one of \[singlehosted ec2elastic ec2vpcelastic ec2vpcprivate multihosted rhi\], got SOME_INVALID_MODE`),
 			},
 			{
 				Config:      testAccBrocadeVTMTrafficIPGroupInvalidIPAddress(trafficIPGroupName),
@@ -59,7 +59,7 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 			},
 			{
 				Config:      testAccBrocadeVTMTrafficIPGroupInvalidRHIProtocol(trafficIPGroupName),
-				ExpectError: regexp.MustCompile(`must be one of ospf or bgp`),
+				ExpectError: regexp.MustCompile(`expected rhi_protocols to be one of \[ospf bgp\], got INVALID_PROTOCOL`),
 			},
 			{
 				Config: testAccBrocadeVTMTrafficIPGroupCreateTemplate(trafficIPGroupName),
