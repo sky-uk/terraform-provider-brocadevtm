@@ -2,6 +2,9 @@ package util
 
 import (
 	"fmt"
+	"log"
+	"reflect"
+
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
