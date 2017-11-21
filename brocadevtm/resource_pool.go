@@ -932,7 +932,7 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 		section := make([]map[string]interface{}, 0)
 		// sections with more complex structures need to be handled differently - eventually we should merge this into one function.
 		if sectionName == "auto_scaling" || sectionName == "ssl" || sectionName == "dns_autoscale" {
-			autoScalingMapList, err := util.BuildReadListMaps(poolPropertiesConfiguration[sectionName].(map[string]interface{}), sectionName)
+			autoScalingMapList, err := util.BuildReadMap(poolPropertiesConfiguration[sectionName].(map[string]interface{}))
 			if err != nil {
 				return err
 			}
