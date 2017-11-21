@@ -2,9 +2,8 @@ package util
 
 import (
 	"fmt"
-	"reflect"
-
 	"github.com/hashicorp/terraform/helper/schema"
+	"reflect"
 )
 
 // BuildStringArrayFromInterface : take an interface and convert it into an array of strings
