@@ -450,7 +450,9 @@ resource "brocadevtm_virtual_server" "acctest" {
 	ssl_decrypt = false
 	ssl_honor_fallback_scsv = "use_default"
 	transparent = false
-	error_file = "testErrorFileUpdate"
+	connection_errors = {
+		error_file = "testErrorFileUpdate"
+	}
 	expect_starttls = false
 	proxy_close = false
 
@@ -713,7 +715,9 @@ resource "brocadevtm_virtual_server" "acctest" {
 	ssl_decrypt = false
 	ssl_honor_fallback_scsv = "use_default"
 	transparent = false
-	error_file = "testErrorFileUpdate"
+	connection_errors = {
+		error_file = "testErrorFileUpdate"
+	}
 	expect_starttls = false
 	proxy_close = false
 
