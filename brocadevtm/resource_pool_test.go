@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/pool"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"net/http"
 	"regexp"
@@ -19,17 +18,6 @@ func TestAccPool_Basic(t *testing.T) {
 	poolName := fmt.Sprintf("acctest_brocadevtm_pool-%d", randomInt)
 	poolResourceName := "brocadevtm_pool.acctest"
 
-	nodePattern := regexp.MustCompile(`nodes_table\.[0-9]+\.node`)
-	priorityPattern := regexp.MustCompile(`nodes_table\.[0-9]+\.priority`)
-	sourceIPPattern := regexp.MustCompile(`nodes_table\.[0-9]+\.source_ip`)
-	statePattern := regexp.MustCompile(`nodes_table\.[0-9]+\.state`)
-	weightPattern := regexp.MustCompile(`nodes_table\.[0-9]+\.weight`)
-	securityIDPattern := regexp.MustCompile(`auto_scaling\.[0-9]+\.securitygroupids\.[0-9]+`)
-	subnetIDPattern := regexp.MustCompile(`auto_scaling\.[0-9]+\.subnetids\.[0-9]+`)
-	dnsAutoScaleHostnamePattern := regexp.MustCompile(`dns_autoscale\.[0-9]+\.hostnames\.[0-9]+`)
-	sslCNPattern := regexp.MustCompile(`ssl\.[0-9]+\.common_name_match\.[0-9]+`)
-	sslEllipticCurvesPattern := regexp.MustCompile(`ssl\.[0-9]+\.elliptic_curves\.[0-9]+`)
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -39,7 +27,6 @@ func TestAccPool_Basic(t *testing.T) {
 				Config:      testAccPoolNodeInvalidAlgo(poolName),
 				ExpectError: regexp.MustCompile(`must be one of fastest_response_time, least_connections, perceptive, random, round_robin, weighted_least_connections, weighted_round_robin`),
 			},
-
 			{
 				Config:      testAccPoolNodeUnsignedInt(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
@@ -65,20 +52,76 @@ func TestAccPool_Basic(t *testing.T) {
 				ExpectError: regexp.MustCompile(`must be a valid IP/Hostname and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
 			{
-				Config:      testAccPoolInvalidNodeDeleteBehaviour(poolName),
-				ExpectError: regexp.MustCompile(`must be one of immediate or drain`),
+				Config:      testAccPoolInvalidNodeDeleteBehavior(poolName),
+				ExpectError: regexp.MustCompile(`expected node_delete_behavior to be one of \[drain immediate\]`),
 			},
 			{
 				Config:      testAccPoolOneItemList(poolName),
 				ExpectError: regexp.MustCompile(`attribute supports 1 item maximum, config has 2 declared`),
 			},
 			{
-				Config:      testAccPoolValidAWSSGPrefix(poolName),
-				ExpectError: regexp.MustCompile(`one or more items in the list of strings doesn't match the prefix sg-`),
+				Config:      testAccPoolInvalidIpsToUse(poolName),
+				ExpectError: regexp.MustCompile(`to be one of \[publicips private_ips\]`),
 			},
 			{
-				Config:      testAccPoolValidAWSSubnetPrefix(poolName),
-				ExpectError: regexp.MustCompile(`one or more items in the list of strings doesn't match the prefix subnet-`),
+				Config:      testAccPoolInvalidAddNodeDelayTime(poolName),
+				ExpectError: regexp.MustCompile(`can't be negative`),
+			},
+			{
+				Config:      testAccPoolInvalidPort(poolName),
+				ExpectError: regexp.MustCompile(`must be a valid port number in the range 1 to 65535`),
+			},
+			{
+				Config:      testAccPoolInvalidMaxConnectTime(poolName),
+				ExpectError: regexp.MustCompile(`can't be negative`),
+			},
+			{
+				Config:      testAccPoolInvalidMaxConnections(poolName),
+				ExpectError: regexp.MustCompile(`can't be negative`),
+			},
+			{
+				Config:      testAccPoolInvalidMaxQueue(poolName),
+				ExpectError: regexp.MustCompile(`can't be negative`),
+			},
+			{
+				Config:      testAccPoolInvalidMaxReply(poolName),
+				ExpectError: regexp.MustCompile(`can't be negative`),
+			},
+			{
+				Config:      testAccPoolInvalidQueueTimeout(poolName),
+				ExpectError: regexp.MustCompile(`can't be negative`),
+			},
+			{
+				Config:      testAccPoolInvalidDNSAutoScalePort(poolName),
+				ExpectError: regexp.MustCompile(`must be a valid port number in the range 1 to 65535`),
+			},
+			{
+				Config:      testAccPoolInvalidSSL2Option(poolName),
+				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
+			},
+			{
+				Config:      testAccPoolInvalidSSL3Option(poolName),
+				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
+			},
+			{
+				Config:      testAccPoolInvalidTLS1Option(poolName),
+				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
+			},
+			{
+				Config:      testAccPoolInvalidTLS1_1Option(poolName),
+				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
+			},
+			{
+				Config:      testAccPoolInvalidTLS1_2Option(poolName),
+				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
+			},
+			{
+				Config:      testAccPoolInvalidUDPAcceptFrom(poolName),
+				ExpectError: regexp.MustCompile(`to be one of \[all dest_ip_only dest_only ip_mask\]`),
+			},
+			{
+				Config:      testAccPoolInvalidUDPAcceptFromMask(poolName),
+				ExpectError: regexp.MustCompile(`must be in the format xxx.xxx.xxx.xxx/xx e.g. 10.0.0.0/8`),
 			},
 			{
 				Config: testAccPoolCreateTemplate(poolName),
@@ -86,108 +129,109 @@ func TestAccPool_Basic(t *testing.T) {
 					testCheckPoolExists(poolResourceName),
 					resource.TestCheckResourceAttr(poolResourceName, "name", poolName),
 					resource.TestCheckResourceAttr(poolResourceName, "nodes_table.#", "1"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, nodePattern, "192.168.10.10:80"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, priorityPattern, "5"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, statePattern, "draining"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, weightPattern, "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sourceIPPattern, "192.168.120.6"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "node"), "192.168.10.10:80"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "priority"), "5"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "state"), "draining"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "weight"), "2"),
 					resource.TestCheckResourceAttr(poolResourceName, "bandwidth_class", "example"),
 					resource.TestCheckResourceAttr(poolResourceName, "failure_pool", "test-pool"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "100"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_idle_connections_pernode", "10"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_timed_out_connection_attempts", "8"),
 					resource.TestCheckResourceAttr(poolResourceName, "monitors.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "monitors.0", "Full HTTP"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("monitors"), "Full HTTP"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_connection_attempts", "6"),
-					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behaviour", "immediate"),
+					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behavior", "immediate"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_drain_to_delete_timeout", "10"),
 					resource.TestCheckResourceAttr(poolResourceName, "note", "example test pool"),
 					resource.TestCheckResourceAttr(poolResourceName, "passive_monitoring", "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "persistence_class", "example"),
 					resource.TestCheckResourceAttr(poolResourceName, "transparent", "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.addnode_delaytime", "10"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.cloud_credentials", "example"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.cluster", "10.0.0.1"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.data_center", "vCentre server"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.enabled", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.external", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.hysteresis", "100"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.imageid", "image id"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.ips_to_use", "private_ips"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.last_node_idle_time", "10"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.max_nodes", "100"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.min_nodes", "20"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.name", "example"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.port", "8980"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.refactory", "10"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.response_time", "100"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_down_level", "90"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_up_level", "20"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.securitygroupids.#", "3"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, securityIDPattern, "sg-12345"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, securityIDPattern, "sg-23456"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, securityIDPattern, "sg-34567"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.size_id", "sizeID"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.subnetids.#", "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, subnetIDPattern, "subnet-xxxx"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, subnetIDPattern, "subnet-xxxx"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "addnode_delaytime"), "10"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "cloud_credentials"), "example"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "cluster"), "10.0.0.1"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "data_center"), "vCentre server"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "data_store"), "data_store1"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "enabled"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "external"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "hysteresis"), "100"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "imageid"), "image id"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "ips_to_use"), "private_ips"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "last_node_idle_time"), "10"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "max_nodes"), "100"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "min_nodes"), "20"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "name"), "example"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "port"), "8980"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "refractory"), "10"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "response_time"), "100"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "scale_down_level"), "90"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "scale_up_level"), "20"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "securitygroupids.#"), "3"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("auto_scaling", "securitygroupids"), "sg-12345"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("auto_scaling", "securitygroupids"), "sg-23456"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("auto_scaling", "securitygroupids"), "sg-34567"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "size_id"), "sizeID"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "subnetids.#"), "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("auto_scaling", "subnetids"), "subnet-xxxx"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("auto_scaling", "subnetids"), "subnet-xxxx"),
 					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_connect_time", "4"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_connections_per_node", "100"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_queue_size", "10"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_reply_time", "12"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.queue_timeout", "14"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "max_connect_time"), "4"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "max_connections_per_node"), "100"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "max_queue_size"), "10"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "max_reply_time"), "12"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "queue_timeout"), "14"),
 					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.enabled", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.hostnames.#", "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, dnsAutoScaleHostnamePattern, "example01.example.com"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, dnsAutoScaleHostnamePattern, "example02.example.com"),
-					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.port", "8080"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("dns_autoscale", "enabled"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("dns_autoscale", "hostnames.#"), "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("dns_autoscale", "hostnames"), "example01.example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("dns_autoscale", "hostnames"), "example02.example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("dns_autoscale", "port"), "8080"),
 					resource.TestCheckResourceAttr(poolResourceName, "ftp.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "ftp.0.support_rfc_2428", "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ftp", "support_rfc_2428"), "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "http.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "http.0.keepalive", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "http.0.keepalive_non_idempotent", "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("http", "keepalive"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("http", "keepalive_non_idempotent"), "true"),
 					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.#", "1"),
-					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.0.principle", ""),
-					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.0.target", ""),
+					//util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("kerberos_protocol_transition", "principle"), ""),
+					//util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("kerberos_protocol_transition", "target"), ""),
 					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.algorithm", "weighted_least_connections"),
-					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.priority_enabled", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.priority_nodes", "3"),
-					resource.TestCheckResourceAttr(poolResourceName, "node.0.close_on_death", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "node.0.retry_fail_time", "30"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("load_balancing", "algorithm"), "weighted_least_connections"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("load_balancing", "priority_enabled"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("load_balancing", "priority_nodes"), "3"),
+					resource.TestCheckResourceAttr(poolResourceName, "node.#", "1"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("node", "close_on_death"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("node", "retry_fail_time"), "30"),
 					resource.TestCheckResourceAttr(poolResourceName, "smtp.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "smtp.0.send_starttls", "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("smtp", "send_starttls"), "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "ssl.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.client_auth", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.common_name_match.#", "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sslCNPattern, "example.com"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sslCNPattern, "another-example.com"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.elliptic_curves.#", "3"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sslEllipticCurvesPattern, "P384"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sslEllipticCurvesPattern, "P256"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sslEllipticCurvesPattern, "P521"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.enable", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.enhance", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.send_close_alerts", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.server_name", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.signature_algorithms", "ECDSA_SHA224 DSA_SHA256"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_ciphers", "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_ssl2", "enabled"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_ssl3", "enabled"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_tls1", "enabled"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_tls1_1", "enabled"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_tls1_2", "enabled"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.strict_verify", "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "client_auth"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "common_name_match.#"), "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("ssl", "common_name_match"), "example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("ssl", "common_name_match"), "another-example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "elliptic_curves.#"), "3"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("ssl", "elliptic_curves"), "P384"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("ssl", "elliptic_curves"), "P256"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("ssl", "elliptic_curves"), "P521"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "enable"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "enhance"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "send_close_alerts"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_name"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "signature_algorithms"), "ECDSA_SHA224 DSA_SHA256"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_ciphers"), "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_ssl2"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_ssl3"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1_1"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1_2"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "strict_verify"), "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "tcp.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "tcp.0.nagle", "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("tcp", "nagle"), "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "udp.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "udp.0.accept_from", "all"),
-					resource.TestCheckResourceAttr(poolResourceName, "udp.0.accept_from_mask", "10.0.0.0/8"),
-					resource.TestCheckResourceAttr(poolResourceName, "udp.0.response_timeout", "0"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "accept_from"), "all"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "accept_from_mask"), "10.0.0.0/8"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "response_timeout"), "0"),
 				),
 			},
 			{
@@ -196,111 +240,110 @@ func TestAccPool_Basic(t *testing.T) {
 					testCheckPoolExists(poolResourceName),
 					resource.TestCheckResourceAttr(poolResourceName, "name", poolName),
 					resource.TestCheckResourceAttr(poolResourceName, "nodes_table.#", "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, nodePattern, "192.168.10.10:80"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, priorityPattern, "5"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, statePattern, "draining"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, weightPattern, "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sourceIPPattern, "192.168.120.6"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, nodePattern, "192.168.10.12:80"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, priorityPattern, "1"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, statePattern, "active"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, weightPattern, "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sourceIPPattern, "192.168.120.6"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "node"), "192.168.10.10:80"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "priority"), "5"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "state"), "draining"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "weight"), "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "node"), "192.168.10.12:80"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "priority"), "1"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "state"), "active"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "weight"), "2"),
 					resource.TestCheckResourceAttr(poolResourceName, "bandwidth_class", "another-example"),
 					resource.TestCheckResourceAttr(poolResourceName, "failure_pool", "test-pool2"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "55"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_idle_connections_pernode", "4"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_timed_out_connection_attempts", "5"),
 					resource.TestCheckResourceAttr(poolResourceName, "monitors.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "monitors.0", "Full HTTPS"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("monitors"), "Full HTTPS"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "false"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_connection_attempts", "3"),
-					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behaviour", "drain"),
+					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behavior", "drain"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_drain_to_delete_timeout", "4"),
 					resource.TestCheckResourceAttr(poolResourceName, "note", "example test pool - updated"),
 					resource.TestCheckResourceAttr(poolResourceName, "passive_monitoring", "false"),
 					resource.TestCheckResourceAttr(poolResourceName, "persistence_class", "another-example"),
 					resource.TestCheckResourceAttr(poolResourceName, "transparent", "false"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.addnode_delaytime", "20"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.cloud_credentials", "another-example"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.cluster", "10.0.2.100"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.data_center", "another vCentre server"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.enabled", "false"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.external", "false"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.hysteresis", "200"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.imageid", "another image id"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.ips_to_use", "publicips"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.last_node_idle_time", "78"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.max_nodes", "200"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.min_nodes", "50"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.name", "anotherExample"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.port", "9980"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.refactory", "56"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.response_time", "89"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_down_level", "75"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_up_level", "15"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.securitygroupids.#", "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, securityIDPattern, "sg-23456"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, securityIDPattern, "sg-34567"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.size_id", "sizeID"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.subnetids.#", "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, subnetIDPattern, "subnet-aaaa"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, subnetIDPattern, "subnet-cccc"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "addnode_delaytime"), "20"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "cloud_credentials"), "another-example"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "cluster"), "10.0.2.100"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "data_center"), "another vCentre server"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "data_store"), "data_store2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "enabled"), "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "external"), "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "hysteresis"), "200"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "imageid"), "another image id"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "ips_to_use"), "publicips"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "last_node_idle_time"), "78"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "max_nodes"), "200"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "min_nodes"), "50"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "name"), "anotherExample"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "port"), "9980"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "refractory"), "56"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "response_time"), "89"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "scale_down_level"), "75"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "scale_up_level"), "15"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "securitygroupids.#"), "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("auto_scaling", "securitygroupids"), "sg-23456"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("auto_scaling", "securitygroupids"), "sg-34567"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "size_id"), "sizeID"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "subnetids.#"), "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("auto_scaling", "subnetids"), "subnet-aaaa"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("auto_scaling", "subnetids"), "subnet-cccc"),
 					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_connect_time", "5"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_connections_per_node", "110"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_queue_size", "8"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_reply_time", "7"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.queue_timeout", "20"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "max_connect_time"), "5"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "max_connections_per_node"), "110"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "max_queue_size"), "8"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "max_reply_time"), "7"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "queue_timeout"), "20"),
 					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.enabled", "false"),
-					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.hostnames.#", "3"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, dnsAutoScaleHostnamePattern, "example01.example.com"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, dnsAutoScaleHostnamePattern, "example02.example.com"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, dnsAutoScaleHostnamePattern, "example03.example.com"),
-					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.port", "8090"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("dns_autoscale", "enabled"), "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("dns_autoscale", "hostnames.#"), "3"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("dns_autoscale", "hostnames"), "example01.example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("dns_autoscale", "hostnames"), "example02.example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("dns_autoscale", "hostnames"), "example03.example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("dns_autoscale", "port"), "8090"),
 					resource.TestCheckResourceAttr(poolResourceName, "ftp.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "ftp.0.support_rfc_2428", "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ftp", "support_rfc_2428"), "false"),
 					resource.TestCheckResourceAttr(poolResourceName, "http.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "http.0.keepalive", "false"),
-					resource.TestCheckResourceAttr(poolResourceName, "http.0.keepalive_non_idempotent", "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("http", "keepalive"), "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("http", "keepalive_non_idempotent"), "false"),
 					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.#", "1"),
-					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.0.principle", ""),
-					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.0.target", ""),
+					//util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("kerberos_protocol_transition", "principle"), ""),
+					//util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("kerberos_protocol_transition", "target"), ""),
 					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.algorithm", "weighted_round_robin"),
-					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.priority_enabled", "false"),
-					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.priority_nodes", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "node.0.close_on_death", "false"),
-					resource.TestCheckResourceAttr(poolResourceName, "node.0.retry_fail_time", "45"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("load_balancing", "algorithm"), "weighted_round_robin"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("load_balancing", "priority_enabled"), "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("load_balancing", "priority_nodes"), "1"),
+					resource.TestCheckResourceAttr(poolResourceName, "node.#", "1"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("node", "close_on_death"), "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("node", "retry_fail_time"), "45"),
 					resource.TestCheckResourceAttr(poolResourceName, "smtp.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "smtp.0.send_starttls", "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("smtp", "send_starttls"), "false"),
 					resource.TestCheckResourceAttr(poolResourceName, "ssl.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.client_auth", "false"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.common_name_match.#", "1"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sslCNPattern, "another-example.com"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.elliptic_curves.#", "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sslEllipticCurvesPattern, "P256"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sslEllipticCurvesPattern, "P521"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.enable", "false"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.enhance", "false"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.send_close_alerts", "false"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.server_name", "false"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.signature_algorithms", "RSA_SHA224 ECDSA_SHA224 DSA_SHA256"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_ciphers", "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_ssl2", "use_default"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_ssl3", "use_default"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_tls1", "use_default"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_tls1_1", "use_default"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_tls1_2", "use_default"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.strict_verify", "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "client_auth"), "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "common_name_match.#"), "1"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("ssl", "common_name_match"), "another-example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "elliptic_curves.#"), "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("ssl", "elliptic_curves"), "P256"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("ssl", "elliptic_curves"), "P521"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "enable"), "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "enhance"), "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "send_close_alerts"), "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_name"), "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "signature_algorithms"), "RSA_SHA224 ECDSA_SHA224 DSA_SHA256"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_ciphers"), "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_ssl2"), "use_default"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_ssl3"), "use_default"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1"), "use_default"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1_1"), "use_default"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1_2"), "use_default"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "strict_verify"), "false"),
 					resource.TestCheckResourceAttr(poolResourceName, "tcp.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "tcp.0.nagle", "false"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("tcp", "nagle"), "false"),
 					resource.TestCheckResourceAttr(poolResourceName, "udp.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "udp.0.accept_from", "dest_ip_only"),
-					resource.TestCheckResourceAttr(poolResourceName, "udp.0.accept_from_mask", "192.168.0.1/24"),
-					resource.TestCheckResourceAttr(poolResourceName, "udp.0.response_timeout", "5"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "accept_from"), "dest_ip_only"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "accept_from_mask"), "192.168.0.1/24"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "response_timeout"), "5"),
 				),
 			},
 			{
@@ -308,109 +351,109 @@ func TestAccPool_Basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testCheckPoolExists(poolResourceName),
 					resource.TestCheckResourceAttr(poolResourceName, "name", poolName),
-					resource.TestCheckResourceAttr(poolResourceName, "nodes_table.#", "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, nodePattern, "192.168.10.10:80"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, priorityPattern, "5"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, statePattern, "draining"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, weightPattern, "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sourceIPPattern, "192.168.120.6"),
+					resource.TestCheckResourceAttr(poolResourceName, "nodes_table.#", "1"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "node"), "192.168.10.11:80"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "priority"), "1"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "state"), "active"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "weight"), "1"),
 					resource.TestCheckResourceAttr(poolResourceName, "bandwidth_class", "example"),
 					resource.TestCheckResourceAttr(poolResourceName, "failure_pool", "test-pool"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "100"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_idle_connections_pernode", "10"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_timed_out_connection_attempts", "8"),
 					resource.TestCheckResourceAttr(poolResourceName, "monitors.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "monitors.0", "Full HTTP"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("monitors"), "Full HTTP"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_close_with_rst", "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_connection_attempts", "6"),
-					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behaviour", "immediate"),
+					resource.TestCheckResourceAttr(poolResourceName, "node_delete_behavior", "immediate"),
 					resource.TestCheckResourceAttr(poolResourceName, "node_drain_to_delete_timeout", "10"),
 					resource.TestCheckResourceAttr(poolResourceName, "note", "example test pool"),
 					resource.TestCheckResourceAttr(poolResourceName, "passive_monitoring", "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "persistence_class", "example"),
 					resource.TestCheckResourceAttr(poolResourceName, "transparent", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.addnode_delaytime", "10"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.cloud_credentials", "example"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.cluster", "10.0.0.1"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.data_center", "vCentre server"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.enabled", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.external", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.hysteresis", "100"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.imageid", "image id"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.ips_to_use", "private_ips"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.last_node_idle_time", "10"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.max_nodes", "100"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.min_nodes", "20"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.name", "example"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.port", "8980"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.refactory", "10"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.response_time", "100"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_down_level", "90"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.scale_up_level", "20"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.securitygroupids.#", "3"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, securityIDPattern, "sg-12345"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, securityIDPattern, "sg-23456"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, securityIDPattern, "sg-34567"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.size_id", "sizeID"),
-					resource.TestCheckResourceAttr(poolResourceName, "auto_scaling.0.subnetids.#", "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, subnetIDPattern, "subnet-xxxx"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, subnetIDPattern, "subnet-xxxx"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "addnode_delaytime"), "10"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "cloud_credentials"), "example"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "cluster"), "10.0.0.1"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "data_center"), "vCentre server"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "data_store"), "data_store1"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "enabled"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "external"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "hysteresis"), "100"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "imageid"), "image id"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "ips_to_use"), "private_ips"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "last_node_idle_time"), "10"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "max_nodes"), "100"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "min_nodes"), "20"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "name"), "example"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "port"), "8980"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "refractory"), "10"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "response_time"), "100"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "scale_down_level"), "90"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "scale_up_level"), "20"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "securitygroupids.#"), "3"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("auto_scaling", "securitygroupids"), "sg-12345"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("auto_scaling", "securitygroupids"), "sg-23456"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("auto_scaling", "securitygroupids"), "sg-34567"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "size_id"), "sizeID"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("auto_scaling", "subnetids.#"), "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("auto_scaling", "subnetids"), "subnet-xxxx"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("auto_scaling", "subnetids"), "subnet-xxxx"),
 					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_connect_time", "4"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_connections_per_node", "100"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_queue_size", "10"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.max_reply_time", "12"),
-					resource.TestCheckResourceAttr(poolResourceName, "pool_connection.0.queue_timeout", "14"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "max_connect_time"), "4"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "max_connections_per_node"), "100"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "max_queue_size"), "10"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "max_reply_time"), "12"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("pool_connection", "queue_timeout"), "14"),
 					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.enabled", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.hostnames.#", "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, dnsAutoScaleHostnamePattern, "example01.example.com"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, dnsAutoScaleHostnamePattern, "example02.example.com"),
-					resource.TestCheckResourceAttr(poolResourceName, "dns_autoscale.0.port", "8080"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("dns_autoscale", "enabled"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("dns_autoscale", "hostnames.#"), "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("dns_autoscale", "hostnames"), "example01.example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("dns_autoscale", "hostnames"), "example02.example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("dns_autoscale", "port"), "8080"),
 					resource.TestCheckResourceAttr(poolResourceName, "ftp.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "ftp.0.support_rfc_2428", "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ftp", "support_rfc_2428"), "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "http.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "http.0.keepalive", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "http.0.keepalive_non_idempotent", "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("http", "keepalive"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("http", "keepalive_non_idempotent"), "true"),
 					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.#", "1"),
-					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.0.principle", ""),
-					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.0.target", ""),
+					//util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("kerberos_protocol_transition", "principle"), ""),
+					//util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("kerberos_protocol_transition", "target"), ""),
 					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.algorithm", "weighted_least_connections"),
-					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.priority_enabled", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.0.priority_nodes", "3"),
-					resource.TestCheckResourceAttr(poolResourceName, "node.0.close_on_death", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "node.0.retry_fail_time", "30"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("load_balancing", "algorithm"), "weighted_least_connections"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("load_balancing", "priority_enabled"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("load_balancing", "priority_nodes"), "3"),
+					resource.TestCheckResourceAttr(poolResourceName, "node.#", "1"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("node", "close_on_death"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("node", "retry_fail_time"), "30"),
 					resource.TestCheckResourceAttr(poolResourceName, "smtp.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "smtp.0.send_starttls", "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("smtp", "send_starttls"), "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "ssl.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.client_auth", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.common_name_match.#", "2"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sslCNPattern, "example.com"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sslCNPattern, "another-example.com"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.elliptic_curves.#", "3"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sslEllipticCurvesPattern, "P384"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sslEllipticCurvesPattern, "P256"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, sslEllipticCurvesPattern, "P521"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.enable", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.enhance", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.send_close_alerts", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.server_name", "true"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.signature_algorithms", "ECDSA_SHA224 DSA_SHA256"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_ciphers", "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_ssl2", "enabled"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_ssl3", "enabled"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_tls1", "enabled"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_tls1_1", "enabled"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.ssl_support_tls1_2", "enabled"),
-					resource.TestCheckResourceAttr(poolResourceName, "ssl.0.strict_verify", "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "client_auth"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "common_name_match.#"), "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("ssl", "common_name_match"), "example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("ssl", "common_name_match"), "another-example.com"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "elliptic_curves.#"), "3"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("ssl", "elliptic_curves"), "P384"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("ssl", "elliptic_curves"), "P256"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForNestedSets("ssl", "elliptic_curves"), "P521"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "enable"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "enhance"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "send_close_alerts"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_name"), "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "signature_algorithms"), "ECDSA_SHA224 DSA_SHA256"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_ciphers"), "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_ssl2"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_ssl3"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1_1"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1_2"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "strict_verify"), "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "tcp.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "tcp.0.nagle", "true"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("tcp", "nagle"), "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "udp.#", "1"),
-					resource.TestCheckResourceAttr(poolResourceName, "udp.0.accept_from", "all"),
-					resource.TestCheckResourceAttr(poolResourceName, "udp.0.accept_from_mask", "10.0.0.0/8"),
-					resource.TestCheckResourceAttr(poolResourceName, "udp.0.response_timeout", "0"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "accept_from"), "all"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "accept_from_mask"), "10.0.0.0/8"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "response_timeout"), "0"),
 				),
 			},
 			{
@@ -429,6 +472,7 @@ func TestAccPool_Basic(t *testing.T) {
 
 func testAccPoolCheckDestroy(s *terraform.State) error {
 
+	pool := make(map[string]interface{})
 	config := testAccProvider.Meta().(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 
@@ -443,8 +487,7 @@ func testAccPoolCheckDestroy(s *terraform.State) error {
 			return nil
 		}
 
-		var poolObj pool.Pool
-		err := client.GetByName("pools", name, &poolObj)
+		err := client.GetByName("pools", name, &pool)
 		if client.StatusCode == http.StatusNotFound {
 			return nil
 		}
@@ -457,6 +500,7 @@ func testAccPoolCheckDestroy(s *terraform.State) error {
 
 func testCheckPoolExists(resName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
+		pool := make(map[string]interface{})
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
 
@@ -474,8 +518,7 @@ func testCheckPoolExists(resName string) resource.TestCheckFunc {
 			return fmt.Errorf("No pool name is set")
 		}
 
-		var poolObj pool.Pool
-		err := client.GetByName("pools", name, &poolObj)
+		err := client.GetByName("pools", name, &pool)
 		if err != nil {
 			return fmt.Errorf("Received an error retrieving service with name: %s, %s", name, err)
 		}
@@ -493,7 +536,69 @@ resource "brocadevtm_pool" "acctest" {
       priority = 5
       state = "draining"
       weight = 2
-      source_ip = "192.168.120.6"
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidAddNodeDelayTime(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  auto_scaling = [
+    {
+      enabled = true
+      addnode_delaytime = -1
+    },
+  ]
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidPort(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  auto_scaling = [
+    {
+      enabled = true
+      port = "-80"
+    },
+  ]
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidIpsToUse(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  auto_scaling = [
+    {
+      enabled = true
+      ips_to_use = "INVALID_IPS"
+    },
+  ]
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
     },
   ]
 }`, poolName)
@@ -509,7 +614,6 @@ resource "brocadevtm_pool" "acctest" {
       priority = 5
       state = "draining"
       weight = 2
-      source_ip = "192.168.120.6"
     },
   ]
   max_idle_connections_pernode = -1
@@ -526,7 +630,6 @@ resource "brocadevtm_pool" "acctest" {
       priority = 5
       state = "draining"
       weight = 2
-      source_ip = "192.168.120.6"
     },
   ]
 }`, poolName)
@@ -542,7 +645,6 @@ resource "brocadevtm_pool" "acctest" {
       priority = 5
       state = "draining"
       weight = 2
-      source_ip = "192.168.120.6"
     },
   ]
 }`, poolName)
@@ -558,7 +660,6 @@ resource "brocadevtm_pool" "acctest" {
       priority = 5
       state = "draining"
       weight = 2
-      source_ip = "192.168.120.6"
     },
   ]
 }`, poolName)
@@ -573,7 +674,6 @@ resource "brocadevtm_pool" "acctest" {
       priority = 5
       state = "draining"
       weight = 2
-      source_ip = "192.168.120.6"
     },
   ]
 }`)
@@ -586,7 +686,7 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
-func testAccPoolInvalidNodeDeleteBehaviour(poolName string) string {
+func testAccPoolInvalidNodeDeleteBehavior(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
   name = "%s"
@@ -596,10 +696,9 @@ resource "brocadevtm_pool" "acctest" {
       priority = 5
       state = "draining"
       weight = 2
-      source_ip = "192.168.120.6"
     },
   ]
-  node_delete_behaviour = "INVALID_BEHAVIOUR"
+  node_delete_behavior = "INVALID_BEHAVIOR"
 }`, poolName)
 }
 
@@ -613,7 +712,6 @@ resource "brocadevtm_pool" "acctest" {
       priority = 5
       state = "draining"
       weight = 2
-      source_ip = "192.168.120.6"
     },
   ]
   auto_scaling = [
@@ -627,9 +725,9 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
-func testAccPoolValidAWSSGPrefix(poolName string) string {
+func testAccPoolInvalidMaxConnectTime(poolName string) string {
 	return fmt.Sprintf(`
-resource "brocadevtm_pool" "acctest"{
+resource "brocadevtm_pool" "acctest" {
   name = "%s"
   nodes_table = [
     {
@@ -637,20 +735,19 @@ resource "brocadevtm_pool" "acctest"{
       priority = 5
       state = "draining"
       weight = 2
-      source_ip = "192.168.120.6"
     },
   ]
-  auto_scaling = [
+  pool_connection = [
     {
-      securitygroupids = [ "INVALID_PREFIX-1234567" ]
+    	max_connect_time = -1
     },
   ]
 }`, poolName)
 }
 
-func testAccPoolValidAWSSubnetPrefix(poolName string) string {
+func testAccPoolInvalidMaxConnections(poolName string) string {
 	return fmt.Sprintf(`
-resource "brocadevtm_pool" "acctest"{
+resource "brocadevtm_pool" "acctest" {
   name = "%s"
   nodes_table = [
     {
@@ -658,12 +755,236 @@ resource "brocadevtm_pool" "acctest"{
       priority = 5
       state = "draining"
       weight = 2
-      source_ip = "192.168.120.6"
     },
   ]
-  auto_scaling = [
+  pool_connection = [
     {
-      subnetids = [ "INVALID_SUBNET-12345" ]
+    	max_connections_per_node = -1
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidMaxQueue(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  pool_connection = [
+    {
+    	max_queue_size = -1
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidMaxReply(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  pool_connection = [
+    {
+    	max_reply_time = -1
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidQueueTimeout(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  pool_connection = [
+    {
+    	queue_timeout = -1
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidDNSAutoScalePort(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  dns_autoscale = [
+    {
+    	port = -1
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidSSL2Option(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  ssl = [
+    {
+    	enabled = true
+    	ssl_support_ssl2 = "INVALID"
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidSSL3Option(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  ssl = [
+    {
+    	enabled = true
+    	ssl_support_ssl3 = "INVALID"
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidTLS1Option(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  ssl = [
+    {
+    	enabled = true
+    	ssl_support_tls1 = "INVALID"
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidTLS1_1Option(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  ssl = [
+    {
+    	enabled = true
+    	ssl_support_tls1_1 = "INVALID"
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidTLS1_2Option(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  ssl = [
+    {
+    	enabled = true
+    	ssl_support_tls1_2 = "INVALID"
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidUDPAcceptFrom(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  udp = [
+    {
+    	accept_from = "INVALID"
+    },
+  ]
+}`, poolName)
+}
+
+func testAccPoolInvalidUDPAcceptFromMask(poolName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_pool" "acctest" {
+  name = "%s"
+  nodes_table = [
+    {
+      node = "192.168.10.10:80"
+      priority = 5
+      state = "draining"
+      weight = 2
+    },
+  ]
+  udp = [
+    {
+    	accept_from_mask = "INVALID"
     },
   ]
 }`, poolName)
@@ -679,7 +1000,6 @@ resource "brocadevtm_pool" "acctest" {
       priority = 5
       state = "draining"
       weight = 2
-      source_ip = "192.168.120.6"
     },
   ]
   bandwidth_class = "example"
@@ -690,7 +1010,7 @@ resource "brocadevtm_pool" "acctest" {
   monitors = [ "Full HTTP" ]
   node_close_with_rst = true
   node_connection_attempts = 6
-  node_delete_behaviour = "immediate"
+  node_delete_behavior = "immediate"
   node_drain_to_delete_timeout = 10
   note = "example test pool"
   passive_monitoring = true
@@ -703,6 +1023,7 @@ resource "brocadevtm_pool" "acctest" {
       cloud_credentials = "example"
       cluster = "10.0.0.1"
       data_center = "vCentre server"
+      data_store = "data_store1"
       enabled = true
       external = true
       hysteresis = 100
@@ -713,7 +1034,7 @@ resource "brocadevtm_pool" "acctest" {
       min_nodes = 20
       name = "example"
       port = 8980
-      refactory = 10
+      refractory = 10
       response_time = 100
       scale_down_level = 90
       scale_up_level = 20
@@ -819,14 +1140,12 @@ resource "brocadevtm_pool" "acctest" {
       priority = 5
       state = "draining"
       weight = 2
-      source_ip = "192.168.120.6"
     },
     {
       node = "192.168.10.12:80"
       priority = 1
       state = "active"
       weight = 2
-      source_ip = "192.168.120.6"
     },
   ]
   bandwidth_class = "another-example"
@@ -837,7 +1156,7 @@ resource "brocadevtm_pool" "acctest" {
   monitors = [ "Full HTTPS" ]
   node_close_with_rst = false
   node_connection_attempts = 3
-  node_delete_behaviour = "drain"
+  node_delete_behavior = "drain"
   node_drain_to_delete_timeout = 4
   note = "example test pool - updated"
   passive_monitoring = false
@@ -850,6 +1169,7 @@ resource "brocadevtm_pool" "acctest" {
       cloud_credentials = "another-example"
       cluster = "10.0.2.100"
       data_center = "another vCentre server"
+      data_store = "data_store2"
       enabled = false
       external = false
       hysteresis = 200
@@ -860,7 +1180,7 @@ resource "brocadevtm_pool" "acctest" {
       min_nodes = 50
       name = "anotherExample"
       port = 9980
-      refactory = 56
+      refractory = 56
       response_time = 89
       scale_down_level = 75
       scale_up_level = 15
@@ -969,7 +1289,7 @@ resource "brocadevtm_pool" "acctest" {
   monitors = [ "Full HTTP" ]
   node_close_with_rst = true
   node_connection_attempts = 6
-  node_delete_behaviour = "immediate"
+  node_delete_behavior = "immediate"
   node_drain_to_delete_timeout = 10
   note = "example test pool"
   passive_monitoring = true
@@ -982,6 +1302,7 @@ resource "brocadevtm_pool" "acctest" {
       cloud_credentials = "example"
       cluster = "10.0.0.1"
       data_center = "vCentre server"
+      data_store = "data_store1"
       enabled = true
       external = true
       hysteresis = 100
@@ -992,7 +1313,7 @@ resource "brocadevtm_pool" "acctest" {
       min_nodes = 20
       name = "example"
       port = 8980
-      refactory = 10
+      refractory = 10
       response_time = 100
       scale_down_level = 90
       scale_up_level = 20
@@ -1101,7 +1422,7 @@ resource "brocadevtm_pool" "acctest" {
   monitors = [ "Full HTTP" ]
   node_close_with_rst = true
   node_connection_attempts = 6
-  node_delete_behaviour = "immediate"
+  node_delete_behavior = "immediate"
   node_drain_to_delete_timeout = 10
   note = "example test pool"
   passive_monitoring = true
@@ -1114,6 +1435,7 @@ resource "brocadevtm_pool" "acctest" {
       cloud_credentials = "example"
       cluster = "10.0.0.1"
       data_center = "vCentre server"
+      data_store = "data_store2"
       enabled = true
       external = true
       hysteresis = 100
@@ -1124,7 +1446,7 @@ resource "brocadevtm_pool" "acctest" {
       min_nodes = 20
       name = "example"
       port = 8980
-      refactory = 10
+      refractory = 10
       response_time = 100
       scale_down_level = 90
       scale_up_level = 20
