@@ -3,6 +3,7 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/traffic_ip_group"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
@@ -37,11 +38,14 @@ func resourceTrafficIPGroup() *schema.Resource {
 				Optional:    true,
 			},
 			"ip_assignment_mode": {
-				Type:         schema.TypeString,
-				Description:  "Configure how traffic IPs are assigned to traffic managers in single hosted mode",
-				Computed:     true,
-				Optional:     true,
-				ValidateFunc: validateIPAssignmentMode,
+				Type:        schema.TypeString,
+				Description: "Configure how traffic IPs are assigned to traffic managers in single hosted mode",
+				Computed:    true,
+				Optional:    true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"alphabetic",
+					"balanced",
+				}, false),
 			},
 			"ip_mapping": {
 				Type:        schema.TypeSet,
@@ -89,11 +93,18 @@ func resourceTrafficIPGroup() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"mode": {
-				Type:         schema.TypeString,
-				Description:  "The method used to distribute traffic IPs across machines in the cluster",
-				Optional:     true,
-				Computed:     true,
-				ValidateFunc: validateTrafficIPGroupMode,
+				Type:        schema.TypeString,
+				Description: "The method used to distribute traffic IPs across machines in the cluster",
+				Optional:    true,
+				Computed:    true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"singlehosted",
+					"ec2elastic",
+					"ec2vpcelastic",
+					"ec2vpcprivate",
+					"multihosted",
+					"rhi",
+				}, false),
 			},
 			"multicast": {
 				Type:         schema.TypeString,
@@ -135,11 +146,14 @@ func resourceTrafficIPGroup() *schema.Resource {
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"rhi_protocols": {
-				Type:         schema.TypeString,
-				Description:  "List of protocols ro be used for RHI",
-				Optional:     true,
-				Computed:     true,
-				ValidateFunc: validateRHIProtocols,
+				Type:        schema.TypeString,
+				Description: "List of protocols ro be used for RHI",
+				Optional:    true,
+				Computed:    true,
+				ValidateFunc: validation.StringInSlice([]string{
+					"ospf",
+					"bgp",
+				}, false),
 			},
 			"slaves": {
 				Type:        schema.TypeSet,
@@ -149,36 +163,6 @@ func resourceTrafficIPGroup() *schema.Resource {
 			},
 		},
 	}
-}
-
-func validateIPAssignmentMode(v interface{}, k string) (ws []string, errors []error) {
-
-	assignmentMode := v.(string)
-	assignmentModeOptions := regexp.MustCompile(`^(alphabetic|balanced)$`)
-	if !assignmentModeOptions.MatchString(assignmentMode) {
-		errors = append(errors, fmt.Errorf("%q must be one of alphabetic or balanced", k))
-	}
-	return
-}
-
-func validateRHIProtocols(v interface{}, k string) (ws []string, errors []error) {
-
-	protocol := v.(string)
-	protocolOption := regexp.MustCompile(`^(ospf|bgp)$`)
-	if !protocolOption.MatchString(protocol) {
-		errors = append(errors, fmt.Errorf("%q must be one of ospf or bgp", k))
-	}
-	return
-}
-
-func validateTrafficIPGroupMode(v interface{}, k string) (ws []string, errors []error) {
-
-	mode := v.(string)
-	modeOptions := regexp.MustCompile(`^(singlehosted|ec2elastic|ec2vpcelastic|ec2vpcprivate|multihosted|rhi)$`)
-	if !modeOptions.MatchString(mode) {
-		errors = append(errors, fmt.Errorf("%q must be one of singlehosted, ec2elastic, ec2vpcelastic, ec2vpcprivate, multihosted or rhi", k))
-	}
-	return
 }
 
 func validateTrafficIPGroupMulticastIP(v interface{}, k string) (ws []string, errors []error) {
