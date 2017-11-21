@@ -29,7 +29,7 @@ func resourceVirtualServer() *schema.Resource {
 				Type:        schema.TypeBool,
 				Description: "Whether or not the virtual server should add an 'X-Cluster-Client-Ip' header to the request that contains the remote client's IP address.",
 				Optional:    true,
-				Default:     false,
+				Default:     true,
 			},
 			"add_x_forwarded_for": {
 				Type:        schema.TypeBool,

@@ -505,8 +505,6 @@ port = 80
 func testAccBrocadeVTMVirtualServerCreate(virtualServerName string) string {
 	return fmt.Sprintf(`
 
-
-
 resource "brocadevtm_virtual_server" "acctest" {
 
 	name = "%s"

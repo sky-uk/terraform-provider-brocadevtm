@@ -420,7 +420,7 @@ resource "brocadevtm_pool" "acctest" {
   ]
 }
 
-resource "brocadevtm_virtual_server" "acctest" {
+resource "brocadevtm_virtual_server" "virtual_server_1" {
 
 	name = "%s"
 	add_cluster_ip = false
@@ -598,15 +598,14 @@ resource "brocadevtm_virtual_server" "acctest" {
 		]
 		ocsp_max_response_age = 55
 		ocsp_stapling = false
-	    	ocsp_time_tolerance = 55
-	    	ocsp_timeout = 25
-	    	prefer_sslv3 = false
-	    	request_client_cert = "require"
-	    	send_close_alerts = false
-	    	server_cert_alt_certificates = ["testssl002"]
-	    	server_cert_default = "testssl001"
-
-	    	ssl_server_cert_host_mapping = [
+	    ocsp_time_tolerance = 55
+	    ocsp_timeout = 25
+	    prefer_sslv3 = false
+	    request_client_cert = "require"
+	    send_close_alerts = false
+	    server_cert_alt_certificates = ["testssl002"]
+	    server_cert_default = "testssl001"
+	    server_cert_host_mapping = [
 		{
 		  host = "fakehost7"
 		  certificate = "altcert6"
@@ -649,7 +648,7 @@ resource "brocadevtm_virtual_server" "acctest" {
 }
 
 resource "brocadevtm_appliance_nat" "acctest" {
-  depends_on = [ "brocadevtm_traffic_ip_group.acctest", "brocadevtm_pool.acctest", "brocadevtm_virtual_server.acctest" ]
+  depends_on = [ "brocadevtm_traffic_ip_group.acctest", "brocadevtm_pool.acctest", "brocadevtm_virtual_server.virtual_server_1" ]
   many_to_one_all_ports = []
   many_to_one_port_locked = [{
 	  rule_number = 20001
@@ -688,7 +687,7 @@ resource "brocadevtm_pool" "acctest" {
   ]
 }
 
-resource "brocadevtm_virtual_server" "acctest" {
+resource "brocadevtm_virtual_server" "virtual_server_1" {
 
 	name = "%s"
 	add_cluster_ip = false
@@ -866,15 +865,14 @@ resource "brocadevtm_virtual_server" "acctest" {
 		]
 		ocsp_max_response_age = 55
 		ocsp_stapling = false
-	    	ocsp_time_tolerance = 55
-	    	ocsp_timeout = 25
-	    	prefer_sslv3 = false
-	    	request_client_cert = "require"
-	    	send_close_alerts = false
-	    	server_cert_alt_certificates = ["testssl002"]
-	    	server_cert_default = "testssl001"
-
-	    	ssl_server_cert_host_mapping = [
+	    ocsp_time_tolerance = 55
+	    ocsp_timeout = 25
+	    prefer_sslv3 = false
+	    request_client_cert = "require"
+	    send_close_alerts = false
+	    server_cert_alt_certificates = ["testssl002"]
+	    server_cert_default = "testssl001"
+	    server_cert_host_mapping = [
 		{
 		  host = "fakehost7"
 		  certificate = "altcert6"
@@ -917,7 +915,7 @@ resource "brocadevtm_virtual_server" "acctest" {
 }
 
 resource "brocadevtm_appliance_nat" "acctest" {
-  depends_on = [ "brocadevtm_traffic_ip_group.acctest", "brocadevtm_pool.acctest", "brocadevtm_virtual_server.acctest" ]
+  depends_on = [ "brocadevtm_traffic_ip_group.acctest", "brocadevtm_pool.acctest", "brocadevtm_virtual_server.virtual_server_1" ]
   many_to_one_all_ports = []
   many_to_one_port_locked = [{
 	  rule_number = 20001
