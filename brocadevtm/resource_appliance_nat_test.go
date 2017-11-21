@@ -420,7 +420,7 @@ resource "brocadevtm_pool" "acctest" {
   ]
 }
 
-resource "brocadevtm_virtual_server" "virtual_server_1" {
+resource "brocadevtm_virtual_server" "acctest" {
 
 	name = "%s"
 	add_cluster_ip = false
@@ -648,7 +648,7 @@ resource "brocadevtm_virtual_server" "virtual_server_1" {
 }
 
 resource "brocadevtm_appliance_nat" "acctest" {
-  depends_on = [ "brocadevtm_traffic_ip_group.acctest", "brocadevtm_pool.acctest", "brocadevtm_virtual_server.virtual_server_1" ]
+  depends_on = [ "brocadevtm_traffic_ip_group.acctest", "brocadevtm_pool.acctest", "brocadevtm_virtual_server.acctest" ]
   many_to_one_all_ports = []
   many_to_one_port_locked = [{
 	  rule_number = 20001
@@ -687,7 +687,7 @@ resource "brocadevtm_pool" "acctest" {
   ]
 }
 
-resource "brocadevtm_virtual_server" "virtual_server_1" {
+resource "brocadevtm_virtual_server" "acctest" {
 
 	name = "%s"
 	add_cluster_ip = false
@@ -915,7 +915,7 @@ resource "brocadevtm_virtual_server" "virtual_server_1" {
 }
 
 resource "brocadevtm_appliance_nat" "acctest" {
-  depends_on = [ "brocadevtm_traffic_ip_group.acctest", "brocadevtm_pool.acctest", "brocadevtm_virtual_server.virtual_server_1" ]
+  depends_on = [ "brocadevtm_traffic_ip_group.acctest", "brocadevtm_pool.acctest", "brocadevtm_virtual_server.acctest" ]
   many_to_one_all_ports = []
   many_to_one_port_locked = [{
 	  rule_number = 20001
