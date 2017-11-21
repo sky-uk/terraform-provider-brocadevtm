@@ -192,7 +192,7 @@ func GetAttributesToMap(d *schema.ResourceData, attributeNames []string) (map[st
 		case []string:
 			m[item] = v.([]string)
 		default:
-			return nil, fmt.Errorf("Error, key %s of not valid type\n", item)
+			return nil, fmt.Errorf("error, key %s of not valid type", item)
 		}
 	}
 	return m, nil
