@@ -6,16 +6,17 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
+	"log"
 	"net/http"
 	"regexp"
 )
 
 func resourcePool() *schema.Resource {
 	return &schema.Resource{
-		Create: resourcePoolCreate,
+		Create: resourcePoolSet,
 		Read:   resourcePoolRead,
+		Update: resourcePoolSet,
 		Delete: resourcePoolDelete,
-		Update: resourcePoolUpdate,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -705,120 +706,6 @@ func validateNode(v interface{}, k string) (ws []string, errors []error) {
 	return
 }
 
-func getPoolMapAttributeList(mapName string) []string {
-
-	var attributes []string
-
-	switch mapName {
-	case "basic":
-		attributes = []string{"bandwidth_class",
-			"failure_pool",
-			"max_connection_attempts",
-			"max_idle_connections_pernode",
-			"max_timed_out_connection_attempts",
-			"monitors",
-			"node_close_with_rst",
-			"node_connection_attempts",
-			"node_delete_behavior",
-			"node_drain_to_delete_timeout",
-			"note",
-			"passive_monitoring",
-			"persistence_class",
-			"transparent",
-		}
-	case "nodes_table":
-		attributes = []string{"node",
-			"priority",
-			"state",
-			"weight",
-			"source_ip",
-		}
-	case "auto_scaling":
-		attributes = []string{"addnode_delaytime",
-			"addnode_delaytime",
-			"cloud_credentials",
-			"cluster",
-			"data_center",
-			"data_store",
-			"enabled",
-			"external",
-			"hysteresis",
-			"imageid",
-			"ips_to_use",
-			"last_node_idle_time",
-			"max_nodes",
-			"min_nodes",
-			"name",
-			"port",
-			"refractory",
-			"response_time",
-			"scale_down_level",
-			"scale_up_level",
-			"securitygroupids",
-			"size_id",
-			"subnetids",
-		}
-	case "pool_connection":
-		attributes = []string{"max_connect_time",
-			"max_connections_per_node",
-			"max_queue_size",
-			"max_reply_time",
-			"queue_timeout",
-		}
-	case "dns_autoscale":
-		attributes = []string{"enabled", "hostnames", "port"}
-	case "ftp":
-		attributes = []string{"support_rfc_2428"}
-	case "http":
-		attributes = []string{"keepalive", "keepalive_non_idempotent"}
-	case "kerberos_protocol_transition":
-		attributes = []string{"principal", "target"}
-	case "load_balancing":
-		attributes = []string{"algorithm", "priority_enabled", "priority_nodes"}
-	case "node":
-		attributes = []string{"close_on_death", "retry_fail_time"}
-	case "smtp":
-		attributes = []string{"send_starttls"}
-	case "ssl":
-		attributes = []string{"client_auth",
-			"common_name_match",
-			"elliptic_curves",
-			"enable",
-			"enhance",
-			"send_close_alerts",
-			"server_name",
-			"signature_algorithms",
-			"ssl_ciphers",
-			"ssl_support_ssl2",
-			"ssl_support_ssl3",
-			"ssl_support_tls1",
-			"ssl_support_tls1_1",
-			"ssl_support_tls1_2",
-			"strict_verify",
-		}
-	case "sub_sections":
-		attributes = []string{"auto_scaling",
-			"dns_autoscale",
-			"ftp",
-			"http",
-			"kerberos_protocol_transition",
-			"load_balancing",
-			"node",
-			"smtp",
-			"ssl",
-			"tcp",
-			"udp",
-		}
-	case "tcp":
-		attributes = []string{"nagle"}
-	case "udp":
-		attributes = []string{"accept_from", "accept_from_mask", "response_timeout"}
-	default:
-		attributes = []string{}
-	}
-	return attributes
-}
-
 func buildNodesTableFromList(nodes interface{}) []map[string]interface{} {
 
 	addresses := nodes.(*schema.Set).List()
@@ -832,164 +719,151 @@ func buildNodesTableFromList(nodes interface{}) []map[string]interface{} {
 	return nodesTable
 }
 
-// resourcePoolCreate - Creates a  pool resource object
-func resourcePoolCreate(d *schema.ResourceData, m interface{}) error {
+func basicPoolKeys() []string {
+	return []string{
+		"bandwidth_class",
+		"failure_pool",
+		"max_connection_attempts",
+		"max_idle_connections_pernode",
+		"max_timed_out_connection_attempts",
+		"monitors",
+		"node_close_with_rst",
+		"node_connection_attempts",
+		"node_delete_behavior",
+		"node_drain_to_delete_timeout",
+		"note",
+		"passive_monitoring",
+		"persistence_class",
+		"transparent",
+	}
+}
 
-	var nodesTableDefined, nodesListDefined bool
+func poolSectionName(name string) string {
+	if name == "pool_connection" {
+		return "connection"
+	}
+	if name == "connection" {
+		return "pool_connection"
+	}
+	return name
+}
+
+func resourcePoolSet(d *schema.ResourceData, m interface{}) error {
+
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	poolConfiguration := make(map[string]interface{})
-	poolPropertiesConfiguration := make(map[string]interface{})
+	var nodesTableDefined, nodesListDefined bool
 
-	poolName := d.Get("name").(string)
+	name := d.Get("name").(string)
 
-	// basic section
-	poolBasicConfiguration := make(map[string]interface{})
-	poolBasicConfiguration = util.AddSimpleGetAttributesToMap(d, poolBasicConfiguration, "", getPoolMapAttributeList("basic"))
+	poolRequest := make(map[string]interface{})
+	poolProperties := make(map[string]interface{})
 
-	if v, ok := d.GetOk("nodes_table"); ok {
-		poolBasicConfiguration["nodes_table"] = v.(*schema.Set).List()
-		nodesTableDefined = true
-	} else {
-		if v, ok := d.GetOk("nodes_list"); ok {
-			poolBasicConfiguration["nodes_table"] = buildNodesTableFromList(v)
-			nodesListDefined = true
+	util.GetSection(d, "basic", poolProperties, basicPoolKeys())
+
+	for _, section := range []string{
+		"auto_scaling",
+		"dns_autoscale",
+		"ftp",
+		"http",
+		"kerberos_protocol_transition",
+		"load_balancing",
+		"node",
+		"pool_connection",
+		"smtp",
+		"ssl",
+		"tcp",
+		"udp",
+	} {
+		if d.HasChange(section) {
+			poolProperties[poolSectionName(section)] = d.Get(section).(*schema.Set).List()[0]
 		}
 	}
+
+	if d.HasChange("nodes_table") {
+		poolProperties["basic"].(map[string]interface{})["nodes_table"] = d.Get("nodes_table").(*schema.Set).List()
+		nodesTableDefined = true
+		log.Printf(fmt.Sprintf("[DEBUG] Nodes table is %+v", d.Get("nodes_table").(*schema.Set).List()))
+	}
+	if d.HasChange("nodes_list") {
+		poolProperties["basic"].(map[string]interface{})["nodes_table"] = buildNodesTableFromList(d.Get("nodes_list"))
+		nodesListDefined = true
+		log.Printf(fmt.Sprintf("[DEBUG] Nodes list is %+v", buildNodesTableFromList(d.Get("nodes_list"))))
+	}
+
 	if nodesTableDefined == false && nodesListDefined == false {
 		return fmt.Errorf("Error creating resource: no one of nodes_table or nodes_list attr has been defined")
 	}
-	poolPropertiesConfiguration["basic"] = poolBasicConfiguration
 
-	// pool_connection section - we can't use "connection" as an attribute in the schema as it's reserved
-	if v, ok := d.GetOk("pool_connection"); ok {
-		poolPropertiesConfiguration["connection"] = v.(*schema.Set).List()[0]
-	}
-
-	// all other sections
-	for _, section := range getPoolMapAttributeList("sub_sections") {
-		if v, ok := d.GetOk(section); ok {
-			builtList, err := util.BuildListMaps(v.(*schema.Set), getPoolMapAttributeList(section))
-			if err != nil {
-				return err
-			}
-			poolPropertiesConfiguration[section] = builtList[0]
-		}
-	}
-
-	poolConfiguration["properties"] = poolPropertiesConfiguration
-	err := client.Set("pools", poolName, poolConfiguration, nil)
+	poolRequest["properties"] = poolProperties
+	util.TraverseMapTypes(poolRequest)
+	err := client.Set("pools", name, poolRequest, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Pool error whilst creating %s: %s", poolName, err)
+		return fmt.Errorf("BrocadeVTM Pool error whilst creating/updating %s: %s", name, err)
 	}
+	d.SetId(name)
 
-	d.SetId(poolName)
 	return resourcePoolRead(d, m)
 }
 
-// resourcePoolRead - Reads a  pool resource
 func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	poolName := d.Id()
-	poolConfiguration := make(map[string]interface{})
+
+	poolResponse := make(map[string]interface{})
 
 	client.WorkWithConfigurationResources()
-	err := client.GetByName("pools", poolName, &poolConfiguration)
+	err := client.GetByName("pools", d.Id(), &poolResponse)
 	if err != nil {
 		if client.StatusCode == http.StatusNotFound {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("BrocadeVTM Pool error whilst retrieving %s: %s", poolName, err)
+		return fmt.Errorf("BrocadeVTM Pools error whilst retrieving %s: %v", d.Id(), err)
 	}
 
-	d.Set("name", poolName)
-	poolPropertiesConfiguration := poolConfiguration["properties"].(map[string]interface{})
-	poolBasicConfiguration := poolPropertiesConfiguration["basic"].(map[string]interface{})
+	poolsProperties := poolResponse["properties"].(map[string]interface{})
+	poolsBasic := poolsProperties["basic"].(map[string]interface{})
 
-	// basic section
-	util.SetSimpleAttributesFromMap(d, poolBasicConfiguration, "", getPoolMapAttributeList("basic"))
+	for _, key := range basicPoolKeys() {
+		d.Set(key, poolsBasic[key])
+	}
 
 	if _, ok := d.GetOk("nodes_list"); ok {
 		var nodesList []string
-		for _, item := range poolBasicConfiguration["nodes_table"].([]interface{}) {
+		for _, item := range poolsBasic["nodes_table"].([]interface{}) {
 			node := item.(map[string]interface{})
 			nodesList = append(nodesList, node["node"].(string))
 		}
 		d.Set("nodes_list", nodesList)
 	}
-	d.Set("nodes_table", poolBasicConfiguration["nodes_table"])
+	d.Set("nodes_table", poolsBasic["nodes_table"])
 
-	// pool_connection section
-	poolSection := make([]map[string]interface{}, 0)
-	poolSection = append(poolSection, poolPropertiesConfiguration["connection"].(map[string]interface{}))
-	d.Set("pool_connection", poolSection)
-
-	// all other sections
-	for _, sectionName := range getPoolMapAttributeList("sub_sections") {
-		section := make([]map[string]interface{}, 0)
-		// sections with more complex structures need to be handled differently - eventually we should merge this into one function.
-		if sectionName == "auto_scaling" || sectionName == "ssl" || sectionName == "dns_autoscale" {
-			autoScalingMapList, err := util.BuildReadMap(poolPropertiesConfiguration[sectionName].(map[string]interface{}))
-			if err != nil {
-				return err
-			}
-			section = append(section, autoScalingMapList)
-		} else {
-			section = append(section, poolPropertiesConfiguration[sectionName].(map[string]interface{}))
+	for _, section := range []string{
+		"auto_scaling",
+		"dns_autoscale",
+		"ftp",
+		"http",
+		"kerberos_protocol_transition",
+		"load_balancing",
+		"node",
+		"connection",
+		"smtp",
+		"ssl",
+		"tcp",
+		"udp",
+	} {
+		set := make([]map[string]interface{}, 0)
+		//set = append(set, poolsProperties[section].(map[string]interface{}))
+		readSectionMap, err := util.BuildReadMap(poolsProperties[section].(map[string]interface{}))
+		if err != nil {
+			return err
 		}
-		d.Set(sectionName, section)
+		set = append(set, readSectionMap)
+		d.Set(sectionName(section), set)
 	}
 	return nil
-}
-
-// resourcePoolUpdate - Updates an existing pool resource
-func resourcePoolUpdate(d *schema.ResourceData, m interface{}) error {
-
-	poolName := d.Id()
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	poolConfiguration := make(map[string]interface{})
-	poolPropertiesConfiguration := make(map[string]interface{})
-
-	// basic section
-	poolBasicConfiguration := make(map[string]interface{})
-	poolBasicConfiguration = util.AddChangedSimpleAttributesToMap(d, poolBasicConfiguration, "", getPoolMapAttributeList("basic"))
-
-	if d.HasChange("nodes_table") {
-		poolBasicConfiguration["nodes_table"] = d.Get("nodes_table").(*schema.Set).List()
-	} else {
-		if v, ok := d.GetOk("nodes_list"); ok {
-			poolBasicConfiguration["nodes_table"] = buildNodesTableFromList(v)
-		}
-	}
-	poolPropertiesConfiguration["basic"] = poolBasicConfiguration
-
-	// connection section
-	if d.HasChange("pool_connection") {
-		poolPropertiesConfiguration["connection"] = d.Get("pool_connection").(*schema.Set).List()[0]
-	}
-
-	// all other sections
-	for _, section := range getPoolMapAttributeList("sub_sections") {
-		if d.HasChange(section) {
-			builtList, err := util.BuildListMaps(d.Get(section).(*schema.Set), getPoolMapAttributeList(section))
-			if err != nil {
-				return err
-			}
-			poolPropertiesConfiguration[section] = builtList[0]
-		}
-	}
-
-	poolConfiguration["properties"] = poolPropertiesConfiguration
-	err := client.Set("pools", poolName, poolConfiguration, nil)
-	if err != nil {
-		return fmt.Errorf("BrocadeVTM Pool error whilst updating %s: %s", poolName, err)
-	}
-	d.SetId(poolName)
-	return resourcePoolRead(d, m)
 }
 
 // resourcePoolDelete - Deletes a pool resource

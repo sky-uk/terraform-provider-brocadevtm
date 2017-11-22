@@ -39,7 +39,7 @@ func resourceTrafficIPGroup() *schema.Resource {
 			"ip_assignment_mode": {
 				Type:        schema.TypeString,
 				Description: "Configure how traffic IPs are assigned to traffic managers in single hosted mode",
-				Computed:    true,
+				Default:     "balanced",
 				Optional:    true,
 				ValidateFunc: validation.StringInSlice([]string{
 					"alphabetic",
@@ -95,7 +95,7 @@ func resourceTrafficIPGroup() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The method used to distribute traffic IPs across machines in the cluster",
 				Optional:    true,
-				Computed:    true,
+				Default:     "singlehosted",
 				ValidateFunc: validation.StringInSlice([]string{
 					"singlehosted",
 					"ec2elastic",
@@ -148,7 +148,7 @@ func resourceTrafficIPGroup() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "List of protocols ro be used for RHI",
 				Optional:    true,
-				Computed:    true,
+				Default:     "ospf",
 				ValidateFunc: validation.StringInSlice([]string{
 					"ospf",
 					"bgp",
@@ -239,7 +239,7 @@ func resourceTrafficIPGroupSet(d *schema.ResourceData, m interface{}) error {
 	trafficIPGroupRequest["properties"] = trafficIPGroupProperties
 	err := client.Set("traffic_ip_groups", name, trafficIPGroupRequest, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst creating %s: %s", name, err)
+		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst creating/updating %s: %s", name, err)
 	}
 	d.SetId(name)
 	return resourceTrafficIPGroupRead(d, m)
@@ -252,8 +252,8 @@ func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 	client.WorkWithConfigurationResources()
 	name := d.Id()
 
-	trafficIPGroupConfiguration := make(map[string]interface{})
-	err := client.GetByName("traffic_ip_groups", name, &trafficIPGroupConfiguration)
+	trafficIPGroupResponse := make(map[string]interface{})
+	err := client.GetByName("traffic_ip_groups", name, &trafficIPGroupResponse)
 	if err != nil {
 		if client.StatusCode == http.StatusNotFound {
 			d.SetId("")
@@ -261,7 +261,7 @@ func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 		}
 		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst retrieving %s: %v", name, err)
 	}
-	trafficIPGroupProperties := trafficIPGroupConfiguration["properties"].(map[string]interface{})
+	trafficIPGroupProperties := trafficIPGroupResponse["properties"].(map[string]interface{})
 	trafficIPGroupBasic := trafficIPGroupProperties["basic"].(map[string]interface{})
 
 	for _, key := range basicTrafficIPGroupKeys() {
