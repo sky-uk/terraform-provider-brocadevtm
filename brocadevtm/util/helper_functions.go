@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
+	"log"
 	"reflect"
 )
 
@@ -162,6 +163,17 @@ func BuildReadMap(inputMap map[string]interface{}) (map[string]interface{}, erro
 		}
 	}
 	return builtMap, nil
+}
+
+// GetSection : used to build a section in the schema into a map
+func GetSection(d *schema.ResourceData, sectionName string, properties map[string]interface{}, keys []string) error {
+	m, err := GetAttributesToMap(d, keys)
+	if err != nil {
+		log.Println("Error getting section ", sectionName, err)
+		return err
+	}
+	properties[sectionName] = m
+	return nil
 }
 
 // GetAttributesToMap : wrapper for d.Get
