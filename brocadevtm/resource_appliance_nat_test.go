@@ -450,10 +450,15 @@ resource "brocadevtm_virtual_server" "acctest" {
 	ssl_decrypt = false
 	ssl_honor_fallback_scsv = "use_default"
 	transparent = false
-	error_file = "testErrorFileUpdate"
-	expect_starttls = false
-	proxy_close = false
-
+	connection_errors = {
+		error_file = "testErrorFileUpdate"
+	}
+	smtp = {
+		expect_starttls = false
+	}
+	tcp = {
+		proxy_close = false
+	}
 	aptimizer = {
 		enabled = true
 		profile = [{
@@ -593,15 +598,14 @@ resource "brocadevtm_virtual_server" "acctest" {
 		]
 		ocsp_max_response_age = 55
 		ocsp_stapling = false
-	    	ocsp_time_tolerance = 55
-	    	ocsp_timeout = 25
-	    	prefer_sslv3 = false
-	    	request_client_cert = "require"
-	    	send_close_alerts = false
-	    	server_cert_alt_certificates = ["testssl002"]
-	    	server_cert_default = "testssl001"
-
-	    	ssl_server_cert_host_mapping = [
+	    ocsp_time_tolerance = 55
+	    ocsp_timeout = 25
+	    prefer_sslv3 = false
+	    request_client_cert = "require"
+	    send_close_alerts = false
+	    server_cert_alt_certificates = ["testssl002"]
+	    server_cert_default = "testssl001"
+	    server_cert_host_mapping = [
 		{
 		  host = "fakehost7"
 		  certificate = "altcert6"
@@ -713,10 +717,15 @@ resource "brocadevtm_virtual_server" "acctest" {
 	ssl_decrypt = false
 	ssl_honor_fallback_scsv = "use_default"
 	transparent = false
-	error_file = "testErrorFileUpdate"
-	expect_starttls = false
-	proxy_close = false
-
+	connection_errors = {
+		error_file = "testErrorFileUpdate"
+	}
+	smtp = {
+		expect_starttls = false
+	}
+	tcp = {
+		proxy_close = false
+	}
 	aptimizer = {
 		enabled = true
 		profile = [{
@@ -856,15 +865,14 @@ resource "brocadevtm_virtual_server" "acctest" {
 		]
 		ocsp_max_response_age = 55
 		ocsp_stapling = false
-	    	ocsp_time_tolerance = 55
-	    	ocsp_timeout = 25
-	    	prefer_sslv3 = false
-	    	request_client_cert = "require"
-	    	send_close_alerts = false
-	    	server_cert_alt_certificates = ["testssl002"]
-	    	server_cert_default = "testssl001"
-
-	    	ssl_server_cert_host_mapping = [
+	    ocsp_time_tolerance = 55
+	    ocsp_timeout = 25
+	    prefer_sslv3 = false
+	    request_client_cert = "require"
+	    send_close_alerts = false
+	    server_cert_alt_certificates = ["testssl002"]
+	    server_cert_default = "testssl001"
+	    server_cert_host_mapping = [
 		{
 		  host = "fakehost7"
 		  certificate = "altcert6"

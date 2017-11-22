@@ -2,6 +2,8 @@ package util
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -161,4 +163,66 @@ func BuildReadListMaps(inputMap map[string]interface{}, attributeName string) (m
 		}
 	}
 	return builtMap, nil
+}
+
+// GetAttributesToMap : wrapper for d.Get
+func GetAttributesToMap(d *schema.ResourceData, attributeNames []string) (map[string]interface{}, error) {
+
+	m := make(map[string]interface{})
+
+	for _, item := range attributeNames {
+		v := d.Get(item)
+		switch v.(type) {
+		case bool:
+			m[item] = v.(bool)
+		case string:
+			m[item] = v.(string)
+		case int:
+			m[item] = v.(int)
+		case float64:
+			m[item] = v.(float64)
+		case []byte:
+			m[item] = v.([]byte)
+		case map[string]interface{}:
+			m[item] = v.(map[string]interface{})
+		case []map[string]interface{}:
+			m[item] = v.([]map[string]interface{})
+		case []interface{}:
+			m[item] = v.([]interface{})
+		case []string:
+			m[item] = v.([]string)
+		case *schema.Set:
+			m[item] = v.(*schema.Set).List()
+		default:
+			return nil, fmt.Errorf("error, key %s of not valid type", item)
+		}
+	}
+	return m, nil
+}
+
+// TraverseMapTypes - traverses the map fixing attr types accordingly
+// Any *schema.Set attr is encoded into a list of maps
+func TraverseMapTypes(m map[string]interface{}) {
+
+	for attr := range m {
+		t := reflect.TypeOf(m[attr])
+
+		switch t.String() {
+		case "*schema.Set":
+			m[attr] = m[attr].(*schema.Set).List()
+			for _, item := range m[attr].([]interface{}) {
+				if v, ok := item.(map[string]interface{}); ok {
+					TraverseMapTypes(v)
+				}
+			}
+		case "[]interface {}":
+			for _, item := range m[attr].([]interface{}) {
+				if v, ok := item.(map[string]interface{}); ok {
+					TraverseMapTypes(v)
+				}
+			}
+		case "map[string]interface {}":
+			TraverseMapTypes(m[attr].(map[string]interface{}))
+		}
+	}
 }

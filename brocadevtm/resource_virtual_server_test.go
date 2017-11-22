@@ -2,14 +2,16 @@ package brocadevtm
 
 import (
 	"fmt"
+	"net/http"
+	"regexp"
+	"testing"
+
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/virtual_server"
-	"net/http"
-	"regexp"
-	"testing"
+	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 )
 
 func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
@@ -33,90 +35,6 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
 			{
-				Config:      testAccBrocadeVTMVirtualServerValidateOCSPRequired(),
-				ExpectError: regexp.MustCompile(`must be one of none, optional, strict`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateOCSPNonce(),
-				ExpectError: regexp.MustCompile(`must be one of off, on or strict`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateSSLClientCertHeaders(),
-				ExpectError: regexp.MustCompile(`SSL Client Cert Header must be one of all, none or simple`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateServerHonorFallbackSCSV(),
-				ExpectError: regexp.MustCompile(`SSL Honor Fallback SCSV must be one of disabled, enabled or use_default`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateCookieDomain(),
-				ExpectError: regexp.MustCompile(`Cookie Domain must be one of no_rewrite, set_to_named or set_to_request`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateCookieSecure(),
-				ExpectError: regexp.MustCompile(`Cookie Secure must be one of no_modify, set_secure or unset_secure`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateDNSRRSETOrder(),
-				ExpectError: regexp.MustCompile(`DNS RRSET Order must be one of cyclic or fixed`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateGZIPCompressLevel(),
-				ExpectError: regexp.MustCompile(`Compression level must be a value within 1-9`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateDataFrameSize(),
-				ExpectError: regexp.MustCompile(`data_frame_size must be a value within 100-16777206`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateMaxFrameSize(),
-				ExpectError: regexp.MustCompile(`max_frame_size must be a value within 16384-16777215`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateETagRewrite(),
-				ExpectError: regexp.MustCompile(`ETag Rewrite must be one of wrap, delete, ignore, weaken or wrap`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateMaxBuffer(),
-				ExpectError: regexp.MustCompile(`must be within 1024-16777216`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateHeaderTableSize(),
-				ExpectError: regexp.MustCompile(`header_table_size must be a value within 4096-1048576`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateSysLogMsgLenLimit(),
-				ExpectError: regexp.MustCompile(`msg_len_lemit must be a value within 480-65535`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateChunkOverheadForwarding(),
-				ExpectError: regexp.MustCompile(`Chunk Overhead Forwarding must be one of lazy or eager`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateLocationRewrite(),
-				ExpectError: regexp.MustCompile(`Location Rewrite must be one of always, if_host_matches or never`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateSIPDangerousRequestsAction(),
-				ExpectError: regexp.MustCompile(`Dangerous requests action must be one of forbid, forward or node`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateSIPMode(),
-				ExpectError: regexp.MustCompile(`SIP mode must be one of full_gateway, route or sip_gateway`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateSSLRequestClientCert(),
-				ExpectError: regexp.MustCompile(`SSL Request Client Cert must be one of dont_request, request or require`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerValidateServerUseSSLSupport(),
-				ExpectError: regexp.MustCompile(`must be one of use_default, disabled or enabled`),
-			},
-			{
-				Config:      testAccBrocadeVTMVirtualServerInvalidProtocol(virtualServerName),
-				ExpectError: regexp.MustCompile(`must be one of client_first, dns, dns_tcp, ftp, http, https, imaps, imapv2, imapv3, imapv4, ldap, ldaps, pop3, pop3s, rtsp, server_first, siptcp, sipudp, smtp, ssl, stream, telnet, udp or udpstreaming`),
-			},
-			{
 				Config: testAccBrocadeVTMVirtualServerCreate(virtualServerName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMVirtualServerExists(virtualServerName, resourceName),
@@ -127,59 +45,44 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "autodetect_upgrade_headers", "true"),
 					resource.TestCheckResourceAttr(resourceName, "close_with_rst", "true"),
 					resource.TestCheckResourceAttr(resourceName, "completionrules.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "completionrules.0", "completionRule1"),
-					resource.TestCheckResourceAttr(resourceName, "completionrules.1", "completionRule2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("completionrules"), "completionRule1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("completionrules"), "completionRule2"),
 					resource.TestCheckResourceAttr(resourceName, "connect_timeout", "50"),
 					resource.TestCheckResourceAttr(resourceName, "enabled", "true"),
 					resource.TestCheckResourceAttr(resourceName, "ftp_force_server_secure", "true"),
 					resource.TestCheckResourceAttr(resourceName, "glb_services.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "glb_services.0", "testservice"),
-					resource.TestCheckResourceAttr(resourceName, "glb_services.1", "testservice2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("glb_services"), "testservice"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("glb_services"), "testservice2"),
 					resource.TestCheckResourceAttr(resourceName, "listen_on_any", "true"),
 					resource.TestCheckResourceAttr(resourceName, "listen_on_hosts.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "listen_on_hosts.0", "host1"),
-					resource.TestCheckResourceAttr(resourceName, "listen_on_hosts.1", "host2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("listen_on_hosts"), "host1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("listen_on_hosts"), "host2"),
 					resource.TestCheckResourceAttr(resourceName, "listen_on_traffic_ips.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "listen_on_traffic_ips.0", "ip1"),
-					resource.TestCheckResourceAttr(resourceName, "listen_on_traffic_ips.1", "ip2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("listen_on_traffic_ips"), "ip1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("listen_on_traffic_ips"), "ip2"),
 					resource.TestCheckResourceAttr(resourceName, "note", "create acceptance test"),
 					resource.TestCheckResourceAttr(resourceName, "pool", "test-pool"),
 					resource.TestCheckResourceAttr(resourceName, "port", "50"),
 					resource.TestCheckResourceAttr(resourceName, "protection_class", "testProtectionClass"),
 					resource.TestCheckResourceAttr(resourceName, "protocol", "dns"),
 					resource.TestCheckResourceAttr(resourceName, "request_rules.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "request_rules.0", "ruleOne"),
-					resource.TestCheckResourceAttr(resourceName, "request_rules.1", "ruleTwo"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("request_rules"), "ruleOne"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("request_rules"), "ruleTwo"),
 					resource.TestCheckResourceAttr(resourceName, "response_rules.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "response_rules.0", "ruleOne"),
-					resource.TestCheckResourceAttr(resourceName, "response_rules.1", "ruleTwo"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("response_rules"), "ruleOne"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("response_rules"), "ruleTwo"),
 					resource.TestCheckResourceAttr(resourceName, "slm_class", "testClass"),
 					resource.TestCheckResourceAttr(resourceName, "so_nagle", "true"),
 					resource.TestCheckResourceAttr(resourceName, "ssl_client_cert_headers", "all"),
 					resource.TestCheckResourceAttr(resourceName, "ssl_decrypt", "true"),
 					resource.TestCheckResourceAttr(resourceName, "ssl_honor_fallback_scsv", "enabled"),
 					resource.TestCheckResourceAttr(resourceName, "transparent", "true"),
-					resource.TestCheckResourceAttr(resourceName, "error_file", "testErrorFile"),
-					resource.TestCheckResourceAttr(resourceName, "expect_starttls", "true"),
-					resource.TestCheckResourceAttr(resourceName, "proxy_close", "true"),
+					resource.TestCheckResourceAttr(resourceName, "connection_errors.0.error_file", "testErrorFile"),
+					resource.TestCheckResourceAttr(resourceName, "smtp.0.expect_starttls", "true"),
+					resource.TestCheckResourceAttr(resourceName, "tcp.0.proxy_close", "true"),
 					resource.TestCheckResourceAttr(resourceName, "aptimizer.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.#", "3"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.0.name", "profile1"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.0.urls.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.0.urls.0", "url1"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.0.urls.1", "url2"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.1.name", "profile2"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.1.urls.#", "3"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.1.urls.0", "url3"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.1.urls.1", "url4"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.1.urls.2", "url5"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.2.name", "profile3"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.2.urls.#", "4"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.2.urls.0", "url6"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.2.urls.1", "url7"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.2.urls.2", "url8"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.2.urls.3", "url9"),
 					resource.TestCheckResourceAttr(resourceName, "bandwidth_class", "test"),
 					resource.TestCheckResourceAttr(resourceName, "vs_connection.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "vs_connection.0.keepalive", "true"),
@@ -202,8 +105,8 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "dns.0.rrset_order", "cyclic"),
 					resource.TestCheckResourceAttr(resourceName, "dns.0.verbose", "true"),
 					resource.TestCheckResourceAttr(resourceName, "dns.0.zones.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "dns.0.zones.0", "testzone1"),
-					resource.TestCheckResourceAttr(resourceName, "dns.0.zones.1", "testzone2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("dns", "zones"), "testzone1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("dns", "zones"), "testzone2"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.0.data_source_port", "10"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.0.force_client_secure", "true"),
@@ -215,9 +118,9 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.etag_rewrite", "weaken"),
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.include_mime.#", "3"),
-					resource.TestCheckResourceAttr(resourceName, "gzip.0.include_mime.0", "mimetype1"),
-					resource.TestCheckResourceAttr(resourceName, "gzip.0.include_mime.1", "mimetype2"),
-					resource.TestCheckResourceAttr(resourceName, "gzip.0.include_mime.2", "mimetype3"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("gzip", "include_mime"), "mimetype1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("gzip", "include_mime"), "mimetype2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("gzip", "include_mime"), "mimetype3"),
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.max_size", "4000"),
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.min_size", "5"),
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.no_size", "true"),
@@ -234,12 +137,12 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "http2.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.header_table_size", "4096"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_blacklist.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_blacklist.0", "header1"),
-					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_blacklist.1", "header2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("http2", "headers_index_blacklist"), "header1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("http2", "headers_index_blacklist"), "header2"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_default", "true"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_whitelist.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_whitelist.0", "header3"),
-					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_whitelist.1", "header4"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("http2", "headers_index_whitelist"), "header3"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("http2", "headers_index_whitelist"), "header4"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.idle_timeout_no_streams", "60"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.idle_timeout_open_streams", "120"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.max_concurrent_streams", "10"),
@@ -279,31 +182,19 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "ssl.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.add_http_headers", "true"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.client_cert_cas.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.client_cert_cas.0", "cas1"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.client_cert_cas.1", "cas2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "client_cert_cas"), "cas1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "client_cert_cas"), "cas2"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.elliptic_curves.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.elliptic_curves.0", "P256"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.elliptic_curves.1", "P384"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "elliptic_curves"), "P256"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "elliptic_curves"), "P384"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.issued_certs_never_expire.#", "3"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.issued_certs_never_expire.0", "cas1"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.issued_certs_never_expire.1", "cas2"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.issued_certs_never_expire.2", "cas3"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "issued_certs_never_expire"), "cas1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "issued_certs_never_expire"), "cas2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "issued_certs_never_expire"), "cas3"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_enable", "true"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.0.issuer", "issuerName"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.0.aia", "true"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.0.nonce", "strict"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.0.required", "optional"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.0.responder_cert", "respondercert"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.0.signer", "fakesigner"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.0.url", "fake.url"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.1.issuer", "issuerName2"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.1.aia", "true"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.1.nonce", "strict"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.1.required", "optional"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.1.responder_cert", "respondercert2"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.1.signer", "fakesigner2"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.1.url", "fake2.url"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ocsp_issuers"), "issuerName"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ocsp_issuers"), "issuerName2"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_max_response_age", "50"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_stapling", "true"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_time_tolerance", "50"),
@@ -312,27 +203,21 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.request_client_cert", "request"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.send_close_alerts", "true"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.server_cert_alt_certificates.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.server_cert_alt_certificates.0", "testssl001"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_alt_certificates"), "testssl001"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.server_cert_default", "testssl002"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.#", "3"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.0.host", "fakehost1"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.0.certificate", "altcert4"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.0.alt_certificates.#", "3"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.0.alt_certificates.0", "altcert1"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.0.alt_certificates.1", "altcert2"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.0.alt_certificates.2", "altcert3"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.1.host", "fakehost2"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.1.certificate", "altcert1"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.1.alt_certificates.#", "3"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.1.alt_certificates.0", "altcert4"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.1.alt_certificates.1", "altcert5"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.1.alt_certificates.2", "altcert6"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.2.host", "fakehost3"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.2.certificate", "altcert2"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.2.alt_certificates.#", "3"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.2.alt_certificates.0", "altcert7"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.2.alt_certificates.1", "altcert8"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.2.alt_certificates.2", "altcert9"),
+					resource.TestCheckResourceAttr(resourceName, "ssl.0.server_cert_host_mapping.#", "3"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "fakehost1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "fakehost2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "fakehost3"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert3"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert4"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert5"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert6"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert7"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert8"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert9"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.signature_algorithms", "RSA_SHA256"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_ciphers", "SSL_RSA_WITH_AES_128_CBC_SHA256"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_support_ssl2", "use_default"),
@@ -370,45 +255,41 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "autodetect_upgrade_headers", "false"),
 					resource.TestCheckResourceAttr(resourceName, "close_with_rst", "false"),
 					resource.TestCheckResourceAttr(resourceName, "completionrules.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "completionrules.0", "completionRule2"),
-					resource.TestCheckResourceAttr(resourceName, "completionrules.1", "completionRule3"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("completionrules"), "completionRule2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("completionrules"), "completionRule3"),
 					resource.TestCheckResourceAttr(resourceName, "connect_timeout", "100"),
 					resource.TestCheckResourceAttr(resourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(resourceName, "ftp_force_server_secure", "false"),
 					resource.TestCheckResourceAttr(resourceName, "glb_services.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "glb_services.0", "testservice3"),
-					resource.TestCheckResourceAttr(resourceName, "glb_services.1", "testservice4"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("glb_services"), "testservice3"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("glb_services"), "testservice4"),
 					resource.TestCheckResourceAttr(resourceName, "listen_on_any", "false"),
 					resource.TestCheckResourceAttr(resourceName, "listen_on_hosts.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "listen_on_hosts.0", "host3"),
-					resource.TestCheckResourceAttr(resourceName, "listen_on_hosts.1", "host4"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("listen_on_hosts"), "host3"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("listen_on_hosts"), "host4"),
 					resource.TestCheckResourceAttr(resourceName, "listen_on_traffic_ips.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "listen_on_traffic_ips.0", "ip1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("listen_on_traffic_ips"), "ip1"),
 					resource.TestCheckResourceAttr(resourceName, "note", "update acceptance test"),
 					resource.TestCheckResourceAttr(resourceName, "pool", "test-pool"),
 					resource.TestCheckResourceAttr(resourceName, "port", "100"),
 					resource.TestCheckResourceAttr(resourceName, "protection_class", "testProtectionClassUpdate"),
 					resource.TestCheckResourceAttr(resourceName, "protocol", "ftp"),
 					resource.TestCheckResourceAttr(resourceName, "request_rules.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "request_rules.0", "ruleThree"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("request_rules"), "ruleThree"),
 					resource.TestCheckResourceAttr(resourceName, "response_rules.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "response_rules.0", "ruleFour"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("response_rules"), "ruleFour"),
 					resource.TestCheckResourceAttr(resourceName, "slm_class", "testClassUpdate"),
 					resource.TestCheckResourceAttr(resourceName, "so_nagle", "false"),
 					resource.TestCheckResourceAttr(resourceName, "ssl_client_cert_headers", "simple"),
 					resource.TestCheckResourceAttr(resourceName, "ssl_decrypt", "false"),
 					resource.TestCheckResourceAttr(resourceName, "ssl_honor_fallback_scsv", "use_default"),
 					resource.TestCheckResourceAttr(resourceName, "transparent", "false"),
-					resource.TestCheckResourceAttr(resourceName, "error_file", "testErrorFileUpdate"),
-					resource.TestCheckResourceAttr(resourceName, "expect_starttls", "false"),
-					resource.TestCheckResourceAttr(resourceName, "proxy_close", "false"),
+					resource.TestCheckResourceAttr(resourceName, "connection_errors.0.error_file", "testErrorFileUpdate"),
+					resource.TestCheckResourceAttr(resourceName, "smtp.0.expect_starttls", "false"),
+					resource.TestCheckResourceAttr(resourceName, "tcp.0.proxy_close", "false"),
 					resource.TestCheckResourceAttr(resourceName, "aptimizer.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.0.name", "profile1"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.0.urls.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.0.urls.0", "url4"),
-					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.0.urls.1", "url3"),
 					resource.TestCheckResourceAttr(resourceName, "bandwidth_class", "testUpdate"),
 					resource.TestCheckResourceAttr(resourceName, "vs_connection.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "vs_connection.0.keepalive", "false"),
@@ -431,7 +312,7 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "dns.0.rrset_order", "fixed"),
 					resource.TestCheckResourceAttr(resourceName, "dns.0.verbose", "false"),
 					resource.TestCheckResourceAttr(resourceName, "dns.0.zones.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "dns.0.zones.0", "testzone2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("dns", "zones"), "testzone2"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.0.data_source_port", "15"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.0.force_client_secure", "false"),
@@ -443,7 +324,7 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.enabled", "false"),
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.etag_rewrite", "wrap"),
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.include_mime.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "gzip.0.include_mime.0", "mimetype3"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("gzip", "include_mime"), "mimetype3"),
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.max_size", "4050"),
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.min_size", "50"),
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.no_size", "false"),
@@ -460,12 +341,12 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "http2.0.enabled", "false"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.header_table_size", "4098"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_blacklist.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_blacklist.0", "header3"),
-					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_blacklist.1", "header4"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("http2", "headers_index_blacklist"), "header3"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("http2", "headers_index_blacklist"), "header4"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_default", "true"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_whitelist.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_whitelist.0", "header1"),
-					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_whitelist.1", "header2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("http2", "headers_index_whitelist"), "header1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("http2", "headers_index_whitelist"), "header2"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.idle_timeout_no_streams", "80"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.idle_timeout_open_streams", "150"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.max_concurrent_streams", "15"),
@@ -505,21 +386,14 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "ssl.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.add_http_headers", "false"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.client_cert_cas.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.client_cert_cas.0", "cas2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "client_cert_cas"), "cas2"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.elliptic_curves.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.elliptic_curves.0", "P384"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "elliptic_curves"), "P384"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.issued_certs_never_expire.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.issued_certs_never_expire.0", "cas2"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.issued_certs_never_expire.1", "cas3"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "issued_certs_never_expire"), "cas2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "issued_certs_never_expire"), "cas3"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_enable", "false"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.0.issuer", "issuerNameUpdated"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.0.aia", "true"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.0.nonce", "off"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.0.required", "optional"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.0.responder_cert", "respondercert"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.0.signer", "fakesigner"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_issuers.0.url", "fake.url"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_max_response_age", "55"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_stapling", "false"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_time_tolerance", "55"),
@@ -528,15 +402,14 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.request_client_cert", "require"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.send_close_alerts", "false"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.server_cert_alt_certificates.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.server_cert_alt_certificates.0", "testssl002"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_alt_certificates"), "testssl002"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.server_cert_default", "testssl001"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.0.host", "fakehost7"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.0.certificate", "altcert6"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.0.alt_certificates.#", "3"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.0.alt_certificates.0", "altcert5"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.0.alt_certificates.1", "altcert1"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_server_cert_host_mapping.0.alt_certificates.2", "altcert3"),
+					resource.TestCheckResourceAttr(resourceName, "ssl.0.server_cert_host_mapping.#", "1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "fakehost7"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert6"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert5"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert3"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.signature_algorithms", "ECDSA_SHA256"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_ciphers", "SSL_RSA_WITH_RC4_128_SHA"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_support_ssl2", "disabled"),
@@ -626,281 +499,8 @@ port = 80
 `
 }
 
-func testAccBrocadeVTMVirtualServerValidateOCSPRequired() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-pool = "test-pool"
-port = 80
-
-ssl = {
-	ocsp_issuers = {
-		required = "INVALID"
-	}
-
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateOCSPNonce() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-pool = "test-pool"
-port = 80
-
-ssl = {
-	ocsp_issuers = {
-		nonce = "INVALID"
-	}
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateSSLClientCertHeaders() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-pool = "test-pool"
-port = 80
-ssl_client_cert_headers = "INVALID"
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateServerHonorFallbackSCSV() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-ssl_honor_fallback_scsv = "INVALID"
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateCookieDomain() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-cookie = {
-	domain = "INVALID"
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateCookieSecure() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-cookie = {
-	secure = "INVALID"
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateDNSRRSETOrder() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-dns = {
-	rrset_order = "INVALID"
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateGZIPCompressLevel() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-gzip = {
-	compress_level = 50
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateDataFrameSize() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-http2 = {
-	data_frame_size = 50
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateMaxFrameSize() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-http2 = {
-	max_frame_size = 1
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateETagRewrite() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-gzip = {
-	etag_rewrite = "INVALID"
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateMaxBuffer() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-vs_connection = {
-	max_client_buffer = 1
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateHeaderTableSize() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-http2 = {
-	header_table_size = 1
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateSysLogMsgLenLimit() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-syslog = {
-	msg_len_limit = 1
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateChunkOverheadForwarding() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-http = {
-	chunk_overhead_forwarding = "INVALID"
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateLocationRewrite() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-http = {
-	location_rewrite = "INVALID"
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateSIPDangerousRequestsAction() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-sip = {
-	dangerous_requests = "INVALID"
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateSIPMode() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-sip = {
-	mode = "INVALID"
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateSSLRequestClientCert() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-ssl = {
-	request_client_cert = "INVALID"
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerValidateServerUseSSLSupport() string {
-	return `
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-ssl = {
-	ssl_support_ssl2 = "INVALID"
-}
-}
-`
-}
-
-func testAccBrocadeVTMVirtualServerInvalidProtocol(virtualServerName string) string {
-	return fmt.Sprintf(`
-resource "brocadevtm_virtual_server" "acctest" {
-name = "%s"
-pool = "test-pool"
-port = 80
-protocol = "SOME_INVALID_PROTOCOL"
-}
-`, virtualServerName)
-}
-
 func testAccBrocadeVTMVirtualServerCreate(virtualServerName string) string {
 	return fmt.Sprintf(`
-
-
 
 resource "brocadevtm_virtual_server" "acctest" {
 
@@ -917,7 +517,7 @@ resource "brocadevtm_virtual_server" "acctest" {
 	ftp_force_server_secure = true
 	glb_services = ["testservice","testservice2"]
 	listen_on_any = true
-	listen_on_hosts = ["host1","host2"]
+	listen_on_hosts = ["host2","host1"]
 	listen_on_traffic_ips = ["ip1","ip2"]
 	note = "create acceptance test"
 	pool = "test-pool"
@@ -932,10 +532,15 @@ resource "brocadevtm_virtual_server" "acctest" {
 	ssl_decrypt = true
 	ssl_honor_fallback_scsv = "enabled"
 	transparent = true
-	error_file = "testErrorFile"
-	expect_starttls = true
-	proxy_close = true
-
+	connection_errors = {
+		error_file = "testErrorFile"
+	}
+	smtp = {
+		expect_starttls = true
+	}
+	tcp = {
+		proxy_close = true
+	}
 	aptimizer = {
 		enabled = true
 		profile = [{
@@ -1100,7 +705,7 @@ resource "brocadevtm_virtual_server" "acctest" {
 	    	server_cert_alt_certificates = ["testssl001"]
 	    	server_cert_default = "testssl002"
 
-	    	ssl_server_cert_host_mapping = [
+	    	server_cert_host_mapping = [
 		{
 		  host = "fakehost1"
 		  certificate = "altcert4"
@@ -1187,10 +792,15 @@ resource "brocadevtm_virtual_server" "acctest" {
 	ssl_decrypt = false
 	ssl_honor_fallback_scsv = "use_default"
 	transparent = false
-	error_file = "testErrorFileUpdate"
-	expect_starttls = false
-	proxy_close = false
-
+	connection_errors = {
+		error_file = "testErrorFileUpdate"
+	}
+	smtp = {
+		expect_starttls = false
+	}
+	tcp = {
+		proxy_close = false
+	}
 	aptimizer = {
 		enabled = true
 		profile = [{
@@ -1318,33 +928,31 @@ resource "brocadevtm_virtual_server" "acctest" {
 		ocsp_enable = false
 
 		ocsp_issuers = [
-		{
-			issuer = "issuerNameUpdated"
-			aia = true
-			nonce = "off"
-			required = "optional"
-			responder_cert = "respondercert"
-			signer = "fakesigner"
-			url = "fake.url"
-		},
+			{
+				issuer = "issuerNameUpdated"
+				aia = true
+				nonce = "off"
+				required = "optional"
+				responder_cert = "respondercert"
+				signer = "fakesigner"
+				url = "fake.url"
+			},
 		]
 		ocsp_max_response_age = 55
 		ocsp_stapling = false
-	    	ocsp_time_tolerance = 55
-	    	ocsp_timeout = 25
-	    	prefer_sslv3 = false
-	    	request_client_cert = "require"
-	    	send_close_alerts = false
-	    	server_cert_alt_certificates = ["testssl002"]
-	    	server_cert_default = "testssl001"
-
-	    	ssl_server_cert_host_mapping = [
-		{
-		  host = "fakehost7"
-		  certificate = "altcert6"
-		  alt_certificates = ["altcert5","altcert1","altcert3"]
-
-		},
+	    ocsp_time_tolerance = 55
+	    ocsp_timeout = 25
+	    prefer_sslv3 = false
+	    request_client_cert = "require"
+	    send_close_alerts = false
+	    server_cert_alt_certificates = ["testssl002"]
+	    server_cert_default = "testssl001"
+	    server_cert_host_mapping = [
+			{
+				host = "fakehost7"
+				certificate = "altcert6"
+				alt_certificates = ["altcert5","altcert1","altcert3"]
+			},
 		]
 
 		signature_algorithms = "ECDSA_SHA256"
