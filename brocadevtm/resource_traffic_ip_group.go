@@ -264,7 +264,7 @@ func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 	trafficIPGroupProperties := trafficIPGroupConfiguration["properties"].(map[string]interface{})
 	trafficIPGroupBasic := trafficIPGroupProperties["basic"].(map[string]interface{})
 
-	for _, key := range basicVirtualServerKeys() {
+	for _, key := range basicTrafficIPGroupKeys() {
 		d.Set(key, trafficIPGroupBasic[key])
 	}
 	return nil
