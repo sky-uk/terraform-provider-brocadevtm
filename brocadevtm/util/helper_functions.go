@@ -191,6 +191,8 @@ func GetAttributesToMap(d *schema.ResourceData, attributeNames []string) (map[st
 			m[item] = v.([]interface{})
 		case []string:
 			m[item] = v.([]string)
+		case *schema.Set:
+			m[item] = v.(*schema.Set).List()
 		default:
 			return nil, fmt.Errorf("error, key %s of not valid type", item)
 		}
