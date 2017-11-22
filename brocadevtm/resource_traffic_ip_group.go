@@ -5,17 +5,17 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/traffic_ip_group"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
+	"log"
 	"net/http"
 	"regexp"
 )
 
 func resourceTrafficIPGroup() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTrafficIPGroupCreate,
+		Create: resourceTrafficIPGroupSet,
 		Read:   resourceTrafficIPGroupRead,
-		Update: resourceTrafficIPGroupUpdate,
+		Update: resourceTrafficIPGroupSet,
 		Delete: resourceTrafficIPGroupDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -175,6 +175,7 @@ func validateTrafficIPGroupMulticastIP(v interface{}, k string) (ws []string, er
 	return
 }
 
+// getTrafficManagers : retrieves a list of traffic managers from the traffic manager set in the environment variable.
 func getTrafficManagers(m interface{}) ([]string, error) {
 
 	var trafficManagers []string
@@ -194,88 +195,62 @@ func getTrafficManagers(m interface{}) ([]string, error) {
 	return trafficManagers, nil
 }
 
-func buildIPMapping(ipMappingBlock *schema.Set) []trafficIpGroups.IPMapping {
-
-	ipMappingObjectList := make([]trafficIpGroups.IPMapping, 0)
-
-	for _, ipMappingItem := range ipMappingBlock.List() {
-
-		ipMapping := ipMappingItem.(map[string]interface{})
-		ipMappingObject := trafficIpGroups.IPMapping{}
-
-		if ip, ok := ipMapping["ip"].(string); ok {
-			ipMappingObject.IP = ip
-		}
-		if trafficManager, ok := ipMapping["traffic_manager"].(string); ok {
-			ipMappingObject.TrafficManager = trafficManager
-		}
-		ipMappingObjectList = append(ipMappingObjectList, ipMappingObject)
+func basicKeys() []string {
+	return []string{
+		"enabled",
+		"hash_source_port",
+		"ip_assignment_mode",
+		"ipaddresses",
+		"ip_mapping",
+		"keeptogether",
+		"location",
+		"machines",
+		"mode",
+		"multicast",
+		"note",
+		"rhi_bgp_metric_base",
+		"rhi_bgp_passive_metric_offset",
+		"rhi_ospfv2_metric_base",
+		"rhi_ospfv2_passive_metric_offset",
+		"rhi_protocols",
+		"slaves",
 	}
-	return ipMappingObjectList
 }
 
-func getTrafficIPGroupAttributeList(mapName string) []string {
-
-	attributes := []string{}
-
-	switch mapName {
-	case "basic":
-		attributes = []string{"enabled",
-			"hash_source_port",
-			"ip_assignment_mode",
-			"ipaddresses",
-			"keeptogether",
-			"location",
-			"mode",
-			"multicast",
-			"note",
-			"rhi_bgp_metric_base",
-			"rhi_bgp_passive_metric_offset",
-			"rhi_ospfv2_metric_base",
-			"rhi_ospfv2_passive_metric_offset",
-			"rhi_protocols",
-			"slaves"}
-	case "ip_mapping":
-		attributes = []string{"ip", "traffic_manager"}
+func getSection(d *schema.ResourceData, sectionName string, properties map[string]interface{}, keys []string) error {
+	m, err := util.GetAttributesToMap(d, keys)
+	if err != nil {
+		log.Println("Error getting section ", sectionName, err)
+		return err
 	}
-	return attributes
+	properties[sectionName] = m
+	return nil
 }
 
-func resourceTrafficIPGroupCreate(d *schema.ResourceData, m interface{}) error {
+func resourceTrafficIPGroupSet(d *schema.ResourceData, m interface{}) error {
 
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	trafficIPGroupConfiguration := make(map[string]interface{})
-	trafficIPGroupPropertiesConfiguration := make(map[string]interface{})
+	trafficIPGroupRequest := make(map[string]interface{})
+	trafficIPGroupProperties := make(map[string]interface{})
 
 	name := d.Get("name").(string)
 
-	trafficIPGroupBasicConfiguration := make(map[string]interface{})
-	trafficIPGroupBasicConfiguration = util.AddSimpleGetAttributesToMap(d, trafficIPGroupBasicConfiguration, "", getTrafficIPGroupAttributeList("basic"))
-	if v, ok := d.GetOk("ip_mapping"); ok {
-		builtList, err := util.BuildListMaps(v.(*schema.Set), getTrafficIPGroupAttributeList("ip_mapping"))
-		if err != nil {
-			return err
-		}
-		trafficIPGroupBasicConfiguration["ip_mapping"] = builtList
-	}
-	// Allow the user to override the list of traffic managers. If not specified by the user retrieving them from the traffic manager.
-	if v, ok := d.GetOk("machines"); ok {
-		trafficIPGroupBasicConfiguration["machines"] = util.BuildStringListFromSet(v.(*schema.Set))
-	} else {
+	getSection(d, "basic", trafficIPGroupProperties, basicKeys())
+
+	// If the list of traffic managers (machines isn't provided by the user get it from the traffic manager we're running against.
+	if len(trafficIPGroupProperties["basic"].(map[string]interface{})["machines"].([]interface{})) == 0 {
 		trafficManagers, err := getTrafficManagers(m)
 		if err != nil {
 			return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst creating %s: %v", name, err)
 		}
-		trafficIPGroupBasicConfiguration["machines"] = trafficManagers
+		trafficIPGroupProperties["basic"].(map[string]interface{})["machines"] = trafficManagers
 	}
 
-	trafficIPGroupPropertiesConfiguration["basic"] = trafficIPGroupBasicConfiguration
-	trafficIPGroupConfiguration["properties"] = trafficIPGroupPropertiesConfiguration
-
-	err := client.Set("traffic_ip_groups", name, trafficIPGroupConfiguration, nil)
+	trafficIPGroupRequest["properties"] = trafficIPGroupProperties
+	err := client.Set("traffic_ip_groups", name, trafficIPGroupRequest, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst creating %s: %v", name, err)
+		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst creating %s: %s", name, err)
 	}
 	d.SetId(name)
 	return resourceTrafficIPGroupRead(d, m)
@@ -297,6 +272,9 @@ func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 		}
 		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst retrieving %s: %v", name, err)
 	}
+	trafficIPGroupProperties := trafficIPGroupConfiguration["properties"].(map[string]interface{})
+	trafficIPGroupBasic := trafficIPGroupProperties["basic"].(map[string]interface{})
+
 
 	trafficIPGroupPropertiesConfiguration := trafficIPGroupConfiguration["properties"].(map[string]interface{})
 	trafficIPGroupBasicConfiguration := trafficIPGroupPropertiesConfiguration["basic"].(map[string]interface{})
@@ -354,10 +332,9 @@ func resourceTrafficIPGroupUpdate(d *schema.ResourceData, m interface{}) error {
 	err := client.Set("traffic_ip_groups", name, trafficIPGroupConfiguration, nil)
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst updating %s: %v", name, err)
-	}
 
-	d.SetId(name)
-	return resourceTrafficIPGroupRead(d, m)
+	}
+	return nil
 }
 
 func resourceTrafficIPGroupDelete(d *schema.ResourceData, m interface{}) error {
