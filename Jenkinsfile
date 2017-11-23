@@ -74,6 +74,7 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                         env.BROCADEVTM_ALLOW_UNVERIFIED_SSL=true
                         goHelper.goTestAcc(project_src_path)
                     }
+
                 }
 
                 stage 'coverage'
@@ -108,6 +109,7 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                     def github_release_response = gitHelper.createGitHubRelease(env.GITHUB_TOKEN, project_owner, project_name, version(), git_branch)
                     echo "${github_release_response}"
                     // FIXME: this is not working yet
+
                     echo "Attaching artifacts to GitHub Release v${version()}"
                     try {
                         def upload_response = gitHelper.uploadToGitHubRelease(env.GITHUB_TOKEN, project_owner, project_name, github_release_response.id, "${pwd()}/coverage.html", 'application/html')
@@ -115,6 +117,7 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                     } catch (Exception e) {
                         echo "Could not upload the artifact"
                     }
+
 
                 }
 
