@@ -11,9 +11,9 @@ import (
 
 func resourceMonitor() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceMonitorCreate,
+		Create: resourceMonitorSet,
 		Read:   resourceMonitorRead,
-		Update: resourceMonitorUpdate,
+		Update: resourceMonitorSet,
 		Delete: resourceMonitorDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -258,7 +258,7 @@ func getMonitorMapAttributeList(mapName string) []string {
 	return attributes
 }
 
-func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
+func resourceMonitorSet(d *schema.ResourceData, m interface{}) error {
 
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
@@ -272,38 +272,28 @@ func resourceMonitorCreate(d *schema.ResourceData, m interface{}) error {
 	monitorBasicConfiguration = util.AddSimpleGetAttributesToMap(d, monitorBasicConfiguration, "", getMonitorMapAttributeList("basic"))
 	monitorPropertiesConfiguration["basic"] = monitorBasicConfiguration
 
-	// HTTP Section
-	monitorHTTPConfiguration := make(map[string]interface{})
-	monitorHTTPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorHTTPConfiguration, "http_", getMonitorMapAttributeList("http"))
-	monitorPropertiesConfiguration["http"] = monitorHTTPConfiguration
-
-	// RTSP section
-	monitorRTSPConfiguration := make(map[string]interface{})
-	monitorRTSPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorRTSPConfiguration, "rtsp_", getMonitorMapAttributeList("rtsp"))
-	monitorPropertiesConfiguration["rtsp"] = monitorRTSPConfiguration
-
 	// Script section
 	monitorScriptConfiguration := make(map[string]interface{})
 	monitorScriptConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorScriptConfiguration, "script_", getMonitorMapAttributeList("script"))
-	if v, ok := d.GetOk("script_arguments"); ok {
-		monitorScriptConfiguration["arguments"] = buildScriptArgumentsSection(v.(*schema.Set).List())
+	if d.HasChange("script_arguments") {
+		if v, ok := d.GetOk("script_arguments"); ok {
+			monitorScriptConfiguration["arguments"] = buildScriptArgumentsSection(v.(*schema.Set).List())
+		}
+		monitorPropertiesConfiguration["script"] = monitorScriptConfiguration
 	}
-	monitorPropertiesConfiguration["script"] = monitorScriptConfiguration
 
-	// SIP Section
-	monitorSIPConfiguration := make(map[string]interface{})
-	monitorSIPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorSIPConfiguration, "sip_", getMonitorMapAttributeList("sip"))
-	monitorPropertiesConfiguration["sip"] = monitorSIPConfiguration
-
-	// TCP Section
-	monitorTCPConfiguration := make(map[string]interface{})
-	monitorTCPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorTCPConfiguration, "tcp_", getMonitorMapAttributeList("tcp"))
-	monitorPropertiesConfiguration["tcp"] = monitorTCPConfiguration
-
-	// UDP Section
-	monitorUDPConfiguration := make(map[string]interface{})
-	monitorUDPConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorUDPConfiguration, "udp_", getMonitorMapAttributeList("udp"))
-	monitorPropertiesConfiguration["udp"] = monitorUDPConfiguration
+	// All other sections
+	for _, sectionName := range []string{
+		"http",
+		"rtsp",
+		"sip",
+		"tcp",
+		"udp",
+	} {
+		section := make(map[string]interface{})
+		section = util.AddSimpleGetOkAttributesToMap(d, section, fmt.Sprintf("%s_", sectionName), getMonitorMapAttributeList(sectionName))
+		monitorPropertiesConfiguration[sectionName] = section
+	}
 
 	monitorConfiguration["properties"] = monitorPropertiesConfiguration
 	err := client.Set("monitors", name, monitorConfiguration, nil)
@@ -330,93 +320,30 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("BrocadeVTM Monitor error whilst retrieving %s: %v", name, err)
 	}
+
 	monitorPropertiesConfiguration := monitorConfiguration["properties"].(map[string]interface{})
 
 	// Basic Section
 	monitorBasicConfiguration := monitorPropertiesConfiguration["basic"].(map[string]interface{})
 	util.SetSimpleAttributesFromMap(d, monitorBasicConfiguration, "", getMonitorMapAttributeList("basic"))
 
-	// HTTP Section
-	monitorHTTPConfiguration := monitorPropertiesConfiguration["http"].(map[string]interface{})
-	util.SetSimpleAttributesFromMap(d, monitorHTTPConfiguration, "http_", getMonitorMapAttributeList("http"))
-
-	// RTSP Section
-	monitorRTSPConfiguration := monitorPropertiesConfiguration["rtsp"].(map[string]interface{})
-	util.SetSimpleAttributesFromMap(d, monitorRTSPConfiguration, "rtsp_", getMonitorMapAttributeList("rtsp"))
-
 	// Script Section
 	monitorScriptConfiguration := monitorPropertiesConfiguration["script"].(map[string]interface{})
 	d.Set("script_program", monitorScriptConfiguration["program"])
 	d.Set("script_arguments", buildScriptArgumentsSection(monitorScriptConfiguration["arguments"]))
 
-	// SIP Section
-	monitorSIPConfiguration := monitorPropertiesConfiguration["sip"].(map[string]interface{})
-	util.SetSimpleAttributesFromMap(d, monitorSIPConfiguration, "sip_", getMonitorMapAttributeList("sip"))
-
-	// TCP Section
-	monitorTCPConfiguration := monitorPropertiesConfiguration["tcp"].(map[string]interface{})
-	util.SetSimpleAttributesFromMap(d, monitorTCPConfiguration, "tcp_", getMonitorMapAttributeList("tcp"))
-
-	// UDP Section
-	monitorUDPConfiguration := monitorPropertiesConfiguration["udp"].(map[string]interface{})
-	d.Set("udp_accept_all", monitorUDPConfiguration["accept_all"])
+	for _, sectionName := range []string{
+		"http",
+		"rtsp",
+		"sip",
+		"tcp",
+		"udp",
+	} {
+		section := monitorPropertiesConfiguration[sectionName].(map[string]interface{})
+		util.SetSimpleAttributesFromMap(d, section, fmt.Sprintf("%s_", sectionName), getMonitorMapAttributeList(sectionName))
+	}
 
 	return nil
-}
-
-func resourceMonitorUpdate(d *schema.ResourceData, m interface{}) error {
-
-	name := d.Id()
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-
-	monitorConfiguration := make(map[string]interface{})
-	monitorPropertiesConfiguration := make(map[string]interface{})
-
-	// Basic Section
-	monitorBasicConfiguration := make(map[string]interface{})
-	monitorBasicConfiguration = util.AddChangedSimpleAttributesToMap(d, monitorBasicConfiguration, "", getMonitorMapAttributeList("basic"))
-	monitorPropertiesConfiguration["basic"] = monitorBasicConfiguration
-
-	// HTTP Section
-	monitorHTTPConfiguration := make(map[string]interface{})
-	monitorHTTPConfiguration = util.AddChangedSimpleAttributesToMap(d, monitorHTTPConfiguration, "http_", getMonitorMapAttributeList("http"))
-	monitorPropertiesConfiguration["http"] = monitorHTTPConfiguration
-
-	// RTSP Section
-	monitorRTSPConfiguration := make(map[string]interface{})
-	monitorRTSPConfiguration = util.AddChangedSimpleAttributesToMap(d, monitorRTSPConfiguration, "rtsp_", getMonitorMapAttributeList("rtsp"))
-	monitorPropertiesConfiguration["rtsp"] = monitorRTSPConfiguration
-
-	// Script Section
-	monitorScriptConfiguration := make(map[string]interface{})
-	monitorScriptConfiguration = util.AddChangedSimpleAttributesToMap(d, monitorScriptConfiguration, "script_", getMonitorMapAttributeList("script"))
-	if d.HasChange("script_arguments") {
-		monitorScriptConfiguration["arguments"] = buildScriptArgumentsSection(d.Get("script_arguments").(*schema.Set).List())
-	}
-	monitorPropertiesConfiguration["script"] = monitorScriptConfiguration
-
-	// SIP Section
-	monitorSIPConfiguration := make(map[string]interface{})
-	monitorSIPConfiguration = util.AddChangedSimpleAttributesToMap(d, monitorSIPConfiguration, "sip_", getMonitorMapAttributeList("sip"))
-	monitorPropertiesConfiguration["sip"] = monitorSIPConfiguration
-
-	// TCP Section
-	monitorTCPConfiguration := make(map[string]interface{})
-	monitorTCPConfiguration = util.AddChangedSimpleAttributesToMap(d, monitorTCPConfiguration, "tcp_", getMonitorMapAttributeList("tcp"))
-	monitorPropertiesConfiguration["tcp"] = monitorTCPConfiguration
-
-	// UDP Section
-	monitorUDPConfiguration := make(map[string]interface{})
-	monitorUDPConfiguration = util.AddChangedSimpleAttributesToMap(d, monitorUDPConfiguration, "udp_", getMonitorMapAttributeList("udp"))
-	monitorPropertiesConfiguration["udp"] = monitorUDPConfiguration
-
-	monitorConfiguration["properties"] = monitorPropertiesConfiguration
-	err := client.Set("monitors", name, monitorConfiguration, nil)
-	if err != nil {
-		return fmt.Errorf("BrocadeVTM Monitor error whilst updating %s: %s", name, err)
-	}
-	return resourceMonitorRead(d, m)
 }
 
 func resourceMonitorDelete(d *schema.ResourceData, m interface{}) error {

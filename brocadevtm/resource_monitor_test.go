@@ -29,11 +29,11 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 			return testAccBrocadeVTMMonitorCheckDestroy(state, monitorName)
 		},
 		Steps: []resource.TestStep{
-			{
+			{ // Step 0
 				Config:      testAccBrocadeVTMMonitorInvalidName(),
 				ExpectError: regexp.MustCompile(`BrocadeVTM Monitor error whilst creating ../virtual_servers/some_random_virtual_server: The path '/api/tm/` + usedVersion + `/config/active/monitors/../virtual_servers/some_random_virtual_server' is invalid`),
 			},
-			{
+			{ // Step 1
 				Config: testAccBrocadeVTMMonitorCreateTemplate(monitorName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMMonitorExists(monitorName, monitorResourceName),
@@ -61,7 +61,7 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(monitorResourceName, "udp_accept_all", "false"),
 				),
 			},
-			{
+			{ // Step 2
 				Config: testAccBrocadeVTMMonitorUpdateTemplate(monitorName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMMonitorExists(monitorName, monitorResourceName),
