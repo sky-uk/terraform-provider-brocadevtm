@@ -119,7 +119,6 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
 
 
 
-
                 }
 
             }
