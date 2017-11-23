@@ -112,10 +112,10 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
 
                     echo "Attaching artifacts to GitHub Release v${version()}"
                     try {
-                        def upload_response = gitHelper.uploadToGitHubRelease(env.GITHUB_TOKEN, project_owner, project_name, github_release_response.id, "${pwd()}/coverage.html", 'application/html')
+                        def upload_response = gitHelper.uploadToGitHubRelease(env.GITHUB_TOKEN, project_owner, project_name, github_release_response.id, "${pwd()}/coverage.html", 'text/html')
                         echo "${upload_response}"
                     } catch (Exception e) {
-                        echo "Could not upload the artifact"
+                        echo "Could not upload the artifact "
                     }
 
 
