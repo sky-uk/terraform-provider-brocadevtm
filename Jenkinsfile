@@ -74,8 +74,7 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                         env.BROCADEVTM_ALLOW_UNVERIFIED_SSL=true
                         goHelper.goTestAcc(project_src_path)
                     }
-                    echo "this is my token"
-                    echo ${env.GITHUB_TOKEN}
+
                 }
 
                 stage 'coverage'
