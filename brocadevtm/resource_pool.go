@@ -782,7 +782,6 @@ func resourcePoolSet(d *schema.ResourceData, m interface{}) error {
 
 	nodesTable := d.Get("nodes_table")
 	nodesList := d.Get("nodes_list")
-
 	if d.HasChange("nodes_table") {
 		poolProperties["basic"].(map[string]interface{})["nodes_table"] = nodesTable.(*schema.Set).List()
 		nodesTableDefined = true
