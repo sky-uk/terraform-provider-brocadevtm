@@ -75,7 +75,7 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                         goHelper.goTestAcc(project_src_path)
                     }
                     echo "this is my token"
-                    echo env.GITHUB_TOKEN
+                    echo ${env.GITHUB_TOKEN}
                 }
 
                 stage 'coverage'
