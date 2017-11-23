@@ -117,7 +117,6 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                         echo "Could not upload the artifact"
                     }
 
-
                 }
 
             }
