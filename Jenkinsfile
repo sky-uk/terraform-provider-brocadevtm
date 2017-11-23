@@ -108,8 +108,8 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                     def github_release_response = gitHelper.createGitHubRelease(env.GITHUB_TOKEN, project_owner, project_name, version(), git_branch)
                     echo "${github_release_response}"
                     // FIXME: this is not working yet
-                    // echo "Attaching artifacts to GitHub Release v${version()}"
-                    gitHelper.uploadToGitHubRelease(project_github_token, project_owner, project_name, github_release_response.id, "${pwd()}/coverage.html", 'application/html')
+                    echo "Attaching artifacts to GitHub Release v${version()}"
+                    gitHelper.uploadToGitHubRelease(env.GITHUB_TOKEN, project_owner, project_name, github_release_response.id, "${pwd()}/coverage.html", 'application/html')
                 }
 
             }
