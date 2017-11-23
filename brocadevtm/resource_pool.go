@@ -752,7 +752,7 @@ func resourcePoolSet(d *schema.ResourceData, m interface{}) error {
 
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	var nodesTableDefined, nodesListDefined bool
+	var nodesTableDefined bool
 
 	name := d.Get("name").(string)
 
@@ -780,19 +780,25 @@ func resourcePoolSet(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	nodesTable := d.Get("nodes_table")
+	nodesList := d.Get("nodes_list")
+
 	if d.HasChange("nodes_table") {
-		poolProperties["basic"].(map[string]interface{})["nodes_table"] = d.Get("nodes_table").(*schema.Set).List()
+		poolProperties["basic"].(map[string]interface{})["nodes_table"] = nodesTable.(*schema.Set).List()
 		nodesTableDefined = true
-		log.Printf(fmt.Sprintf("[DEBUG] Nodes table is %+v", d.Get("nodes_table").(*schema.Set).List()))
+		log.Printf(fmt.Sprintf("[DEBUG] Nodes table is %+v", nodesTable.(*schema.Set).List()))
 	}
-	if d.HasChange("nodes_list") {
-		poolProperties["basic"].(map[string]interface{})["nodes_table"] = buildNodesTableFromList(d.Get("nodes_list"))
-		nodesListDefined = true
-		log.Printf(fmt.Sprintf("[DEBUG] Nodes list is %+v", buildNodesTableFromList(d.Get("nodes_list"))))
+	// We only want to use nodes_list when nodes_table hasn't been defined.
+	if nodesTableDefined == false {
+		if d.HasChange("nodes_list") {
+			poolProperties["basic"].(map[string]interface{})["nodes_table"] = buildNodesTableFromList(nodesList)
+			//nodesListDefined = true
+			log.Printf(fmt.Sprintf("[DEBUG] Nodes list is %+v", buildNodesTableFromList(nodesList)))
+		}
 	}
 
-	if nodesTableDefined == false && nodesListDefined == false {
-		return fmt.Errorf("Error creating resource: no one of nodes_table or nodes_list attr has been defined")
+	if len(nodesTable.(*schema.Set).List()) == 0 && len(nodesList.(*schema.Set).List()) == 0 {
+		return fmt.Errorf("Error creating/updating resource: one of nodes_list or nodes_table must be defined")
 	}
 
 	poolRequest["properties"] = poolProperties
