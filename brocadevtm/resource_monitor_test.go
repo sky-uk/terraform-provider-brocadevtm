@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"os"
 	"regexp"
 	"testing"
@@ -43,22 +44,27 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(monitorResourceName, "failures", "7"),
 					resource.TestCheckResourceAttr(monitorResourceName, "verbose", "true"),
 					resource.TestCheckResourceAttr(monitorResourceName, "use_ssl", "true"),
-					resource.TestCheckResourceAttr(monitorResourceName, "http_host_header", "some_other_header"),
-					resource.TestCheckResourceAttr(monitorResourceName, "http_authentication", "admin:password"),
-					resource.TestCheckResourceAttr(monitorResourceName, "http_body_regex", "^ok"),
-					resource.TestCheckResourceAttr(monitorResourceName, "http_path", "/some/status/page"),
-					resource.TestCheckResourceAttr(monitorResourceName, "rtsp_status_regex", "^[234][0-9][0-9]$"),
-					resource.TestCheckResourceAttr(monitorResourceName, "rtsp_body_regex", ""),
-					resource.TestCheckResourceAttr(monitorResourceName, "rtsp_path", "/"),
+					resource.TestCheckResourceAttr(monitorResourceName, "http.#", "1"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("http", "host_header"), "some_other_header"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("http", "authentication"), "admin:password"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("http", "body_regex"), "^ok"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("http", "path"), "/some/status/page"),
+					resource.TestCheckResourceAttr(monitorResourceName, "rtsp.#", "1"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("rtsp", "status_regex"), "^[234][0-9][0-9]$"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("rtsp", "body_regex"), ""),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("rtsp", "path"), "/"),
 					resource.TestCheckResourceAttr(monitorResourceName, "script_program", ""),
-					resource.TestCheckResourceAttr(monitorResourceName, "sip_body_regex", ""),
-					resource.TestCheckResourceAttr(monitorResourceName, "sip_status_regex", "^[234][0-9][0-9]$"),
-					resource.TestCheckResourceAttr(monitorResourceName, "sip_transport", "udp"),
-					resource.TestCheckResourceAttr(monitorResourceName, "tcp_close_string", ""),
-					resource.TestCheckResourceAttr(monitorResourceName, "tcp_max_response_len", "4048"),
-					resource.TestCheckResourceAttr(monitorResourceName, "tcp_response_regex", ".*"),
-					resource.TestCheckResourceAttr(monitorResourceName, "tcp_write_string", ""),
-					resource.TestCheckResourceAttr(monitorResourceName, "udp_accept_all", "false"),
+					resource.TestCheckResourceAttr(monitorResourceName, "sip.#", "1"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("sip", "body_regex"), ""),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("sip", "status_regex"), "^[234][0-9][0-9]$"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("sip", "transport"), "udp"),
+					resource.TestCheckResourceAttr(monitorResourceName, "tcp.#", "1"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("tcp", "close_string"), ""),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("tcp", "max_response_len"), "4048"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("tcp", "response_regex"), ".*"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("tcp", "write_string"), ""),
+					resource.TestCheckResourceAttr(monitorResourceName, "udp.#", "1"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "accept_all"), "false"),
 				),
 			},
 			{ // Step 2
@@ -71,22 +77,27 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(monitorResourceName, "failures", "9"),
 					resource.TestCheckResourceAttr(monitorResourceName, "verbose", "false"),
 					resource.TestCheckResourceAttr(monitorResourceName, "use_ssl", "false"),
-					resource.TestCheckResourceAttr(monitorResourceName, "http_host_header", "some_header"),
-					resource.TestCheckResourceAttr(monitorResourceName, "http_authentication", "some_authentication"),
-					resource.TestCheckResourceAttr(monitorResourceName, "http_body_regex", "^healthy"),
-					resource.TestCheckResourceAttr(monitorResourceName, "http_path", "/some/other/status/page"),
-					resource.TestCheckResourceAttr(monitorResourceName, "rtsp_status_regex", "^[234][0-9][0-9]$"),
-					resource.TestCheckResourceAttr(monitorResourceName, "rtsp_body_regex", "something"),
-					resource.TestCheckResourceAttr(monitorResourceName, "rtsp_path", "/"),
+					resource.TestCheckResourceAttr(monitorResourceName, "http.#", "1"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("http", "host_header"), "some_header"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("http", "authentication"), "some_authentication"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("http", "body_regex"), "^healthy"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("http", "path"), "/some/other/status/page"),
+					resource.TestCheckResourceAttr(monitorResourceName, "rtsp.#", "1"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("rtsp", "status_regex"), "^[234][0-9][0-9]$"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("rtsp", "body_regex"), "something"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("rtsp", "path"), "/"),
 					resource.TestCheckResourceAttr(monitorResourceName, "script_program", "dns.pl"),
-					resource.TestCheckResourceAttr(monitorResourceName, "sip_body_regex", ""),
-					resource.TestCheckResourceAttr(monitorResourceName, "sip_status_regex", "^[234][0-9][0-9]$"),
-					resource.TestCheckResourceAttr(monitorResourceName, "sip_transport", "udp"),
-					resource.TestCheckResourceAttr(monitorResourceName, "tcp_close_string", ""),
-					resource.TestCheckResourceAttr(monitorResourceName, "tcp_max_response_len", "2048"),
-					resource.TestCheckResourceAttr(monitorResourceName, "tcp_response_regex", ".+"),
-					resource.TestCheckResourceAttr(monitorResourceName, "tcp_write_string", ""),
-					resource.TestCheckResourceAttr(monitorResourceName, "udp_accept_all", "false"),
+					resource.TestCheckResourceAttr(monitorResourceName, "sip.#", "1"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("sip", "body_regex"), ""),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("sip", "status_regex"), "^[234][0-9][0-9]$"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("sip", "transport"), "udp"),
+					resource.TestCheckResourceAttr(monitorResourceName, "tcp.#", "1"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("tcp", "close_string"), ""),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("tcp", "max_response_len"), "2048"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("tcp", "response_regex"), ".+"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("tcp", "write_string"), ""),
+					resource.TestCheckResourceAttr(monitorResourceName, "udp.#", "1"),
+					util.AccTestCheckValueInKeyPattern(monitorResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "accept_all"), "false"),
 				),
 			},
 		},
@@ -157,27 +168,47 @@ resource "brocadevtm_monitor" "acctest" {
   failures = 7
   verbose = true
   use_ssl = true
-  http_host_header = "some_other_header"
-  http_authentication = "admin:password"
-  http_body_regex = "^ok"
-  http_path = "/some/status/page"
-  rtsp_status_regex = "^[234][0-9][0-9]$"
-  rtsp_body_regex = ""
-  rtsp_path = "/"
+  http = [
+    {
+      host_header = "some_other_header"
+      authentication = "admin:password"
+      body_regex = "^ok"
+      path = "/some/status/page"
+    },
+  ]
+  rtsp = [
+    {
+      status_regex = "^[234][0-9][0-9]$"
+      body_regex = ""
+      path = "/"
+    },
+  ]
   script_arguments {
     name="test1"
     description="paas test"
     value="dns.pl"
   }
   script_program = ""
-  sip_body_regex = ""
-  sip_status_regex = "^[234][0-9][0-9]$"
-  sip_transport = "udp"
-  tcp_close_string = ""
-  tcp_max_response_len = "4048"
-  tcp_response_regex = ".*"
-  tcp_write_string = ""
-  udp_accept_all = false
+  sip = [
+    {
+      body_regex = ""
+      status_regex = "^[234][0-9][0-9]$"
+      transport = "udp"
+    },
+  ]
+  tcp = [
+    {
+      close_string = ""
+      max_response_len = "4048"
+      response_regex = ".*"
+      write_string = ""
+    },
+  ]
+  udp = [
+    {
+      accept_all = false
+    },
+  ]
 }
 `, monitorName)
 }
@@ -196,27 +227,47 @@ resource "brocadevtm_monitor" "acctest" {
   type = "tcp_transaction"
   verbose = false
   use_ssl = false
-  http_host_header = "some_header"
-  http_authentication = "some_authentication"
-  http_body_regex = "^healthy"
-  http_path = "/some/other/status/page"
-  rtsp_status_regex = "^[234][0-9][0-9]$"
-  rtsp_body_regex = "something"
-  rtsp_path = "/"
+  http = [
+    {
+      host_header = "some_header"
+      authentication = "some_authentication"
+      body_regex = "^healthy"
+      path = "/some/other/status/page"
+    },
+  ]
+  rtsp = [
+    {
+      status_regex = "^[234][0-9][0-9]$"
+      body_regex = "something"
+      path = "/"
+    },
+  ]
   script_arguments {
     name="test2"
     description="paas test2"
     value="bla.pl"
   }
   script_program = "dns.pl"
-  sip_body_regex = ""
-  sip_status_regex = "^[234][0-9][0-9]$"
-  sip_transport = "udp"
-  tcp_close_string = ""
-  tcp_max_response_len = "2048"
-  tcp_response_regex = ".+"
-  tcp_write_string = ""
-  udp_accept_all = false
+  sip = [
+    {
+      body_regex = ""
+      status_regex = "^[234][0-9][0-9]$"
+      transport = "udp"
+    },
+  ]
+  tcp = [
+    {
+      close_string = ""
+      max_response_len = "2048"
+      response_regex = ".+"
+      write_string = ""
+    },
+  ]
+  udp = [
+    {
+      accept_all = false
+    },
+  ]
 }
 `, monitorName)
 }

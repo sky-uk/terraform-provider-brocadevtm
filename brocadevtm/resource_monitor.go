@@ -96,63 +96,73 @@ func resourceMonitor() *schema.Resource {
 				Default:     false,
 				Description: "Whether or not the monitor should emit verbose logging. This is useful for diagnosing problems",
 			},
-			"http_host_header": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-			"http_path": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-			"http_authentication": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-			"http_body_regex": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-			"http_status_regex": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-			"rtsp_body_regex": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-			"rtsp_status_regex": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-			"rtsp_path": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-			"script_program": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-			"script_arguments": {
-				Type:     schema.TypeSet,
-				Optional: true,
+			"http": {
+				Type:        schema.TypeSet,
+				Description: "HTTP section",
+				Optional:    true,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-
-						"name": {
+						"authentication": {
 							Type:     schema.TypeString,
 							Optional: true,
 							Computed: true,
 						},
-						"description": {
+						"body_regex": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"host_header": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"path": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"status_regex": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+					},
+				},
+			},
+			"rtsp": {
+				Type:        schema.TypeSet,
+				Description: "RTSP section",
+				Optional:    true,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"body_regex": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"path": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"status_regex": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+					},
+				},
+			},
+			"script_arguments": {
+				Type:        schema.TypeSet,
+				Description: "Script arguments to script program",
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
 							Type:     schema.TypeString,
 							Optional: true,
 							Computed: true,
@@ -162,143 +172,152 @@ func resourceMonitor() *schema.Resource {
 							Optional: true,
 							Computed: true,
 						},
+						"description": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
 					},
 				},
 			},
-			"sip_body_regex": {
+			"script_program": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
-			"sip_status_regex": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+			"sip": {
+				Type:        schema.TypeSet,
+				Description: "SIP section",
+				Optional:    true,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"body_regex": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"status_regex": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"transport": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+							ValidateFunc: validation.StringInSlice([]string{
+								"tcp",
+								"udp",
+							}, false),
+						},
+					},
+				},
 			},
-			"sip_transport": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ValidateFunc: validation.StringInSlice([]string{
-					"tcp",
-					"udp",
-				}, false),
+			"tcp": {
+				Type:        schema.TypeSet,
+				Description: "TCP section",
+				Optional:    true,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"close_string": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"max_response_len": {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							Default:      2048,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"response_regex": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default:  ".+",
+						},
+						"write_string": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+					},
+				},
 			},
-			"tcp_close_string": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-			"tcp_max_response_len": {
-				Type:         schema.TypeInt,
-				Optional:     true,
-				Computed:     true,
-				ValidateFunc: util.ValidateUnsignedInteger,
-			},
-			"tcp_response_regex": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-			"tcp_write_string": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-			"udp_accept_all": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
+			"udp": {
+				Type:        schema.TypeSet,
+				Description: "UDP section",
+				Optional:    true,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"accept_all": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
+					},
+				},
 			},
 		},
 	}
 }
 
-func buildScriptArgumentsSection(scriptArguments interface{}) []map[string]string {
-
-	monitorScriptArguments := make([]map[string]string, 0)
-
-	for _, item := range scriptArguments.([]interface{}) {
-		scriptArgumentItem := item.(map[string]interface{})
-		monitorScriptArgument := make(map[string]string)
-		scriptArgumentAttributes := []string{"name", "description", "value"}
-
-		for _, argumentAttribute := range scriptArgumentAttributes {
-			if v, ok := scriptArgumentItem[argumentAttribute].(string); ok {
-				monitorScriptArgument[argumentAttribute] = v
-			}
-		}
-		monitorScriptArguments = append(monitorScriptArguments, monitorScriptArgument)
+func basicMonitorKeys() []string {
+	return []string{
+		"back_off",
+		"delay",
+		"failures",
+		"machine",
+		"note",
+		"scope",
+		"timeout",
+		"type",
+		"use_ssl",
+		"verbose",
 	}
-	return monitorScriptArguments
-}
-
-func getMonitorMapAttributeList(mapName string) []string {
-
-	var attributes []string
-
-	switch mapName {
-	case "basic":
-		attributes = []string{"back_off", "delay", "failures", "machine", "note", "scope", "timeout", "type", "use_ssl", "verbose"}
-	case "http":
-		attributes = []string{"authentication", "host_header", "body_regex", "path", "status_regex"}
-	case "rtsp":
-		attributes = []string{"body_regex", "status_regex", "path"}
-	case "script":
-		attributes = []string{"program"}
-	case "sip":
-		attributes = []string{"body_regex", "status_regex", "transport"}
-	case "tcp":
-		attributes = []string{"close_string", "max_response_len", "response_regex", "write_string"}
-	case "udp":
-		attributes = []string{"accept_all"}
-	default:
-		attributes = []string{}
-	}
-	return attributes
 }
 
 func resourceMonitorSet(d *schema.ResourceData, m interface{}) error {
 
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	monitorConfiguration := make(map[string]interface{})
-	monitorPropertiesConfiguration := make(map[string]interface{})
+	monitorRequest := make(map[string]interface{})
+	monitorProperties := make(map[string]interface{})
 
 	name := d.Get("name").(string)
+	// basic section
+	util.GetSection(d, "basic", monitorProperties, basicMonitorKeys())
 
-	// Basic section
-	monitorBasicConfiguration := make(map[string]interface{})
-	monitorBasicConfiguration = util.AddSimpleGetAttributesToMap(d, monitorBasicConfiguration, "", getMonitorMapAttributeList("basic"))
-	monitorPropertiesConfiguration["basic"] = monitorBasicConfiguration
-
-	// Script section
-	monitorScriptConfiguration := make(map[string]interface{})
-	monitorScriptConfiguration = util.AddSimpleGetOkAttributesToMap(d, monitorScriptConfiguration, "script_", getMonitorMapAttributeList("script"))
-	if d.HasChange("script_arguments") {
-		if v, ok := d.GetOk("script_arguments"); ok {
-			monitorScriptConfiguration["arguments"] = buildScriptArgumentsSection(v.(*schema.Set).List())
-		}
-		monitorPropertiesConfiguration["script"] = monitorScriptConfiguration
-	}
-
-	// All other sections
-	for _, sectionName := range []string{
+	// all other sections apart from script
+	for _, section := range []string{
 		"http",
 		"rtsp",
 		"sip",
 		"tcp",
 		"udp",
 	} {
-		section := make(map[string]interface{})
-		section = util.AddSimpleGetOkAttributesToMap(d, section, fmt.Sprintf("%s_", sectionName), getMonitorMapAttributeList(sectionName))
-		monitorPropertiesConfiguration[sectionName] = section
+		if d.HasChange(section) {
+			monitorProperties[section] = d.Get(section).(*schema.Set).List()[0]
+		}
 	}
 
-	monitorConfiguration["properties"] = monitorPropertiesConfiguration
-	err := client.Set("monitors", name, monitorConfiguration, nil)
+	// script section
+	monitorScriptSection := make(map[string]interface{})
+	if d.HasChange("script_arguments") {
+		monitorScriptSection["arguments"] = d.Get("script_arguments").(*schema.Set).List()
+	}
+	if d.HasChange("script_program") {
+		monitorScriptSection["program"] = d.Get("script_program").(string)
+	}
+	monitorProperties["script"] = monitorScriptSection
+
+	monitorRequest["properties"] = monitorProperties
+	util.TraverseMapTypes(monitorRequest)
+	err := client.Set("monitors", name, monitorRequest, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Monitor error whilst creating %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Monitor error whilst creating %s: %v", name, err)
 	}
 	d.SetId(name)
 	return resourceMonitorRead(d, m)
@@ -306,32 +325,32 @@ func resourceMonitorSet(d *schema.ResourceData, m interface{}) error {
 
 func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 
-	name := d.Id()
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
-	monitorConfiguration := make(map[string]interface{})
+	monitorResponse := make(map[string]interface{})
+	name := d.Id()
 
 	client.WorkWithConfigurationResources()
-	err := client.GetByName("monitors", name, &monitorConfiguration)
+	err := client.GetByName("monitors", name, &monitorResponse)
 	if client.StatusCode == http.StatusNotFound {
 		d.SetId("")
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Monitor error whilst retrieving %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Monitor error whilst retrieving %s: %v", name, err)
+	}
+	monitorProperties := monitorResponse["properties"].(map[string]interface{})
+	monitorBasic := monitorProperties["basic"].(map[string]interface{})
+
+	// basic section
+	for _, key := range basicMonitorKeys() {
+		err := d.Set(key, monitorBasic[key])
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM Monitor error whilst setting key %s: %v", key, err)
+		}
 	}
 
-	monitorPropertiesConfiguration := monitorConfiguration["properties"].(map[string]interface{})
-
-	// Basic Section
-	monitorBasicConfiguration := monitorPropertiesConfiguration["basic"].(map[string]interface{})
-	util.SetSimpleAttributesFromMap(d, monitorBasicConfiguration, "", getMonitorMapAttributeList("basic"))
-
-	// Script Section
-	monitorScriptConfiguration := monitorPropertiesConfiguration["script"].(map[string]interface{})
-	d.Set("script_program", monitorScriptConfiguration["program"])
-	d.Set("script_arguments", buildScriptArgumentsSection(monitorScriptConfiguration["arguments"]))
-
+	// all other sections apart from script
 	for _, sectionName := range []string{
 		"http",
 		"rtsp",
@@ -339,8 +358,34 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 		"tcp",
 		"udp",
 	} {
-		section := monitorPropertiesConfiguration[sectionName].(map[string]interface{})
-		util.SetSimpleAttributesFromMap(d, section, fmt.Sprintf("%s_", sectionName), getMonitorMapAttributeList(sectionName))
+		set := make([]map[string]interface{}, 0)
+		readSectionMap, err := util.BuildReadMap(monitorProperties[sectionName].(map[string]interface{}))
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM Monitor error whilst building section map to set: %v", err)
+		}
+		set = append(set, readSectionMap)
+		err = d.Set(sectionName, set)
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM Monitor error whilst setting section %s: %v", sectionName, err)
+		}
+	}
+
+	// script section
+	err = d.Set("script_program", monitorProperties["script"].(map[string]interface{})["program"].(string))
+	if err != nil {
+		return fmt.Errorf("[ERROR] BrocadeVTM Monitor error whilst setting script_program: %v", err)
+	}
+	scriptArgumentSet := make([]map[string]interface{}, 0)
+	for _, item := range monitorProperties["script"].(map[string]interface{})["arguments"].([]interface{}) {
+		scriptArgument := make(map[string]interface{})
+		for key, value := range item.(map[string]interface{}) {
+			scriptArgument[key] = value.(string)
+		}
+		scriptArgumentSet = append(scriptArgumentSet, scriptArgument)
+	}
+	err = d.Set("script_arguments", scriptArgumentSet)
+	if err != nil {
+		return fmt.Errorf("[ERROR] BrocadeVTM Monitor error whilst setting script_arguments: %v", err)
 	}
 
 	return nil
