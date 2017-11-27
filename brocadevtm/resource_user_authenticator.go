@@ -265,7 +265,7 @@ func resourceUserAuthenticatorSet(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Set("user_authenticators", name, res, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst creating user authenticator %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM error whilst creating user authenticator %s: %v", name, err)
 	}
 	d.SetId(name)
 	return resourceUserAuthenticatorRead(d, m)
@@ -284,7 +284,7 @@ func resourceUserAuthenticatorRead(d *schema.ResourceData, m interface{}) error 
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst retrieving user authenticator %s: %v", d.Id(), err)
+		return fmt.Errorf("[ERROR] BrocadeVTM error whilst retrieving user authenticator %s: %v", d.Id(), err)
 	}
 
 	props := res["properties"].(map[string]interface{})

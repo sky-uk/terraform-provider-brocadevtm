@@ -73,11 +73,11 @@ func testAccBrocadeVTMBandwidthCheckDestroy(state *terraform.State, name string)
 
 		bandwidthClasses, err := client.GetAllResources("bandwidth")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM error whilst retrieving bandwidth classes: %+v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error whilst retrieving bandwidth classes: %+v", err)
 		}
 		for _, bandwidthClass := range bandwidthClasses {
 			if bandwidthClass["name"] == name {
-				return fmt.Errorf("Brocade vTM Bandwidth Class %s still exists", name)
+				return fmt.Errorf("[ERROR] Brocade vTM Bandwidth Class %s still exists", name)
 			}
 		}
 	}
@@ -89,10 +89,10 @@ func testAccBrocadeVTMBandwidthExists(name, resourceName string) resource.TestCh
 
 		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM Bandwidth Class %s wasn't found in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Bandwidth Class %s wasn't found in resources", name)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM Bandwidth Class ID not set for %s in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Bandwidth Class ID not set for %s in resources", name)
 		}
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
@@ -100,14 +100,14 @@ func testAccBrocadeVTMBandwidthExists(name, resourceName string) resource.TestCh
 
 		bandwidthClasses, err := client.GetAllResources("bandwidth")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM error whilst retriving bandwidth classes: %v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error whilst retriving bandwidth classes: %v", err)
 		}
 		for _, bandwidthClass := range bandwidthClasses {
 			if bandwidthClass["name"] == name {
 				return nil
 			}
 		}
-		return fmt.Errorf("Brocade vTM Bandwidth Class %s not found on remote vTM", name)
+		return fmt.Errorf("[ERROR] Brocade vTM Bandwidth Class %s not found on remote vTM", name)
 	}
 }
 

@@ -20,12 +20,12 @@ func IntBetween(min, max int) schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (s []string, es []error) {
 		v, ok := i.(int)
 		if !ok {
-			es = append(es, fmt.Errorf("expected type of %s to be int", k))
+			es = append(es, fmt.Errorf("[ERROR] expected type of %s to be int", k))
 			return
 		}
 
 		if v < min || v > max {
-			es = append(es, fmt.Errorf("expected %s to be in the range (%d - %d), got %d", k, min, max, v))
+			es = append(es, fmt.Errorf("[ERROR] expected %s to be in the range (%d - %d), got %d", k, min, max, v))
 			return
 		}
 
@@ -39,12 +39,12 @@ func IntAtLeast(min int) schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (s []string, es []error) {
 		v, ok := i.(int)
 		if !ok {
-			es = append(es, fmt.Errorf("expected type of %s to be int", k))
+			es = append(es, fmt.Errorf("[ERROR] expected type of %s to be int", k))
 			return
 		}
 
 		if v < min {
-			es = append(es, fmt.Errorf("expected %s to be at least (%d), got %d", k, min, v))
+			es = append(es, fmt.Errorf("[ERROR] expected %s to be at least (%d), got %d", k, min, v))
 			return
 		}
 
@@ -58,12 +58,12 @@ func IntAtMost(max int) schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (s []string, es []error) {
 		v, ok := i.(int)
 		if !ok {
-			es = append(es, fmt.Errorf("expected type of %s to be int", k))
+			es = append(es, fmt.Errorf("[ERROR] expected type of %s to be int", k))
 			return
 		}
 
 		if v > max {
-			es = append(es, fmt.Errorf("expected %s to be at most (%d), got %d", k, max, v))
+			es = append(es, fmt.Errorf("[ERROR] expected %s to be at most (%d), got %d", k, max, v))
 			return
 		}
 
@@ -78,7 +78,7 @@ func StringInSlice(valid []string, ignoreCase bool) schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (s []string, es []error) {
 		v, ok := i.(string)
 		if !ok {
-			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			es = append(es, fmt.Errorf("[ERROR] expected type of %s to be string", k))
 			return
 		}
 
@@ -88,7 +88,7 @@ func StringInSlice(valid []string, ignoreCase bool) schema.SchemaValidateFunc {
 			}
 		}
 
-		es = append(es, fmt.Errorf("expected %s to be one of %v, got %s", k, valid, v))
+		es = append(es, fmt.Errorf("[ERROR] expected %s to be one of %v, got %s", k, valid, v))
 		return
 	}
 }
@@ -99,11 +99,11 @@ func StringLenBetween(min, max int) schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (s []string, es []error) {
 		v, ok := i.(string)
 		if !ok {
-			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			es = append(es, fmt.Errorf("[ERROR] expected type of %s to be string", k))
 			return
 		}
 		if len(v) < min || len(v) > max {
-			es = append(es, fmt.Errorf("expected length of %s to be in the range (%d - %d), got %s", k, min, max, v))
+			es = append(es, fmt.Errorf("[ERROR] expected length of %s to be in the range (%d - %d), got %s", k, min, max, v))
 		}
 		return
 	}
@@ -116,12 +116,12 @@ func NoZeroValues(i interface{}, k string) (s []string, es []error) {
 	if reflect.ValueOf(i).Interface() == reflect.Zero(reflect.TypeOf(i)).Interface() {
 		switch reflect.TypeOf(i).Kind() {
 		case reflect.String:
-			es = append(es, fmt.Errorf("%s must not be empty", k))
+			es = append(es, fmt.Errorf("[ERROR] %s must not be empty", k))
 		case reflect.Int, reflect.Float64:
-			es = append(es, fmt.Errorf("%s must not be zero", k))
+			es = append(es, fmt.Errorf("[ERROR] %s must not be zero", k))
 		default:
 			// this validator should only ever be applied to TypeString, TypeInt and TypeFloat
-			panic(fmt.Errorf("can't use NoZeroValues with %T attribute %s", i, k))
+			panic(fmt.Errorf("[ERROR] can't use NoZeroValues with %T attribute %s", i, k))
 		}
 	}
 	return
@@ -133,27 +133,27 @@ func CIDRNetwork(min, max int) schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (s []string, es []error) {
 		v, ok := i.(string)
 		if !ok {
-			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			es = append(es, fmt.Errorf("[ERROR] expected type of %s to be string", k))
 			return
 		}
 
 		_, ipnet, err := net.ParseCIDR(v)
 		if err != nil {
 			es = append(es, fmt.Errorf(
-				"expected %s to contain a valid CIDR, got: %s with err: %s", k, v, err))
+				"[ERROR] expected %s to contain a valid CIDR, got: %s with err: %s", k, v, err))
 			return
 		}
 
 		if ipnet == nil || v != ipnet.String() {
 			es = append(es, fmt.Errorf(
-				"expected %s to contain a valid network CIDR, expected %s, got %s",
+				"[ERROR] expected %s to contain a valid network CIDR, expected %s, got %s",
 				k, ipnet, v))
 		}
 
 		sigbits, _ := ipnet.Mask.Size()
 		if sigbits < min || sigbits > max {
 			es = append(es, fmt.Errorf(
-				"expected %q to contain a network CIDR with between %d and %d significant bits, got: %d",
+				"[ERROR] expected %q to contain a network CIDR with between %d and %d significant bits, got: %d",
 				k, min, max, sigbits))
 		}
 
@@ -168,7 +168,7 @@ func ValidateListUniqueStrings(v interface{}, k string) (ws []string, errors []e
 	for n1, v1 := range v.([]interface{}) {
 		for n2, v2 := range v.([]interface{}) {
 			if v1.(string) == v2.(string) && n1 != n2 {
-				errors = append(errors, fmt.Errorf("%q: duplicate entry - %s", k, v1.(string)))
+				errors = append(errors, fmt.Errorf("[ERROR] %q: duplicate entry - %s", k, v1.(string)))
 			}
 		}
 	}
@@ -179,7 +179,7 @@ func ValidateListUniqueStrings(v interface{}, k string) (ws []string, errors []e
 // supplied string is a valid regular expression.
 func ValidateRegexp(v interface{}, k string) (ws []string, errors []error) {
 	if _, err := regexp.Compile(v.(string)); err != nil {
-		errors = append(errors, fmt.Errorf("%q: %s", k, err))
+		errors = append(errors, fmt.Errorf("[ERROR] %q: %s", k, err))
 	}
 	return
 }

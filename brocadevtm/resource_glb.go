@@ -269,7 +269,7 @@ func resourceGLBSet(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Set("glb_services", name, res, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM GLB error whilst creating %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM GLB error whilst creating %s: %v", name, err)
 	}
 	d.SetId(name)
 	return resourceGLBRead(d, m)
@@ -288,7 +288,7 @@ func resourceGLBRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM GLB error whilst retrieving %s: %v", d.Id(), err)
+		return fmt.Errorf("[ERROR] BrocadeVTM GLB error whilst retrieving %s: %v", d.Id(), err)
 	}
 
 	pros := res["properties"].(map[string]interface{})

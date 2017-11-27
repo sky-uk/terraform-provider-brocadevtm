@@ -140,11 +140,11 @@ func testAccBrocadeVTMApplianceNatCheckDestroy(state *terraform.State, name stri
 
 		resources, err := client.GetAllResources("appliance/nat")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM error whilst retrieving appliance nat: %+v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error whilst retrieving appliance nat: %+v", err)
 		}
 		for _, resource := range resources {
 			if resource["name"] == name {
-				return fmt.Errorf("Brocade vTM Appliance nat %s still exists", name)
+				return fmt.Errorf("[ERROR] Brocade vTM Appliance nat %s still exists", name)
 			}
 		}
 	}
@@ -156,10 +156,10 @@ func testAccBrocadeVTMApplianceNatExists(name, resourceName string) resource.Tes
 
 		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM Appliance Nat %s wasn't found in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Appliance Nat %s wasn't found in resources", name)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM Appliance Nat ID not set for %s in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Appliance Nat ID not set for %s in resources", name)
 		}
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
@@ -167,7 +167,7 @@ func testAccBrocadeVTMApplianceNatExists(name, resourceName string) resource.Tes
 		nat := make(map[string]interface{})
 		err := client.GetByName("appliance/nat", "", &nat)
 		if err != nil {
-			return fmt.Errorf("Brocade vTM error whilst retriving appliance nat: %v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error whilst retriving appliance nat: %v", err)
 		}
 		return nil
 	}

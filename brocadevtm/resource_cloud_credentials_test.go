@@ -73,12 +73,12 @@ func testAccBrocadeVTMCloudCredentialsCheckDestroy(state *terraform.State, name 
 
 		err := client.GetByName("cloud_api_credentials", rs.Primary.ID, &cloudCredentialsConfiguration)
 		if client.StatusCode == http.StatusOK {
-			return fmt.Errorf("Brocade vTM Check Destroy Error: Cloud Credential %s still exists", name)
+			return fmt.Errorf("[ERROR] Brocade vTM Check Destroy Error: Cloud Credential %s still exists", name)
 		}
 		if client.StatusCode == http.StatusNotFound {
 			return nil
 		}
-		return fmt.Errorf("Brocade vTM Check Destroy Error: Cloud Credential %+v ", err)
+		return fmt.Errorf("[ERROR] Brocade vTM Check Destroy Error: Cloud Credential %+v ", err)
 	}
 	return nil
 }
@@ -87,11 +87,11 @@ func testAccBrocadeVTMCloudCredentialsExists(name, resourceName string) resource
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("Not found: %s", resourceName)
+			return fmt.Errorf("[ERROR] Not found: %s", resourceName)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No ID is set")
+			return fmt.Errorf("[ERROR] No ID is set")
 		}
 
 		config := testAccProvider.Meta().(map[string]interface{})
@@ -100,7 +100,7 @@ func testAccBrocadeVTMCloudCredentialsExists(name, resourceName string) resource
 		cloudCredentialsConfiguration := make(map[string]interface{})
 		err := client.GetByName("cloud_api_credentials", name, &cloudCredentialsConfiguration)
 		if client.StatusCode != http.StatusOK {
-			return fmt.Errorf("Brocade vTM error whilst retrieving VTM Cloud Credentials: %+v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error whilst retrieving VTM Cloud Credentials: %+v", err)
 		}
 		return nil
 	}

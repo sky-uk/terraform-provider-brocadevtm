@@ -103,7 +103,7 @@ func resourceCloudCredentialsCreate(d *schema.ResourceData, m interface{}) error
 
 	err := client.Set("cloud_api_credentials", name, &cloudCredentialsConfiguration, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst creating Cloud API Credentials %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM error whilst creating Cloud API Credentials %s: %v", name, err)
 	}
 	d.SetId(name)
 	return resourceCloudCredentialsRead(d, m)
@@ -144,7 +144,7 @@ func resourceCloudCredentialsUpdate(d *schema.ResourceData, m interface{}) error
 
 	err := client.Set("cloud_api_credentials", name, &cloudCredentialsConfiguration, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst updating Cloud API Credentials %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM error whilst updating Cloud API Credentials %s: %v", name, err)
 	}
 
 	return resourceCloudCredentialsRead(d, m)
@@ -164,7 +164,7 @@ func resourceCloudCredentialsRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst retrieving Cloud API Credentials %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM error whilst retrieving Cloud API Credentials %s: %v", name, err)
 	}
 
 	cloudCredentialsPropertiesConfiguration := cloudCredentialsConfiguration["properties"].(map[string]interface{})

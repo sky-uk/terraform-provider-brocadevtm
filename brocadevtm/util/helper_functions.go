@@ -49,7 +49,7 @@ func BuildReadMap(inputMap map[string]interface{}) (map[string]interface{}, erro
 		case []interface{}:
 			builtMap[key] = schema.NewSet(schema.HashString, value.([]interface{}))
 		default:
-			return builtMap, fmt.Errorf("util.BuildReadListMaps doesn't understand type for %+v", value)
+			return builtMap, fmt.Errorf("[ERROR] util.BuildReadListMaps doesn't understand type for %+v", value)
 		}
 	}
 	return builtMap, nil
@@ -59,7 +59,7 @@ func BuildReadMap(inputMap map[string]interface{}) (map[string]interface{}, erro
 func GetSection(d *schema.ResourceData, sectionName string, properties map[string]interface{}, keys []string) error {
 	m, err := GetAttributesToMap(d, keys)
 	if err != nil {
-		log.Println("Error getting section ", sectionName, err)
+		log.Println("[ERROR] Error getting section ", sectionName, err)
 		return err
 	}
 	properties[sectionName] = m
@@ -95,7 +95,7 @@ func GetAttributesToMap(d *schema.ResourceData, attributeNames []string) (map[st
 		case *schema.Set:
 			m[item] = v.(*schema.Set).List()
 		default:
-			return nil, fmt.Errorf("error, key %s of not valid type", item)
+			return nil, fmt.Errorf("[ERROR] error, key %s of not valid type", item)
 		}
 	}
 	return m, nil

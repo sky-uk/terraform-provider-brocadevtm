@@ -63,12 +63,12 @@ func testAccBrocadeVTMAptimizerProfilesCheckDestroy(state *terraform.State, name
 
 		err := client.GetByName("aptimizer/profiles", rs.Primary.ID, &aptimizerProfileConfig)
 		if client.StatusCode == http.StatusOK {
-			return fmt.Errorf("Brocade vTM Check Destroy Error: Aptimizer Profile %s still exists", name)
+			return fmt.Errorf("[ERROR] Brocade vTM Check Destroy Error: Aptimizer Profile %s still exists", name)
 		}
 		if client.StatusCode == http.StatusNotFound {
 			return nil
 		}
-		return fmt.Errorf("Brocade vTM Check Destroy Error: Aptimizer Profile %+v ", err)
+		return fmt.Errorf("[ERROR] Brocade vTM Check Destroy Error: Aptimizer Profile %+v ", err)
 	}
 	return nil
 }
@@ -77,11 +77,11 @@ func testAccBrocadeVTMAptimizerProfilesExists(name, resourceName string) resourc
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("Not found: %s", resourceName)
+			return fmt.Errorf("[ERROR] Not found: %s", resourceName)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM Aptimizer Profile ID not set for %s in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Aptimizer Profile ID not set for %s in resources", name)
 		}
 
 		config := testAccProvider.Meta().(map[string]interface{})
@@ -90,7 +90,7 @@ func testAccBrocadeVTMAptimizerProfilesExists(name, resourceName string) resourc
 		aptimizerProfileConfig := make(map[string]interface{})
 		err := client.GetByName("aptimizer/profiles", name, &aptimizerProfileConfig)
 		if client.StatusCode != http.StatusOK {
-			return fmt.Errorf("Brocade vTM error whilst retrieving VTM Aptimizer Profile: %+v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error whilst retrieving VTM Aptimizer Profile: %+v", err)
 		}
 		return nil
 	}

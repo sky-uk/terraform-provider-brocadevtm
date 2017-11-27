@@ -72,12 +72,12 @@ func testAccBrocadeVTMSSLClientKeyCheckDestroy(state *terraform.State, keyName s
 
 		err := client.GetByName("ssl/client_keys", rs.Primary.ID, sslKeyConfig)
 		if client.StatusCode == http.StatusOK {
-			return fmt.Errorf("Brocade vTM Check Destroy Error: ssl/client_keys %s still exists", keyName)
+			return fmt.Errorf("[ERROR] Brocade vTM Check Destroy Error: ssl/client_keys %s still exists", keyName)
 		}
 		if client.StatusCode == http.StatusNotFound {
 			return nil
 		}
-		return fmt.Errorf("Brocade vTM Check Destroy Error: ssl/client_keys %+v ", err)
+		return fmt.Errorf("[ERROR] Brocade vTM Check Destroy Error: ssl/client_keys %+v ", err)
 	}
 	return nil
 }
@@ -86,11 +86,11 @@ func testAccBrocadeVTMSSLClientKeyExists(keyName, keyResourceName string) resour
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[keyResourceName]
 		if !ok {
-			return fmt.Errorf("Not found: %s", keyName)
+			return fmt.Errorf("[ERROR] Not found: %s", keyName)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM SSL Client Key ID not set for %s in resources", keyName)
+			return fmt.Errorf("\n[ERROR] Brocade vTM SSL Client Key ID not set for %s in resources", keyName)
 		}
 
 		config := testAccProvider.Meta().(map[string]interface{})
@@ -99,7 +99,7 @@ func testAccBrocadeVTMSSLClientKeyExists(keyName, keyResourceName string) resour
 		sslKeyConfig := make(map[string]interface{})
 		err := client.GetByName("ssl/client_keys", keyName, sslKeyConfig)
 		if client.StatusCode != http.StatusOK {
-			return fmt.Errorf("Brocade vTM error whilst retrieving ssl/client_keys: %+v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error whilst retrieving ssl/client_keys: %+v", err)
 		}
 		return nil
 	}
