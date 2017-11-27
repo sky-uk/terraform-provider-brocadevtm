@@ -170,11 +170,11 @@ func testAccBrocadeVTMTrafficIPGroupCheckDestroy(state *terraform.State, name st
 
 		trafficIPGroups, err := client.GetAllResources("traffic_ip_groups")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM traffic IP group error retrieving the list of traffic IP groups")
+			return fmt.Errorf("[ERROR] Brocade vTM traffic IP group error retrieving the list of traffic IP groups")
 		}
 		for _, trafficIPGroupItem := range trafficIPGroups {
 			if trafficIPGroupItem["name"] == name {
-				return fmt.Errorf("Brocade vTM traffic IP group %s still exists", name)
+				return fmt.Errorf("[ERROR] Brocade vTM traffic IP group %s still exists", name)
 			}
 		}
 	}
@@ -186,10 +186,10 @@ func testAccBrocadeVTMTrafficIPGroupExists(trafficIPGroupName, trafficIPGroupRes
 
 		rs, ok := state.RootModule().Resources[trafficIPGroupResourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM Traffic IP Group resource %s not found in resources", trafficIPGroupName)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Traffic IP Group resource %s not found in resources", trafficIPGroupName)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM Traffic IP Group ID not set in resources")
+			return fmt.Errorf("\n[ERROR] Brocade vTM Traffic IP Group ID not set in resources")
 		}
 
 		config := testAccProvider.Meta().(map[string]interface{})
@@ -197,14 +197,14 @@ func testAccBrocadeVTMTrafficIPGroupExists(trafficIPGroupName, trafficIPGroupRes
 		trafficIPGroups, err := client.GetAllResources("traffic_ip_groups")
 
 		if err != nil {
-			return fmt.Errorf("Error: %+v", err)
+			return fmt.Errorf("[ERROR] %+v", err)
 		}
 		for _, trafficIPGroupItem := range trafficIPGroups {
 			if trafficIPGroupItem["name"] == trafficIPGroupName {
 				return nil
 			}
 		}
-		return fmt.Errorf("Brocade vTM Traffic IP Group %s not found on remote vTM", trafficIPGroupName)
+		return fmt.Errorf("[ERROR] Brocade vTM Traffic IP Group %s not found on remote vTM", trafficIPGroupName)
 	}
 }
 

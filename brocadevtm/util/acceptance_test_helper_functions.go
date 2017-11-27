@@ -21,7 +21,7 @@ func AccTestCheckValueInKeyPattern(resourceName string, keyPattern *regexp.Regex
 				}
 			}
 		}
-		return fmt.Errorf("value %s not found in resource %s", checkValue, resourceName)
+		return fmt.Errorf("[ERROR] value %s not found in resource %s", checkValue, resourceName)
 	}
 }
 

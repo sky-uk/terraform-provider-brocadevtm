@@ -69,11 +69,11 @@ func testAccBrocadeVTMSSLCasConfigCheckDestroy(state *terraform.State, name stri
 		}
 		sslCasList, err := client.GetAllResources("ssl/cas")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM error occurred while retrieving list of SSL cas configs: %v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error occurred while retrieving list of SSL cas configs: %v", err)
 		}
 		for _, childSSLCasConfig := range sslCasList {
 			if childSSLCasConfig["name"] == name {
-				return fmt.Errorf("Error: Brocade vTM SSL cas config %s still exists", name)
+				return fmt.Errorf("[ERROR] Brocade vTM SSL cas config %s still exists", name)
 			}
 		}
 	}
@@ -90,22 +90,22 @@ func testAccBrocadeVTMSSLCasConfigExists(name, resourceName string) resource.Tes
 
 		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM SSL cas config %s wasn't found in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM SSL cas config %s wasn't found in resources", name)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM SSL cas config ID not set for %s in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM SSL cas config ID not set for %s in resources", name)
 		}
 
 		sslCasConfigList, err := client.GetAllResources("ssl/cas")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM error occurred while retrieving list of SSL cas configs: %v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error occurred while retrieving list of SSL cas configs: %v", err)
 		}
 		for _, sslCasConfig := range sslCasConfigList {
 			if sslCasConfig["name"] == name {
 				return nil
 			}
 		}
-		return fmt.Errorf("Brocade vTM SSL cas config %s not found on remote vTM", name)
+		return fmt.Errorf("[ERROR] Brocade vTM SSL cas config %s not found on remote vTM", name)
 	}
 }
 

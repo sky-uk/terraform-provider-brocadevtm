@@ -67,7 +67,7 @@ func SSLKeyCreate(d *schema.ResourceData, meta interface{}, keyType string) erro
 	client := config["jsonClient"].(*api.Client)
 	err := client.Set(keyType, name, sslKeyConfig, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM %s error whilst creating %s: %v", keyType, name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM %s error whilst creating %s: %v", keyType, name, err)
 	}
 	d.SetId(name)
 
@@ -86,7 +86,7 @@ func SSLKeyRead(d *schema.ResourceData, meta interface{}, keyType string) error 
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM %s error whilst retrieving %s: %v", keyType, d.Id(), err)
+		return fmt.Errorf("[ERROR] BrocadeVTM %s error whilst retrieving %s: %v", keyType, d.Id(), err)
 	}
 
 	sslClientKeyPropertiesConfig := sslClientKeyConfig["properties"].(map[string]interface{})
@@ -126,7 +126,7 @@ func SSLKeyUpdate(d *schema.ResourceData, meta interface{}, keyType string) erro
 	client := config["jsonClient"].(*api.Client)
 	err := client.Set(keyType, d.Id(), sslKeyConfig, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM %s error whilst updating %s: %v", keyType, d.Id(), err)
+		return fmt.Errorf("[ERROR] BrocadeVTM %s error whilst updating %s: %v", keyType, d.Id(), err)
 	}
 	return nil
 }

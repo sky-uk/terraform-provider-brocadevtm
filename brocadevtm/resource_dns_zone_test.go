@@ -68,11 +68,11 @@ func testAccBrocadeVTMDNSZoneCheckDestroy(state *terraform.State, name string) e
 		}
 		zones, err := client.GetAllResources("dns_server/zones")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM DNS zone - error occurred whilst retrieving a list of all DNS zones: %+v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM DNS zone - error occurred whilst retrieving a list of all DNS zones: %+v", err)
 		}
 		for _, dnsZone := range zones {
 			if dnsZone["name"] == name {
-				return fmt.Errorf("Brocade vTM DNS zone %s still exists", name)
+				return fmt.Errorf("[ERROR] Brocade vTM DNS zone %s still exists", name)
 			}
 		}
 	}
@@ -84,24 +84,24 @@ func testAccBrocadeVTMDNSZoneExists(dnsZoneName, dnsZoneResourceName string) res
 
 		rs, ok := state.RootModule().Resources[dnsZoneResourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM DNS zone %s wasn't found in resources", dnsZoneName)
+			return fmt.Errorf("\n[ERROR] Brocade vTM DNS zone %s wasn't found in resources", dnsZoneName)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM DNS zone ID not set for %s in resources", dnsZoneName)
+			return fmt.Errorf("\n[ERROR] Brocade vTM DNS zone ID not set for %s in resources", dnsZoneName)
 		}
 
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
 		zones, err := client.GetAllResources("dns_server/zones")
 		if err != nil {
-			return fmt.Errorf("Error getting all dns zones: %+v", err)
+			return fmt.Errorf("[ERROR] Error getting all dns zones: %+v", err)
 		}
 		for _, dnsZone := range zones {
 			if dnsZone["name"] == dnsZoneName {
 				return nil
 			}
 		}
-		return fmt.Errorf("Brocade vTM DNS zone %s not found on remote vTM", dnsZoneName)
+		return fmt.Errorf("[ERROR] Brocade vTM DNS zone %s not found on remote vTM", dnsZoneName)
 	}
 }
 

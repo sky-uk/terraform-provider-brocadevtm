@@ -91,7 +91,7 @@ func resourceUserGroupCreate(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Set("user_groups", name, &res, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM User Group error whilst creating %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM User Group error whilst creating %s: %v", name, err)
 	}
 
 	d.SetId(name)
@@ -112,7 +112,7 @@ func resourceUserGroupRead(d *schema.ResourceData, m interface{}) error {
 	}
 	if err != nil {
 		d.SetId("")
-		return fmt.Errorf("BrocadeVTM User Group error whilst retrieving %s: %v", d.Id(), err)
+		return fmt.Errorf("[ERROR] BrocadeVTM User Group error whilst retrieving %s: %v", d.Id(), err)
 	}
 
 	props := res["properties"].(map[string]interface{})
@@ -151,7 +151,7 @@ func resourceUserGroupUpdate(d *schema.ResourceData, m interface{}) error {
 	client := config["jsonClient"].(*api.Client)
 	err := client.Set("user_groups", d.Id(), res, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM User Group error whilst updating %s: %v", d.Id(), err)
+		return fmt.Errorf("[ERROR] BrocadeVTM User Group error whilst updating %s: %v", d.Id(), err)
 	}
 	return resourceUserGroupRead(d, m)
 }

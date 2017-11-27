@@ -1335,7 +1335,7 @@ func resourceVirtualServerSet(d *schema.ResourceData, m interface{}) error {
 	util.TraverseMapTypes(res)
 	err := client.Set("virtual_servers", name, res, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Virtual Server error whilst creating/updating %s: %s", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Virtual Server error whilst creating/updating %s: %s", name, err)
 	}
 	d.SetId(name)
 
@@ -1356,7 +1356,7 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("BrocadeVTM Virtual Server error whilst retrieving %s: %v", d.Id(), err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Virtual Server error whilst retrieving %s: %v", d.Id(), err)
 	}
 
 	props := res["properties"].(map[string]interface{})

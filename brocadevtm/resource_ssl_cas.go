@@ -46,7 +46,7 @@ func resourceSSLCasCreate(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Set("ssl/cas", name, []byte(sslCasConfig), nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM SSL cas config file error whilst creating %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM SSL cas config file error whilst creating %s: %v", name, err)
 	}
 
 	d.SetId(name)
@@ -68,7 +68,7 @@ func resourceSSLCasRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM SSL cas config file error whilst reading %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM SSL cas config file error whilst reading %s: %v", name, err)
 	}
 	d.Set("ssl_cas_config", string(*sslCasConfig))
 
@@ -91,7 +91,7 @@ func resourceSSLCasUpdate(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Set("ssl/cas", name, []byte(sslCasConfig), nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM SSL cas config file error whilst updating %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM SSL cas config file error whilst updating %s: %v", name, err)
 	}
 	d.Set("ssl_cas_config", sslCasConfig)
 	return resourceSSLCasRead(d, m)

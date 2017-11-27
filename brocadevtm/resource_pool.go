@@ -691,7 +691,7 @@ func validateAcceptFromMask(v interface{}, k string) (ws []string, errors []erro
 	acceptFromMask := v.(string)
 	acceptFromPattern := regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$`)
 	if !acceptFromPattern.MatchString(acceptFromMask) {
-		errors = append(errors, fmt.Errorf("%q must be in the format xxx.xxx.xxx.xxx/xx e.g. 10.0.0.0/8", k))
+		errors = append(errors, fmt.Errorf("[ERROR] %q must be in the format xxx.xxx.xxx.xxx/xx e.g. 10.0.0.0/8", k))
 	}
 	return
 }
@@ -701,7 +701,7 @@ func validateNode(v interface{}, k string) (ws []string, errors []error) {
 	node := v.(string)
 	validateNode := regexp.MustCompile(`[\w.-]+:\d{1,5}$`)
 	if !validateNode.MatchString(node) {
-		errors = append(errors, fmt.Errorf("%q must be a valid IP/Hostname and port seperated by a colon. i.e 127.0.0.1:80", k))
+		errors = append(errors, fmt.Errorf("[ERROR] %q must be a valid IP/Hostname and port seperated by a colon. i.e 127.0.0.1:80", k))
 	}
 	return
 }
@@ -797,14 +797,14 @@ func resourcePoolSet(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if len(nodesTable.(*schema.Set).List()) == 0 && len(nodesList.(*schema.Set).List()) == 0 {
-		return fmt.Errorf("Error creating/updating resource: one of nodes_list or nodes_table must be defined")
+		return fmt.Errorf("[ERROR] creating/updating resource: one of nodes_list or nodes_table must be defined")
 	}
 
 	poolRequest["properties"] = poolProperties
 	util.TraverseMapTypes(poolRequest)
 	err := client.Set("pools", name, poolRequest, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Pool error whilst creating/updating %s: %s", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Pool error whilst creating/updating %s: %s", name, err)
 	}
 	d.SetId(name)
 
@@ -825,7 +825,7 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("BrocadeVTM Pools error whilst retrieving %s: %v", d.Id(), err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Pools error whilst retrieving %s: %v", d.Id(), err)
 	}
 
 	poolsProperties := poolResponse["properties"].(map[string]interface{})

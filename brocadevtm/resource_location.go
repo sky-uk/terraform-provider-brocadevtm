@@ -62,7 +62,7 @@ func resourceLocation() *schema.Resource {
 func checkValidLocationType(v interface{}, k string) (ws []string, errors []error) {
 	locationType := v.(string)
 	if locationType != "config" && locationType != "glb" {
-		errors = append(errors, fmt.Errorf("%q must be one of config or glb", k))
+		errors = append(errors, fmt.Errorf("[ERROR] %q must be one of config or glb", k))
 	}
 	return
 }
@@ -70,7 +70,7 @@ func checkValidLocationType(v interface{}, k string) (ws []string, errors []erro
 func checkLatitudeWithinRange(v interface{}, k string) (ws []string, errors []error) {
 	latitude := v.(float64)
 	if latitude < -90 || latitude > 90 {
-		errors = append(errors, fmt.Errorf("%q must be between -90 and 90 degrees inclusive", k))
+		errors = append(errors, fmt.Errorf("[ERROR] %q must be between -90 and 90 degrees inclusive", k))
 	}
 	return
 }
@@ -78,7 +78,7 @@ func checkLatitudeWithinRange(v interface{}, k string) (ws []string, errors []er
 func checkLongitudeWithinRange(v interface{}, k string) (ws []string, errors []error) {
 	longitude := v.(float64)
 	if longitude < -180 || longitude > 180 {
-		errors = append(errors, fmt.Errorf("%q must be between -180 and 180 degrees inclusive", k))
+		errors = append(errors, fmt.Errorf("[ERROR] %q must be between -180 and 180 degrees inclusive", k))
 	}
 	return
 }
@@ -117,7 +117,7 @@ func resourceLocationCreate(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Set("locations", name, locationConfiguration, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Location error whilst creating %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Location error whilst creating %s: %v", name, err)
 	}
 
 	d.SetId(name)
@@ -142,7 +142,7 @@ func resourceLocationRead(d *schema.ResourceData, m interface{}) error {
 	}
 	if err != nil {
 		d.SetId("")
-		return fmt.Errorf("BrocadeVTM location error whilst retrieving %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM location error whilst retrieving %s: %v", name, err)
 	}
 	locationPropertiesConfiguration = locationConfiguration["properties"].(map[string]interface{})
 	locationBasicConfiguration = locationPropertiesConfiguration["basic"].(map[string]interface{})
@@ -190,7 +190,7 @@ func resourceLocationUpdate(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Set("locations", name, locationConfiguration, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM locations error whilst updating %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM locations error whilst updating %s: %v", name, err)
 	}
 
 	return resourceLocationRead(d, m)

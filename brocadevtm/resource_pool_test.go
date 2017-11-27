@@ -506,21 +506,21 @@ func testCheckPoolExists(resName string) resource.TestCheckFunc {
 
 		rs, ok := s.RootModule().Resources[resName]
 		if !ok {
-			return fmt.Errorf("Not found: %s", resName)
+			return fmt.Errorf("[ERROR] Not found: %s", resName)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No pool name is set")
+			return fmt.Errorf("[ERROR] No pool name is set")
 		}
 
 		var name string
 		if name, ok = rs.Primary.Attributes["name"]; ok && name == "" {
-			return fmt.Errorf("No pool name is set")
+			return fmt.Errorf("[ERROR] No pool name is set")
 		}
 
 		err := client.GetByName("pools", name, &pool)
 		if err != nil {
-			return fmt.Errorf("Received an error retrieving service with name: %s, %s", name, err)
+			return fmt.Errorf("[ERROR] retrieving pool with name: %s, %s", name, err)
 		}
 		return nil
 	}

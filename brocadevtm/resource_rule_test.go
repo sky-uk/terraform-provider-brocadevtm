@@ -71,11 +71,11 @@ func testAccBrocadeVTMRuleCheckDestroy(state *terraform.State, name string) erro
 		}
 		allRules, err := vtmClient.GetAllResources("rules")
 		if err != nil {
-			return fmt.Errorf("Error: Brocade vTM error occurred while retrieving list of rules, %v", err)
+			return fmt.Errorf("[ERROR] Error: Brocade vTM error occurred while retrieving list of rules, %v", err)
 		}
 		for _, childRule := range allRules {
 			if childRule["name"] == name {
-				return fmt.Errorf("Error: Brocade vTM Rule %s still exists", name)
+				return fmt.Errorf("[ERROR] Error: Brocade vTM Rule %s still exists", name)
 			}
 		}
 	}
@@ -88,23 +88,23 @@ func testAccBrocadeVTMRuleExists(ruleName, ruleResourceName string) resource.Tes
 
 		rs, ok := state.RootModule().Resources[ruleResourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM Rule %s wasn't found in resources", ruleName)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Rule %s wasn't found in resources", ruleName)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM Rule ID not set for %s in resources", ruleName)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Rule ID not set for %s in resources", ruleName)
 		}
 		config := testAccProvider.Meta().(map[string]interface{})
 		vtmClient := config["octetClient"].(*api.Client)
 		allRules, err := vtmClient.GetAllResources("rules")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM Rule - error while retrieving a list of all rules: %v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM Rule - error while retrieving a list of all rules: %v", err)
 		}
 		for _, childRule := range allRules {
 			if childRule["name"] == ruleName {
 				return nil
 			}
 		}
-		return fmt.Errorf("Brocade vTM Rule %s not found on remote vTM", ruleName)
+		return fmt.Errorf("[ERROR] Brocade vTM Rule %s not found on remote vTM", ruleName)
 	}
 }
 

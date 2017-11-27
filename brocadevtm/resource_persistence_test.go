@@ -83,11 +83,11 @@ func testAccBrocadeVTMPersistenceCheckDestroy(state *terraform.State, name strin
 
 		persistenceClasses, err := client.GetAllResources("persistence")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM error whilst retrieving list of persistence classes: %+v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error whilst retrieving list of persistence classes: %+v", err)
 		}
 		for _, persistenceClass := range persistenceClasses {
 			if persistenceClass["name"] == name {
-				return fmt.Errorf("Brocade vTM Persistance %s still exists", name)
+				return fmt.Errorf("[ERROR] Brocade vTM Persistance %s still exists", name)
 			}
 		}
 	}
@@ -99,10 +99,10 @@ func testAccBrocadeVTMPersistenceExists(name, resourceName string) resource.Test
 
 		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM Persistence %s wasn't found in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Persistence %s wasn't found in resources", name)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM Persistance ID not set for %s in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Persistance ID not set for %s in resources", name)
 		}
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
@@ -110,14 +110,14 @@ func testAccBrocadeVTMPersistenceExists(name, resourceName string) resource.Test
 
 		persistenceClasses, err := client.GetAllResources("persistence")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM error whilst retriving Persistance classes: %v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error whilst retriving Persistance classes: %v", err)
 		}
 		for _, persistenceClass := range persistenceClasses {
 			if persistenceClass["name"] == name {
 				return nil
 			}
 		}
-		return fmt.Errorf("Brocade vTM Perstistence %s not found on remote vTM", name)
+		return fmt.Errorf("[ERROR] Brocade vTM Perstistence %s not found on remote vTM", name)
 	}
 }
 

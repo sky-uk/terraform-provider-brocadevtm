@@ -120,11 +120,11 @@ func testAccBrocadeVTMMonitorCheckDestroy(state *terraform.State, name string) e
 		monitors, err := client.GetAllResources("monitors")
 
 		if err != nil {
-			return fmt.Errorf("Brocade vTM Monitor - error occurred whilst retrieving a list of all monitors: %+v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM Monitor - error occurred whilst retrieving a list of all monitors: %+v", err)
 		}
 		for _, monitorChild := range monitors {
 			if monitorChild["name"] == name {
-				return fmt.Errorf("Brocade vTM monitor %s still exists", name)
+				return fmt.Errorf("[ERROR] Brocade vTM monitor %s still exists", name)
 			}
 		}
 	}
@@ -136,10 +136,10 @@ func testAccBrocadeVTMMonitorExists(monitorName, monitorResourceName string) res
 
 		rs, ok := state.RootModule().Resources[monitorResourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM Monitor resource %s not found in resources", monitorResourceName)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Monitor resource %s not found in resources", monitorResourceName)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM Monitor ID not set in resources")
+			return fmt.Errorf("\n[ERROR] Brocade vTM Monitor ID not set in resources")
 		}
 
 		config := testAccProvider.Meta().(map[string]interface{})
@@ -147,15 +147,14 @@ func testAccBrocadeVTMMonitorExists(monitorName, monitorResourceName string) res
 		monitors, err := client.GetAllResources("monitors")
 
 		if err != nil {
-			//return fmt.Errorf("Error: %+v", err)
-			return fmt.Errorf("Error getting all monitors: %+v", err)
+			return fmt.Errorf("[ERROR] getting all monitors: %+v", err)
 		}
 		for _, monitorChild := range monitors {
 			if monitorChild["name"] == monitorName {
 				return nil
 			}
 		}
-		return fmt.Errorf("Brocade vTM Monitor %s not found on remote vTM", monitorName)
+		return fmt.Errorf("[ERROR] Brocade vTM Monitor %s not found on remote vTM", monitorName)
 	}
 }
 

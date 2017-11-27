@@ -131,7 +131,7 @@ func resourceGlobalSettings() *schema.Resource {
 func validateSocketOptimizations(v interface{}, k string) (ws []string, errors []error) {
 	so := v.(string)
 	if so != "auto" && so != "no" && so != "yes" {
-		errors = append(errors, fmt.Errorf("socket_optimizations value not valid (must be either \"auto\" or \"no\" or \"yes\""))
+		errors = append(errors, fmt.Errorf("[ERROR] socket_optimizations value not valid (must be either \"auto\" or \"no\" or \"yes\""))
 	}
 	return
 }
@@ -159,7 +159,7 @@ func resourceGlobalSettingsRead(d *schema.ResourceData, m interface{}) error {
 	err := client.GetByName("global_settings", "", &globalSettings)
 	if err != nil {
 		d.SetId("")
-		return fmt.Errorf("BrocadeVTM error whilst reading %s: %v", "", err)
+		return fmt.Errorf("[ERROR] BrocadeVTM error whilst reading %s: %v", "", err)
 	}
 	properties := globalSettings["properties"].(map[string]interface{})
 	log.Println("Properties:\n", properties)
@@ -186,7 +186,7 @@ func resourceGlobalSettingsUpdate(d *schema.ResourceData, m interface{}) error {
 		globalSettings["properties"] = properties
 		err := client.Set("global_settings", "", globalSettings, nil)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM DNS error whilst updating %s: %v", "", err)
+			return fmt.Errorf("[ERROR] BrocadeVTM DNS error whilst updating %s: %v", "", err)
 		}
 	}
 	return resourceGlobalSettingsRead(d, m)

@@ -169,7 +169,7 @@ func validateTrafficIPGroupMulticastIP(v interface{}, k string) (ws []string, er
 	multicastIP := v.(string)
 	validMulticastIPs := regexp.MustCompile(`^2[2-3][0-9]\.[0-9]+\.[0-9]+\.[0-9]+$`)
 	if !validMulticastIPs.MatchString(multicastIP) {
-		errors = append(errors, fmt.Errorf("%q must be a valid multicast IP (224.0.0.0 - 239.255.255.255)", k))
+		errors = append(errors, fmt.Errorf("[ERROR] %q must be a valid multicast IP (224.0.0.0 - 239.255.255.255)", k))
 	}
 	return
 }
@@ -184,7 +184,7 @@ func getTrafficManagers(m interface{}) ([]string, error) {
 
 	trafficManagerList, err := client.GetAllResources("traffic_managers")
 	if err != nil {
-		return trafficManagers, fmt.Errorf("BrocadeVTM Traffic Managers error whilst retrieving the list of Traffic Managers: %v", err)
+		return trafficManagers, fmt.Errorf("[ERROR] BrocadeVTM Traffic Managers error whilst retrieving the list of Traffic Managers: %v", err)
 	}
 
 	for _, trafficManagerItem := range trafficManagerList {
@@ -231,7 +231,7 @@ func resourceTrafficIPGroupSet(d *schema.ResourceData, m interface{}) error {
 	if len(trafficIPGroupProperties["basic"].(map[string]interface{})["machines"].([]interface{})) == 0 {
 		trafficManagers, err := getTrafficManagers(m)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst creating %s: %v", name, err)
+			return fmt.Errorf("[ERROR] BrocadeVTM Traffic IP Group error whilst creating %s: %v", name, err)
 		}
 		trafficIPGroupProperties["basic"].(map[string]interface{})["machines"] = trafficManagers
 	}
@@ -239,7 +239,7 @@ func resourceTrafficIPGroupSet(d *schema.ResourceData, m interface{}) error {
 	trafficIPGroupRequest["properties"] = trafficIPGroupProperties
 	err := client.Set("traffic_ip_groups", name, trafficIPGroupRequest, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst creating/updating %s: %s", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Traffic IP Group error whilst creating/updating %s: %s", name, err)
 	}
 	d.SetId(name)
 	return resourceTrafficIPGroupRead(d, m)
@@ -259,7 +259,7 @@ func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("BrocadeVTM Traffic IP Group error whilst retrieving %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Traffic IP Group error whilst retrieving %s: %v", name, err)
 	}
 	trafficIPGroupProperties := trafficIPGroupResponse["properties"].(map[string]interface{})
 	trafficIPGroupBasic := trafficIPGroupProperties["basic"].(map[string]interface{})

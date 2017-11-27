@@ -64,7 +64,7 @@ func testAccBrocadeVTMDNSZoneFileCheckDestroy(state *terraform.State, name strin
 	if err != nil {
 		return nil
 	}
-	return fmt.Errorf("Error: resource %s still exists", name)
+	return fmt.Errorf("[ERROR] Error: resource %s still exists", name)
 }
 
 func testAccBrocadeVTMDNSZoneFileExists(dnsZoneFileName, dnsZoneResourceName string) resource.TestCheckFunc {
@@ -78,7 +78,7 @@ func testAccBrocadeVTMDNSZoneFileExists(dnsZoneFileName, dnsZoneResourceName str
 		zoneConfig := new([]byte)
 		err := client.GetByName("dns_server/zone_files", dnsZoneFileName, zoneConfig)
 		if err != nil {
-			return fmt.Errorf("Error: resource %s doesn't exists", dnsZoneFileName)
+			return fmt.Errorf("[ERROR] resource %s doesn't exists", dnsZoneFileName)
 		}
 		return nil
 	}

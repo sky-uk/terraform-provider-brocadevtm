@@ -80,7 +80,7 @@ func testAccBrocadeVTMGlobalSettingsCheckDestroy(state *terraform.State) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("Brocade vTM, global settings still found")
+	return fmt.Errorf("[ERROR] Brocade vTM, global settings still found")
 }
 
 func testAccBrocadeVTMGlobalSettingsExists() resource.TestCheckFunc {
@@ -88,10 +88,10 @@ func testAccBrocadeVTMGlobalSettingsExists() resource.TestCheckFunc {
 
 		rs, ok := state.RootModule().Resources["brocadevtm_global_settings.global_settings"]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM global settings missing")
+			return fmt.Errorf("\n[ERROR] Brocade vTM global settings missing")
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM ID not set")
+			return fmt.Errorf("\n[ERROR] Brocade vTM ID not set")
 		}
 
 		config := testAccProvider.Meta().(map[string]interface{})
@@ -103,7 +103,7 @@ func testAccBrocadeVTMGlobalSettingsExists() resource.TestCheckFunc {
 		gs := make(map[string]interface{})
 		err := client.GetByURL("/api/tm/"+usedVersion+"/config/active/global_settings", &gs)
 		if err != nil {
-			return fmt.Errorf("Error getting global settings: %+v", err)
+			return fmt.Errorf("[ERROR] getting global settings: %+v", err)
 		}
 		return nil
 	}
