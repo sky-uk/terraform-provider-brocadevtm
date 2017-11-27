@@ -875,7 +875,7 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 			return err
 		}
 		set = append(set, readSectionMap)
-		err = d.Set(sectionName(section), set)
+		err = d.Set(poolSectionName(section), set)
 		if err != nil {
 			return fmt.Errorf("[ERROR] BrocadeVTM Pools error whilst setting key %s in state", section)
 		}
