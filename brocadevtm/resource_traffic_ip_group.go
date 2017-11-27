@@ -264,8 +264,11 @@ func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 	trafficIPGroupProperties := trafficIPGroupResponse["properties"].(map[string]interface{})
 	trafficIPGroupBasic := trafficIPGroupProperties["basic"].(map[string]interface{})
 
-	for _, key := range basicVirtualServerKeys() {
-		d.Set(key, trafficIPGroupBasic[key])
+	for _, key := range basicTrafficIPGroupKeys() {
+		err := d.Set(key, trafficIPGroupBasic[key])
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM Traffic IP Group error whilst setting key %s in state", key)
+		}
 	}
 	return nil
 }
