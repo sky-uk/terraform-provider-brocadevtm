@@ -287,12 +287,12 @@ func testAccBrocadeVTMTrafficManagerCheckDestroy(state *terraform.State, name st
 
 		err := client.GetByName("traffic_managers", rs.Primary.ID, &trafficManagerConfiguration)
 		if client.StatusCode == http.StatusOK {
-			return fmt.Errorf("Brocade vTM Check Destroy Error: Traffic Manager %s still exists", name)
+			return fmt.Errorf("[ERROR] Brocade vTM Check Destroy Error: Traffic Manager %s still exists", name)
 		}
 		if client.StatusCode == http.StatusNotFound {
 			return nil
 		}
-		return fmt.Errorf("Brocade vTM Check Destroy Error: Traffic Manager %+v ", err)
+		return fmt.Errorf("[ERROR] Brocade vTM Check Destroy Error: Traffic Manager %+v ", err)
 	}
 	return nil
 }
@@ -301,11 +301,11 @@ func testAccBrocadeVTMTrafficManagerExists(name, resourceName string) resource.T
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("Not found: %s", resourceName)
+			return fmt.Errorf("[ERROR] Not found: %s", resourceName)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No ID is set")
+			return fmt.Errorf("[ERROR] No ID is set")
 		}
 
 		config := testAccProvider.Meta().(map[string]interface{})
@@ -314,7 +314,7 @@ func testAccBrocadeVTMTrafficManagerExists(name, resourceName string) resource.T
 		trafficManagerConfiguration := make(map[string]interface{})
 		err := client.GetByName("traffic_managers", name, &trafficManagerConfiguration)
 		if client.StatusCode != http.StatusOK {
-			return fmt.Errorf("Brocade vTM error whilst retrieving VTM Traffic Managers: %+v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error whilst retrieving VTM Traffic Managers: %+v", err)
 		}
 		return nil
 	}

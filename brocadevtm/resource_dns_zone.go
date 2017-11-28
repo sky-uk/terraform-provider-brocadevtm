@@ -60,7 +60,7 @@ func resourceDNSZoneCreate(d *schema.ResourceData, m interface{}) error {
 	res["properties"] = prop
 	err := client.Set("dns_server/zones", name, res, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM DNS zone error whilst creating %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM DNS zone error whilst creating %s: %v", name, err)
 	}
 
 	d.SetId(name)
@@ -83,7 +83,7 @@ func resourceDNSZoneRead(d *schema.ResourceData, m interface{}) error {
 	}
 	if err != nil {
 		d.SetId("")
-		return fmt.Errorf("BrocadeVTM DNS zone error whilst reading %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM DNS zone error whilst reading %s: %v", name, err)
 	}
 	d.SetId(name)
 	props := res["properties"].(map[string]interface{})
@@ -114,7 +114,7 @@ func resourceDNSZoneUpdate(d *schema.ResourceData, m interface{}) error {
 	client := config["jsonClient"].(*api.Client)
 	err := client.Set("dns_server/zones", name, &res, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM DNS zone error whilst updating %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM DNS zone error whilst updating %s: %v", name, err)
 	}
 
 	return resourceDNSZoneRead(d, m)

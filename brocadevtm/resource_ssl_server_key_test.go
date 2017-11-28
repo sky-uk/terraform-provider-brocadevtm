@@ -70,11 +70,11 @@ func testAccBrocadeVTMSSLServerKeyCheckDestroy(state *terraform.State, sslServer
 		}
 		sslKeys, err := client.GetAllResources("ssl/server_keys")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM error whilst retrieving SSL Server Keys: %+v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error whilst retrieving SSL Server Keys: %+v", err)
 		}
 		for _, sslKey := range sslKeys {
 			if sslKey["Name"] == sslServerKeyName {
-				return fmt.Errorf("Brocade vTM SSL Server Key %s still exists", sslServerKeyName)
+				return fmt.Errorf("[ERROR] Brocade vTM SSL Server Key %s still exists", sslServerKeyName)
 			}
 		}
 	}
@@ -86,10 +86,10 @@ func testAccBrocadeVTMSSLServerKeyExists(sslServerKeyName, sslServerKeyResourceN
 
 		rs, ok := state.RootModule().Resources[sslServerKeyResourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM SSL Server Key %s wasn't found in resources", sslServerKeyName)
+			return fmt.Errorf("\n[ERROR] Brocade vTM SSL Server Key %s wasn't found in resources", sslServerKeyName)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM SSL Server Key ID not set for %s in resources", sslServerKeyName)
+			return fmt.Errorf("\n[ERROR] Brocade vTM SSL Server Key ID not set for %s in resources", sslServerKeyName)
 		}
 
 		config := testAccProvider.Meta().(map[string]interface{})
@@ -98,7 +98,7 @@ func testAccBrocadeVTMSSLServerKeyExists(sslServerKeyName, sslServerKeyResourceN
 		res := make(map[string]interface{})
 		err := client.GetByName("ssl/server_keys", sslServerKeyName, &res)
 		if err != nil {
-			return fmt.Errorf("Brocade vTM error whilst retrieving SSL Server Key: %+v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error whilst retrieving SSL Server Key: %+v", err)
 		}
 		return nil
 	}

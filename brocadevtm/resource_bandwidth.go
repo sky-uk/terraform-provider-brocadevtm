@@ -48,7 +48,7 @@ func validateBandwidthSharing(v interface{}, k string) (ws []string, errors []er
 	sharing := v.(string)
 	sharingOptions := regexp.MustCompile(`^(cluster|connection|machine)$`)
 	if !sharingOptions.MatchString(sharing) {
-		errors = append(errors, fmt.Errorf("%q must be one of cluster, connection, machine", k))
+		errors = append(errors, fmt.Errorf("[ERROR] %q must be one of cluster, connection, machine", k))
 	}
 	return
 }
@@ -80,7 +80,7 @@ func resourceBandwidthCreate(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Set("bandwidth", name, &bandwidthConfiguration, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Bandwidth error whilst creating %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Bandwidth error whilst creating %s: %v", name, err)
 	}
 	d.SetId(name)
 	return resourceBandwidthRead(d, m)
@@ -100,7 +100,7 @@ func resourceBandwidthRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Bandwidth error whilst retrieving %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Bandwidth error whilst retrieving %s: %v", name, err)
 	}
 
 	bandwidthPropertiesConfiguration := bandwidthConfiguration["properties"].(map[string]interface{})
@@ -147,7 +147,7 @@ func resourceBandwidthUpdate(d *schema.ResourceData, m interface{}) error {
 		client := config["jsonClient"].(*api.Client)
 		err := client.Set("bandwidth", name, &bandwidthConfiguration, nil)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM Bandwidth error whilst creating %s: %v", name, err)
+			return fmt.Errorf("[ERROR] BrocadeVTM Bandwidth error whilst creating %s: %v", name, err)
 		}
 	}
 	d.SetId(name)

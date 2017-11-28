@@ -148,11 +148,11 @@ func testAccBrocadeVTMUserAuthenticatorCheckDestroy(state *terraform.State, name
 		}
 		authenticators, err := client.GetAllResources("user_authenticators")
 		if err != nil {
-			return fmt.Errorf("Error getting all User Authenticators: %+v", err)
+			return fmt.Errorf("[ERROR] getting all User Authenticators: %+v", err)
 		}
 		for _, authenticator := range authenticators {
 			if authenticator["name"] == name {
-				return fmt.Errorf("Brocade vTM User Authenticator %s still exists", name)
+				return fmt.Errorf("[ERROR] Brocade vTM User Authenticator %s still exists", name)
 			}
 		}
 	}
@@ -163,23 +163,23 @@ func testAccBrocadeVTMUserAuthenticatorExists(name, resourceName string) resourc
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM User Authenticator %s wasn't found in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM User Authenticator %s wasn't found in resources", name)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM User Authenticator ID not set for %s in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM User Authenticator ID not set for %s in resources", name)
 		}
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
 		authenticators, err := client.GetAllResources("user_authenticators")
 		if err != nil {
-			return fmt.Errorf("Error getting all User Authenticators: %+v", err)
+			return fmt.Errorf("[ERROR] getting all User Authenticators: %+v", err)
 		}
 		for _, authenticator := range authenticators {
 			if authenticator["name"] == name {
 				return nil
 			}
 		}
-		return fmt.Errorf("Brocade vTM User Authenticator %s not found on remote vTM", name)
+		return fmt.Errorf("[ERROR] Brocade vTM User Authenticator %s not found on remote vTM", name)
 	}
 }
 

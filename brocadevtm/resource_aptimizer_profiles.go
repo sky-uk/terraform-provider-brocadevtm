@@ -62,7 +62,7 @@ func validateMode(v interface{}, k string) (ws []string, errors []error) {
 		"stealth":
 		return
 	}
-	errors = append(errors, fmt.Errorf("%s must be one of active, idle or stealth", k))
+	errors = append(errors, fmt.Errorf("[ERROR] %s must be one of active, idle or stealth", k))
 	return
 }
 
@@ -85,7 +85,7 @@ func resourceAptimizerProfileCreate(d *schema.ResourceData, m interface{}) error
 
 	err := client.Set("aptimizer/profiles", name, aptimizerProfileConfig, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst creating Aptimizer Profile %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM error whilst creating Aptimizer Profile %s: %v", name, err)
 	}
 	d.SetId(name)
 	return resourceAptimizerProfileRead(d, m)
@@ -104,7 +104,7 @@ func resourceAptimizerProfileRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst retrieving Aptimizer Profile %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM error whilst retrieving Aptimizer Profile %s: %v", name, err)
 	}
 
 	aptimizerProfilePropertiesConfig := aptimizerProfileConfig["properties"].(map[string]interface{})
@@ -143,7 +143,7 @@ func resourceAptimizerProfileUpdate(d *schema.ResourceData, m interface{}) error
 
 	err := client.Set("aptimizer/profiles", d.Id(), aptimizerProfileConfig, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst updating Aptimizer Profile %s: %v", d.Id(), err)
+		return fmt.Errorf("[ERROR] BrocadeVTM error whilst updating Aptimizer Profile %s: %v", d.Id(), err)
 	}
 
 	return resourceAptimizerProfileRead(d, m)

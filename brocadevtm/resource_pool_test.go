@@ -23,107 +23,107 @@ func TestAccPool_Basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccPoolCheckDestroy,
 		Steps: []resource.TestStep{
-			{
+			{ // Step 0
 				Config:      testAccPoolNodeInvalidAlgo(poolName),
 				ExpectError: regexp.MustCompile(`must be one of fastest_response_time, least_connections, perceptive, random, round_robin, weighted_least_connections, weighted_round_robin`),
 			},
-			{
+			{ // Step 1
 				Config:      testAccPoolNodeUnsignedInt(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
-			{
+			{ // Step 2
 				Config:      testAccPoolNoName(),
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
-			{
+			{ // Step 3
 				Config:      testAccPoolNoNodes(poolName),
 				ExpectError: regexp.MustCompile(`required field is not set`),
 			},
-			{
+			{ // Step 4
 				Config:      testAccPoolInvalidNode(poolName),
 				ExpectError: regexp.MustCompile(`must be a valid IP/Hostname and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
-			{
+			{ // Step 5
 				Config:      testAccPoolInvalidNodeNoIP(poolName),
 				ExpectError: regexp.MustCompile(`must be a valid IP/Hostname and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
-			{
+			{ // Step 6
 				Config:      testAccPoolInvalidNodeNoPort(poolName),
 				ExpectError: regexp.MustCompile(`must be a valid IP/Hostname and port seperated by a colon. i.e 127.0.0.1:80`),
 			},
-			{
+			{ // Step 7
 				Config:      testAccPoolInvalidNodeDeleteBehavior(poolName),
 				ExpectError: regexp.MustCompile(`expected node_delete_behavior to be one of \[drain immediate\]`),
 			},
-			{
+			{ // Step 8
 				Config:      testAccPoolOneItemList(poolName),
 				ExpectError: regexp.MustCompile(`attribute supports 1 item maximum, config has 2 declared`),
 			},
-			{
+			{ // Step 9
 				Config:      testAccPoolInvalidIpsToUse(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[publicips private_ips\]`),
 			},
-			{
+			{ // Step 10
 				Config:      testAccPoolInvalidAddNodeDelayTime(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
-			{
+			{ // Step 11
 				Config:      testAccPoolInvalidPort(poolName),
 				ExpectError: regexp.MustCompile(`must be a valid port number in the range 1 to 65535`),
 			},
-			{
+			{ // Step 12
 				Config:      testAccPoolInvalidMaxConnectTime(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
-			{
+			{ // Step 13
 				Config:      testAccPoolInvalidMaxConnections(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
-			{
+			{ // Step 14
 				Config:      testAccPoolInvalidMaxQueue(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
-			{
+			{ // Step 15
 				Config:      testAccPoolInvalidMaxReply(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
-			{
+			{ // Step 16
 				Config:      testAccPoolInvalidQueueTimeout(poolName),
 				ExpectError: regexp.MustCompile(`can't be negative`),
 			},
-			{
+			{ // Step 17
 				Config:      testAccPoolInvalidDNSAutoScalePort(poolName),
 				ExpectError: regexp.MustCompile(`must be a valid port number in the range 1 to 65535`),
 			},
-			{
+			{ // Step 18
 				Config:      testAccPoolInvalidSSL2Option(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
 			},
-			{
+			{ // Step 19
 				Config:      testAccPoolInvalidSSL3Option(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
 			},
-			{
+			{ // Step 20
 				Config:      testAccPoolInvalidTLS1Option(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
 			},
-			{
+			{ // Step 21
 				Config:      testAccPoolInvalidTLS1_1Option(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
 			},
-			{
+			{ // Step 22
 				Config:      testAccPoolInvalidTLS1_2Option(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
 			},
-			{
+			{ // Step 23
 				Config:      testAccPoolInvalidUDPAcceptFrom(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[all dest_ip_only dest_only ip_mask\]`),
 			},
-			{
+			{ // Step 24
 				Config:      testAccPoolInvalidUDPAcceptFromMask(poolName),
 				ExpectError: regexp.MustCompile(`must be in the format xxx.xxx.xxx.xxx/xx e.g. 10.0.0.0/8`),
 			},
-			{
+			{ // Step 25
 				Config: testAccPoolCreateTemplate(poolName),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckPoolExists(poolResourceName),
@@ -234,7 +234,7 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "response_timeout"), "0"),
 				),
 			},
-			{
+			{ // Step 26
 				Config: testAccPoolUpdateTemplate(poolName),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckPoolExists(poolResourceName),
@@ -346,7 +346,7 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "response_timeout"), "5"),
 				),
 			},
-			{
+			{ // Step 27
 				Config: testAccPoolCreateTemplateNodesList(poolName),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckPoolExists(poolResourceName),
@@ -456,7 +456,7 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "response_timeout"), "0"),
 				),
 			},
-			{
+			{ // Step 28
 				Config: testAccPoolUpdateTemplateNodesList(poolName),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckPoolExists(poolResourceName),
@@ -506,21 +506,21 @@ func testCheckPoolExists(resName string) resource.TestCheckFunc {
 
 		rs, ok := s.RootModule().Resources[resName]
 		if !ok {
-			return fmt.Errorf("Not found: %s", resName)
+			return fmt.Errorf("[ERROR] Not found: %s", resName)
 		}
 
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("No pool name is set")
+			return fmt.Errorf("[ERROR] No pool name is set")
 		}
 
 		var name string
 		if name, ok = rs.Primary.Attributes["name"]; ok && name == "" {
-			return fmt.Errorf("No pool name is set")
+			return fmt.Errorf("[ERROR] No pool name is set")
 		}
 
 		err := client.GetByName("pools", name, &pool)
 		if err != nil {
-			return fmt.Errorf("Received an error retrieving service with name: %s, %s", name, err)
+			return fmt.Errorf("[ERROR] retrieving pool with name: %s, %s", name, err)
 		}
 		return nil
 	}

@@ -18,5 +18,5 @@ func DeleteResource(resourceType string, d *schema.ResourceData, m interface{}) 
 	if client.StatusCode == http.StatusNoContent || client.StatusCode == http.StatusNotFound {
 		return nil
 	}
-	return fmt.Errorf("BrocadeVTM %s error whilst deleting %s: %v", resourceType, d.Id(), err)
+	return fmt.Errorf("[ERROR] BrocadeVTM %s error whilst deleting %s: %v", resourceType, d.Id(), err)
 }

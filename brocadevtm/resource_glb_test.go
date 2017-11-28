@@ -137,11 +137,11 @@ func testAccBrocadeVTMGLBCheckDestroy(state *terraform.State, glbName string) er
 		}
 		glbServices, err := client.GetAllResources("glb_services")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM GLB - error while retrieving GLB: %v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM GLB - error while retrieving GLB: %v", err)
 		}
 		for _, glb := range glbServices {
 			if glb["name"] == glbName {
-				return fmt.Errorf("Brocade vTM GLB %s still exists", glbName)
+				return fmt.Errorf("[ERROR] Brocade vTM GLB %s still exists", glbName)
 			}
 		}
 	}
@@ -152,23 +152,23 @@ func testAccBrocadeVTMGLBExists(glbName, glbResourceName string) resource.TestCh
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[glbResourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM GLB %s wasn't found in resources", glbName)
+			return fmt.Errorf("\n[ERROR] Brocade vTM GLB %s wasn't found in resources", glbName)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM GLB ID not set for %s in resources", glbName)
+			return fmt.Errorf("\n[ERROR] Brocade vTM GLB ID not set for %s in resources", glbName)
 		}
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
 		glbServices, err := client.GetAllResources("glb_services")
 		if err != nil {
-			return fmt.Errorf("Brocade vTM GLB - error while retrieving GLB: %v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM GLB - error while retrieving GLB: %v", err)
 		}
 		for _, glb := range glbServices {
 			if glb["name"] == glbName {
 				return nil
 			}
 		}
-		return fmt.Errorf("Brocade vTM  GLB %s not found on remote vTM", glbName)
+		return fmt.Errorf("[ERROR] Brocade vTM  GLB %s not found on remote vTM", glbName)
 	}
 }
 

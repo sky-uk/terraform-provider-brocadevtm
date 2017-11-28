@@ -40,7 +40,7 @@ func resourceRuleSet(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Set("rules", name, []byte(rule), nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Rule error whilst creating %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Rule error whilst creating %s: %v", name, err)
 	}
 
 	d.SetId(name)
@@ -61,7 +61,7 @@ func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Rule error whilst retrieving %s: %v", d.Id(), err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Rule error whilst retrieving %s: %v", d.Id(), err)
 	}
 
 	d.Set("rule", string(*ruleText))

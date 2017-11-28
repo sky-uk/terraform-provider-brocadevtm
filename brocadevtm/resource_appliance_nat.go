@@ -163,7 +163,7 @@ func resourceApplianceNatCreate(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Set("appliance/nat", "", natResource, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Appliance/Nat error whilst creating: %s", err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Appliance/Nat error whilst creating: %s", err)
 	}
 	d.SetId("appliance_nat")
 	return resourceApplianceNatRead(d, m)
@@ -179,7 +179,7 @@ func resourceApplianceNatRead(d *schema.ResourceData, m interface{}) error {
 	err := client.GetByName("appliance/nat", "", &natResource)
 	basic := natResource["properties"]["basic"].(map[string]interface{})
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Appliance/Nat error whilst retrieving: %s", err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Appliance/Nat error whilst retrieving: %s", err)
 	}
 
 	resource := resourceApplianceNat()
@@ -210,7 +210,7 @@ func resourceApplianceNatUpdate(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Set("appliance/nat", "", natResource, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM ApplianceNat error whilst creating: %s", err)
+		return fmt.Errorf("[ERROR] BrocadeVTM ApplianceNat error whilst creating: %s", err)
 	}
 	return resourceApplianceNatRead(d, m)
 }
@@ -235,7 +235,7 @@ func resourceApplianceNatDelete(d *schema.ResourceData, m interface{}) error {
 	natResource["properties"] = properties
 	err := client.Set("appliance/nat", "", natResource, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM ApplianceNat error whilst deleting all NAT rules: %s", err)
+		return fmt.Errorf("[ERROR] BrocadeVTM ApplianceNat error whilst deleting all NAT rules: %s", err)
 	}
 	d.SetId("")
 	return nil

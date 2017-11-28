@@ -512,7 +512,7 @@ func validateApplianceCardLabel(v interface{}, k string) (ws []string, errors []
 	if r.MatchString(v.(string)) {
 		return
 	}
-	errors = append(errors, fmt.Errorf("Label must be a valid network interface card label"))
+	errors = append(errors, fmt.Errorf("[ERROR] Label must be a valid network interface card label"))
 	return
 }
 
@@ -521,7 +521,7 @@ func validateApplianceIFBond(v interface{}, k string) (ws []string, errors []err
 	if r.MatchString(v.(string)) {
 		return
 	}
-	errors = append(errors, fmt.Errorf("Bond must match regex '^(bond\\d+)?$'"))
+	errors = append(errors, fmt.Errorf("[ERROR] Bond must match regex '^(bond\\d+)?$'"))
 	return
 }
 
@@ -585,7 +585,7 @@ func resourceTrafficManagerCreate(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Set("traffic_managers", name, &trafficManagerConfiguration, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst creating Traffic Manager %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM error whilst creating Traffic Manager %s: %v", name, err)
 	}
 	d.SetId(name)
 
@@ -606,7 +606,7 @@ func resourceTrafficManagerRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst retrieving Traffic Manager %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM error whilst retrieving Traffic Manager %s: %v", name, err)
 	}
 
 	trafficManagerPropertiesConfig := trafficManagerConfiguration["properties"].(map[string]interface{})
@@ -688,7 +688,7 @@ func resourceTrafficManagerUpdate(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Set("traffic_managers", d.Id(), &trafficManagerConfiguration, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM error whilst updating Traffic Manager %s: %v", d.Id(), err)
+		return fmt.Errorf("[ERROR] BrocadeVTM error whilst updating Traffic Manager %s: %v", d.Id(), err)
 	}
 
 	return resourceTrafficManagerRead(d, m)

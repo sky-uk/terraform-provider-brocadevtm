@@ -455,10 +455,10 @@ func testAccBrocadeVTMVirtualServerCheckDestroy(state *terraform.State, name str
 		client.WorkWithConfigurationResources()
 		err := client.GetByName("virtual_servers", name, &vs)
 		if err != nil {
-			return fmt.Errorf("Error: Brocade vTM error occurred while retrieving Virtual Server: %s", err)
+			return fmt.Errorf("[ERROR] Brocade vTM error occurred while retrieving Virtual Server: %s", err)
 		}
 		if client.StatusCode == http.StatusOK {
-			return fmt.Errorf("Error: Brocade vTM Virtual Server %s still exists", name)
+			return fmt.Errorf("[ERROR] Brocade vTM Virtual Server %s still exists", name)
 		}
 	}
 	return nil
@@ -468,10 +468,10 @@ func testAccBrocadeVTMVirtualServerExists(name, resourceName string) resource.Te
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM Virtual Server %s wasn't found in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Virtual Server %s wasn't found in resources", name)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM Virtual Server ID not set for %s in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Virtual Server ID not set for %s in resources", name)
 		}
 
 		config := testAccProvider.Meta().(map[string]interface{})
@@ -481,12 +481,12 @@ func testAccBrocadeVTMVirtualServerExists(name, resourceName string) resource.Te
 		client.WorkWithConfigurationResources()
 		err := client.GetByName("virtual_servers", name, &vs)
 		if err != nil {
-			return fmt.Errorf("Brocade vTM Virtual Server - error while retrieving virtual server %s: %s", name, err)
+			return fmt.Errorf("[ERROR] Brocade vTM Virtual Server - error while retrieving virtual server %s: %s", name, err)
 		}
 		if client.StatusCode == http.StatusOK {
 			return nil
 		}
-		return fmt.Errorf("Brocade vTM Virtual Server %s not found on remote vTM", name)
+		return fmt.Errorf("[ERROR] Brocade vTM Virtual Server %s not found on remote vTM", name)
 	}
 }
 

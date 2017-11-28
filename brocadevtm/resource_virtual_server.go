@@ -2,13 +2,11 @@ package brocadevtm
 
 import (
 	"fmt"
-	"log"
-	"net/http"
-
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
+	"net/http"
 )
 
 func resourceVirtualServer() *schema.Resource {
@@ -1289,7 +1287,7 @@ func resourceVirtualServer() *schema.Resource {
 	}
 }
 
-func basicKeys() []string {
+func basicVirtualServerKeys() []string {
 	return []string{
 		"add_cluster_ip", "add_x_forwarded_for", "add_x_forwarded_proto", "autodetect_upgrade_headers",
 		"bandwidth_class", "close_with_rst", "completionrules", "connect_timeout", "enabled",
@@ -1298,16 +1296,6 @@ func basicKeys() []string {
 		"slm_class", "so_nagle", "ssl_client_cert_headers", "ssl_decrypt", "ssl_honor_fallback_scsv",
 		"transparent",
 	}
-}
-
-func getSection(d *schema.ResourceData, sectionName string, properties map[string]interface{}, keys []string) error {
-	m, err := util.GetAttributesToMap(d, keys)
-	if err != nil {
-		log.Println("Error getting section ", sectionName, err)
-		return err
-	}
-	properties[sectionName] = m
-	return nil
 }
 
 func sectionName(name string) string {
@@ -1330,7 +1318,7 @@ func resourceVirtualServerSet(d *schema.ResourceData, m interface{}) error {
 	res := make(map[string]interface{})
 	pros := make(map[string]interface{})
 
-	getSection(d, "basic", pros, basicKeys())
+	util.GetSection(d, "basic", pros, basicVirtualServerKeys())
 
 	for _, section := range []string{
 		"aptimizer", "vs_connection", "connection_errors", "cookie",
@@ -1347,7 +1335,7 @@ func resourceVirtualServerSet(d *schema.ResourceData, m interface{}) error {
 	util.TraverseMapTypes(res)
 	err := client.Set("virtual_servers", name, res, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Virtual Server error whilst creating %s: %s", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Virtual Server error whilst creating/updating %s: %s", name, err)
 	}
 	d.SetId(name)
 
@@ -1368,13 +1356,13 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("BrocadeVTM Virtual Server error whilst retrieving %s: %v", d.Id(), err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Virtual Server error whilst retrieving %s: %v", d.Id(), err)
 	}
 
 	props := res["properties"].(map[string]interface{})
 	basic := props["basic"].(map[string]interface{})
 
-	for _, key := range basicKeys() {
+	for _, key := range basicVirtualServerKeys() {
 		d.Set(key, basic[key])
 	}
 

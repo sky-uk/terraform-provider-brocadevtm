@@ -70,11 +70,11 @@ func testAccBrocadeVTMUserGroupCheckDestroy(state *terraform.State, name string)
 		}
 		userGroups, err := client.GetAllResources("user_groups")
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM User Group error whilst retrieving %s: %v", name, err)
+			return fmt.Errorf("[ERROR] BrocadeVTM User Group error whilst retrieving %s: %v", name, err)
 		}
 		for _, individualUserGroup := range userGroups {
 			if individualUserGroup["name"] == name {
-				return fmt.Errorf("Brocade vTM User Group %s still exists", name)
+				return fmt.Errorf("[ERROR] Brocade vTM User Group %s still exists", name)
 			}
 		}
 	}
@@ -85,23 +85,23 @@ func testAccBrocadeVTMUserGroupExists(name, resourceName string) resource.TestCh
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[resourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM User Group %s wasn't found in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM User Group %s wasn't found in resources", name)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM User Group ID not set for %s in resources", name)
+			return fmt.Errorf("\n[ERROR] Brocade vTM User Group ID not set for %s in resources", name)
 		}
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
 		userGroups, err := client.GetAllResources("user_groups")
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM User Group error whilst retrieving %s: %v", name, err)
+			return fmt.Errorf("[ERROR] BrocadeVTM User Group error whilst retrieving %s: %v", name, err)
 		}
 		for _, individualUserGroup := range userGroups {
 			if individualUserGroup["name"] == name {
 				return nil
 			}
 		}
-		return fmt.Errorf("Brocade vTM User Group %s not found on remote vTM", name)
+		return fmt.Errorf("[ERROR] Brocade vTM User Group %s not found on remote vTM", name)
 	}
 }
 

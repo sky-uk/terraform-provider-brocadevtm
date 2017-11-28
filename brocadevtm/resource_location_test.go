@@ -97,11 +97,11 @@ func testAccBrocadeVTMLocationCheckDestroy(state *terraform.State, name string) 
 		locations, err := client.GetAllResources("locations")
 
 		if err != nil {
-			return fmt.Errorf("Brocade vTM Location - error occurred whilst retrieving a list of all locations: %+v", err)
+			return fmt.Errorf("[ERROR] Brocade vTM Location - error occurred whilst retrieving a list of all locations: %+v", err)
 		}
 		for _, locationChild := range locations {
 			if locationChild["name"] == name {
-				return fmt.Errorf("Brocade vTM Location %s still exists", name)
+				return fmt.Errorf("[ERROR] Brocade vTM Location %s still exists", name)
 			}
 		}
 	}
@@ -113,10 +113,10 @@ func testAccBrocadeVTMLocationExists(locationName, locationResourceName string) 
 
 		rs, ok := state.RootModule().Resources[locationResourceName]
 		if !ok {
-			return fmt.Errorf("\nBrocade vTM Location %s wasn't found in resources", locationName)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Location %s wasn't found in resources", locationName)
 		}
 		if rs.Primary.ID == "" {
-			return fmt.Errorf("\nBrocade vTM Location ID not set for %s in resources", locationName)
+			return fmt.Errorf("\n[ERROR] Brocade vTM Location ID not set for %s in resources", locationName)
 		}
 
 		config := testAccProvider.Meta().(map[string]interface{})
@@ -124,7 +124,7 @@ func testAccBrocadeVTMLocationExists(locationName, locationResourceName string) 
 		locations, err := client.GetAllResources("locations")
 
 		if err != nil {
-			return fmt.Errorf("Error getting all locations: %+v", err)
+			return fmt.Errorf("[ERROR] getting all locations: %+v", err)
 		}
 
 		for _, locationChild := range locations {
@@ -132,7 +132,7 @@ func testAccBrocadeVTMLocationExists(locationName, locationResourceName string) 
 				return nil
 			}
 		}
-		return fmt.Errorf("Brocade vTM Location %s not found on remote vTM", locationName)
+		return fmt.Errorf("[ERROR] Brocade vTM Location %s not found on remote vTM", locationName)
 	}
 }
 

@@ -65,7 +65,7 @@ func validateFailureMode(v interface{}, k string) (ws []string, errors []error) 
 	failureMode := v.(string)
 	failureModeOptions := regexp.MustCompile(`^(close|new_node|url)$`)
 	if !failureModeOptions.MatchString(failureMode) {
-		errors = append(errors, fmt.Errorf("%q must be one of close, new_node or url", k))
+		errors = append(errors, fmt.Errorf("[ERROR] %q must be one of close, new_node or url", k))
 	}
 	return
 }
@@ -74,7 +74,7 @@ func validateType(v interface{}, k string) (ws []string, errors []error) {
 	persistenceType := v.(string)
 	persistenceTypeOptions := regexp.MustCompile(`^(asp|cookie|ip|j2ee|named|ssl|transparent|universal|x_zeus)$`)
 	if !persistenceTypeOptions.MatchString(persistenceType) {
-		errors = append(errors, fmt.Errorf("%q must be one of asp, cookie, ip, j2ee, named, ssl, transparent, universal or x_zeus", k))
+		errors = append(errors, fmt.Errorf("[ERROR] %q must be one of asp, cookie, ip, j2ee, named, ssl, transparent, universal or x_zeus", k))
 	}
 	return
 }
@@ -114,7 +114,7 @@ func resourcePersistenceCreate(d *schema.ResourceData, m interface{}) error {
 
 	err := client.Set("persistence", name, &persistenceConfiguration, nil)
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Persistence error whilst creating %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Persistence error whilst creating %s: %v", name, err)
 	}
 	d.SetId(name)
 	return resourcePersistenceRead(d, m)
@@ -134,7 +134,7 @@ func resourcePersistenceRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("BrocadeVTM Persistence error whilst retrieving %s: %v", name, err)
+		return fmt.Errorf("[ERROR] BrocadeVTM Persistence error whilst retrieving %s: %v", name, err)
 	}
 	persistencePropertiesConfiguration := persistenceConfiguration["properties"].(map[string]interface{})
 	persistenceBasicConfiguration := persistencePropertiesConfiguration["basic"].(map[string]interface{})
@@ -198,7 +198,7 @@ func resourcePersistenceUpdate(d *schema.ResourceData, m interface{}) error {
 		client := config["jsonClient"].(*api.Client)
 		err := client.Set("persistence", name, &persistenceConfiguration, nil)
 		if err != nil {
-			return fmt.Errorf("BrocadeVTM Persistence error whilst creating %s: %v", name, err)
+			return fmt.Errorf("[ERROR] BrocadeVTM Persistence error whilst creating %s: %v", name, err)
 		}
 	}
 	d.SetId(name)
