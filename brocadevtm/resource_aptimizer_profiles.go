@@ -113,7 +113,7 @@ func resourceAptimizerProfileRead(d *schema.ResourceData, m interface{}) error {
 	for _, key := range []string{"background_after", "background_on_additional_resources", "mode", "show_info_bar"} {
 		err := d.Set(key, aptimizerProfileBasicConfig[key])
 		if err != nil {
-			return fmt.Errorf("[ERROR] BrocadeVTM error whilst setting key %s: %v", key, err)
+			return fmt.Errorf("[ERROR] BrocadeVTM error whilst setting attribute %s: %v", key, err)
 		}
 	}
 

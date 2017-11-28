@@ -88,8 +88,15 @@ func resourceDNSZoneRead(d *schema.ResourceData, m interface{}) error {
 	d.SetId(name)
 	props := res["properties"].(map[string]interface{})
 	basic := props["basic"].(map[string]interface{})
-	d.Set("origin", basic["origin"])
-	d.Set("zone_file", basic["zonefile"])
+
+	err = d.Set("origin", basic["origin"])
+	if err != nil {
+		return fmt.Errorf("[ERROR] BrocadeVTM DNS zone error whilst setting attribute origin: %v", err)
+	}
+	err = d.Set("zone_file", basic["zonefile"])
+	if err != nil {
+		return fmt.Errorf("[ERROR] BrocadeVTM DNS zone error whilst setting attribute zone_file: %v", err)
+	}
 
 	return nil
 }

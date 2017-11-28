@@ -181,7 +181,7 @@ func resourceCloudCredentialsRead(d *schema.ResourceData, m interface{}) error {
 	} {
 		err := d.Set(key, cloudCredentialsBasicConfiguration[key])
 		if err != nil {
-			return fmt.Errorf("[ERROR] BrocadeVTM Cloud Credentials error whilst setting key %s: %v", key, err)
+			return fmt.Errorf("[ERROR] BrocadeVTM Cloud Credentials error whilst setting attribute %s: %v", key, err)
 		}
 	}
 

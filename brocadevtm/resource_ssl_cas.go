@@ -70,7 +70,10 @@ func resourceSSLCasRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("[ERROR] BrocadeVTM SSL cas config file error whilst reading %s: %v", name, err)
 	}
-	d.Set("ssl_cas_config", string(*sslCasConfig))
+	err = d.Set("ssl_cas_config", string(*sslCasConfig))
+	if err != nil {
+		return fmt.Errorf("[ERROR] BrocadeVTM SSL cas config file error whilst setting attribute  ssl_cas_config: %v", err)
+	}
 
 	return nil
 }

@@ -109,7 +109,7 @@ func resourceBandwidthRead(d *schema.ResourceData, m interface{}) error {
 	for _, key := range []string{"maximum", "note", "sharing"} {
 		err := d.Set(key, bandwidthBasicConfiguration[key])
 		if err != nil {
-			return fmt.Errorf("[ERROR] BrocadeVTM Bandwidth error whilst setting key %s: %v", key, err)
+			return fmt.Errorf("[ERROR] BrocadeVTM Bandwidth error whilst setting attribute %s: %v", key, err)
 		}
 	}
 	return nil

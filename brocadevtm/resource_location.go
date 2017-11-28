@@ -82,6 +82,15 @@ func checkLongitudeWithinRange(v interface{}, k string) (ws []string, errors []e
 	}
 	return
 }
+func locationAttribute(name string) string {
+	if name == "location_id" {
+		return "id"
+	}
+	if name == "id" {
+		return "location_id"
+	}
+	return name
+}
 
 func resourceLocationCreate(d *schema.ResourceData, m interface{}) error {
 
@@ -147,11 +156,13 @@ func resourceLocationRead(d *schema.ResourceData, m interface{}) error {
 	locationPropertiesConfiguration = locationConfiguration["properties"].(map[string]interface{})
 	locationBasicConfiguration = locationPropertiesConfiguration["basic"].(map[string]interface{})
 
-	d.Set("location_id", locationBasicConfiguration["id"])
-	d.Set("latitude", locationBasicConfiguration["latitude"])
-	d.Set("longitude", locationBasicConfiguration["longitude"])
-	d.Set("note", locationBasicConfiguration["note"])
-	d.Set("type", locationBasicConfiguration["type"])
+	for _, attribute := range []string{"id", "latitude", "longitude", "note", "type"} {
+		err := d.Set(locationAttribute(attribute), locationBasicConfiguration[attribute])
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM location error whilst setting attribute %s: %v ", attribute, err)
+		}
+
+	}
 
 	return nil
 }
