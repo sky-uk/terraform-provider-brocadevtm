@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
+	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 )
 
 func resourceGLB() *schema.Resource {
@@ -198,6 +199,19 @@ func resourceGLB() *schema.Resource {
 	}
 }
 
+func buildListMaps(section []interface{}, attribute string) ([]map[string]interface{}, error) {
+	listMaps := make([]map[string]interface{}, 0)
+	for _, item := range section {
+		mapItem, err := util.BuildReadMap(item.(map[string]interface{}))
+		if err != nil {
+			return listMaps, fmt.Errorf("[ERROR] BrocadeVTM GLB error whilst building %s : %v", attribute, err)
+		}
+		listMaps = append(listMaps, mapItem)
+
+	}
+	return listMaps, nil
+}
+
 func resourceGLBSet(d *schema.ResourceData, m interface{}) error {
 
 	config := m.(map[string]interface{})
@@ -301,22 +315,41 @@ func resourceGLBRead(d *schema.ResourceData, m interface{}) error {
 		"chained_auto_failback",
 		"chained_location_order",
 		"disable_on_failure",
-		"dnssec_keys",
 		"domains",
 		"enabled",
 		"geo_effect",
 		"last_resort_response",
 		"location_draining",
-		"location_settings",
-		"peer_health_timeout",
 		"return_ips_on_fail",
 		"rules",
 		"ttl",
 	} {
-		d.Set(attr, basic[attr])
+		err := d.Set(attr, basic[attr])
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM GLB error whilst setting attribute %s: %v", attr, err)
+		}
 	}
 
-	d.Set("log", pros["log"])
+	// For basic attributes which contains lists or sets
+	for _, attribute := range []string{"dnssec_keys", "location_settings"} {
+		listMaps, err := buildListMaps(basic[attribute].([]interface{}), attribute)
+
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM GLB error whilst building %s : %v", attribute, err)
+		}
+		err = d.Set(attribute, listMaps)
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM GLB error whilst setting attribute %s: %v", attribute, err)
+		}
+	}
+
+	// Log section
+	logItems := make([]map[string]interface{}, 0)
+	logItems = append(logItems, pros["log"].(map[string]interface{}))
+	err = d.Set("log", logItems)
+	if err != nil {
+		return fmt.Errorf("[ERROR] BrocadeVTM GLB error whilst setting attribute log: %v", err)
+	}
 
 	return nil
 }
