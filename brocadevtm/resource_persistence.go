@@ -139,12 +139,12 @@ func resourcePersistenceRead(d *schema.ResourceData, m interface{}) error {
 	persistencePropertiesConfiguration := persistenceConfiguration["properties"].(map[string]interface{})
 	persistenceBasicConfiguration := persistencePropertiesConfiguration["basic"].(map[string]interface{})
 
-	d.Set("cookie", persistenceBasicConfiguration["cookie"])
-	d.Set("delete", persistenceBasicConfiguration["delete"])
-	d.Set("failure_mode", persistenceBasicConfiguration["failure_mode"])
-	d.Set("note", persistenceBasicConfiguration["note"])
-	d.Set("type", persistenceBasicConfiguration["type"])
-	d.Set("url", persistenceBasicConfiguration["url"])
+	for _, attribute := range []string{"cookie", "delete", "failure_mode", "note", "type", "url"} {
+		err := d.Set(attribute, persistenceBasicConfiguration[attribute])
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM Persistence error whilst setting attributes %s: %v", attribute, err)
+		}
+	}
 	return nil
 }
 

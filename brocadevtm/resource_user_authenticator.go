@@ -290,12 +290,22 @@ func resourceUserAuthenticatorRead(d *schema.ResourceData, m interface{}) error 
 	props := res["properties"].(map[string]interface{})
 	basic := props["basic"].(map[string]interface{})
 
-	d.Set("description", basic["description"])
-	d.Set("enabled", basic["enabled"])
-	d.Set("type", basic["type"])
-	d.Set("ldap", props["ldap"])
-	d.Set("radius", props["radius"])
-	d.Set("tacacs_plus", props["tacacs_plus"])
+	for _, attribute := range []string{"description", "enabled", "type"} {
+		err = d.Set(attribute, basic[attribute])
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM error whilst setting  attribute %s: %v", attribute, err)
+		}
+
+	}
+
+	for _, sectionName := range []string{"ldap", "radius", "tacacs_plus"} {
+		section := make([]map[string]interface{}, 0)
+		section = append(section, props[sectionName].(map[string]interface{}))
+		err = d.Set(sectionName, section)
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM error whilst setting  attribute %s: %v", sectionName, err)
+		}
+	}
 	return nil
 }
 

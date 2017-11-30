@@ -834,7 +834,7 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 	for _, key := range basicPoolKeys() {
 		err := d.Set(key, poolsBasic[key])
 		if err != nil {
-			return fmt.Errorf("[ERROR] BrocadeVTM Pools error whilst setting key %s in state", key)
+			return fmt.Errorf("[ERROR] BrocadeVTM Pools error whilst setting attribute %s in state", key)
 		}
 	}
 
@@ -846,12 +846,12 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 		}
 		err := d.Set("nodes_list", nodesList)
 		if err != nil {
-			return fmt.Errorf("[ERROR] BrocadeVTM Pools error whilst setting key nodes_list in state")
+			return fmt.Errorf("[ERROR] BrocadeVTM Pools error whilst setting attribute nodes_list in state")
 		}
 	}
 	err = d.Set("nodes_table", poolsBasic["nodes_table"])
 	if err != nil {
-		return fmt.Errorf("[ERROR] BrocadeVTM Pools error whilst setting key nodes_table in state")
+		return fmt.Errorf("[ERROR] BrocadeVTM Pools error whilst setting attribute nodes_table in state")
 	}
 
 	for _, section := range []string{
@@ -877,7 +877,7 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 		set = append(set, readSectionMap)
 		err = d.Set(poolSectionName(section), set)
 		if err != nil {
-			return fmt.Errorf("[ERROR] BrocadeVTM Pools error whilst setting key %s in state", section)
+			return fmt.Errorf("[ERROR] BrocadeVTM Pools error whilst setting attribute %s in state", section)
 		}
 	}
 	return nil

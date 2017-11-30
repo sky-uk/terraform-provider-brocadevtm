@@ -92,9 +92,12 @@ func SSLKeyRead(d *schema.ResourceData, meta interface{}, keyType string) error 
 	sslClientKeyPropertiesConfig := sslClientKeyConfig["properties"].(map[string]interface{})
 	sslClientKeyBasicConfig := sslClientKeyPropertiesConfig["basic"].(map[string]interface{})
 
-	d.Set("note", sslClientKeyBasicConfig["note"])
-	d.Set("public", sslClientKeyBasicConfig["public"])
-	d.Set("request", sslClientKeyBasicConfig["request"])
+	for _, attribute := range []string{"note", "public", "request"} {
+		err := d.Set(attribute, sslClientKeyBasicConfig[attribute])
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM %s error whilst setting attribute %s: %v", keyType, attribute, err)
+		}
+	}
 
 	return nil
 }

@@ -184,7 +184,10 @@ func resourceApplianceNatRead(d *schema.ResourceData, m interface{}) error {
 
 	resource := resourceApplianceNat()
 	for key := range resource.Schema {
-		d.Set(key, basic[key])
+		err := d.Set(key, basic[key])
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM Appliance/NAT error whilst setting attribute %s: %v", key, err)
+		}
 	}
 	return nil
 }

@@ -110,10 +110,12 @@ func resourceAptimizerProfileRead(d *schema.ResourceData, m interface{}) error {
 	aptimizerProfilePropertiesConfig := aptimizerProfileConfig["properties"].(map[string]interface{})
 	aptimizerProfileBasicConfig := aptimizerProfilePropertiesConfig["basic"].(map[string]interface{})
 
-	d.Set("background_after", aptimizerProfileBasicConfig["background_after"])
-	d.Set("background_on_additional_resources", aptimizerProfileBasicConfig["background_on_additional_resources"])
-	d.Set("mode", aptimizerProfileBasicConfig["mode"])
-	d.Set("show_info_bar", aptimizerProfileBasicConfig["show_info_bar"])
+	for _, key := range []string{"background_after", "background_on_additional_resources", "mode", "show_info_bar"} {
+		err := d.Set(key, aptimizerProfileBasicConfig[key])
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM error whilst setting attribute %s: %v", key, err)
+		}
+	}
 
 	return nil
 }

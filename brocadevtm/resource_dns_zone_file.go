@@ -71,7 +71,10 @@ func resourceDNSZoneFileRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("[ERROR] BrocadeVTM DNS zone file error whilst reading %s: %v", name, err)
 	}
-	d.Set("dns_zone_config", string(*zoneConfig))
+	err = d.Set("dns_zone_config", string(*zoneConfig))
+	if err != nil {
+		return fmt.Errorf("[ERROR] BrocadeVTM DNS zone file error whilst setting attribute dns_zone_config: %v", err)
+	}
 	return nil
 }
 
@@ -96,7 +99,10 @@ func resourceDNSZoneFileUpdate(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			return fmt.Errorf("[ERROR] BrocadeVTM DNS Zone File error whilst updating %s: %v", name, err)
 		}
-		d.Set("dns_zone_config", zoneConfig)
+		err = d.Set("dns_zone_config", zoneConfig)
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM DNS zone file error whilst setting attribute dns_zone_config: %v", err)
+		}
 	}
 	return resourceDNSZoneFileRead(d, m)
 }

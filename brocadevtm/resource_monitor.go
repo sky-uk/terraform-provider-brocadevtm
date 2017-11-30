@@ -346,7 +346,7 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 	for _, key := range basicMonitorKeys() {
 		err := d.Set(key, monitorBasic[key])
 		if err != nil {
-			return fmt.Errorf("[ERROR] BrocadeVTM Monitor error whilst setting key %s: %v", key, err)
+			return fmt.Errorf("[ERROR] BrocadeVTM Monitor error whilst setting attribute %s: %v", key, err)
 		}
 	}
 

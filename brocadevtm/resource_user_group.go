@@ -118,10 +118,12 @@ func resourceUserGroupRead(d *schema.ResourceData, m interface{}) error {
 	props := res["properties"].(map[string]interface{})
 	basic := props["basic"].(map[string]interface{})
 
-	d.Set("description", basic["description"])
-	d.Set("password_expire_time", basic["password_expire_time"])
-	d.Set("timeout", basic["timeout"])
-	d.Set("permissions", basic["permissions"])
+	for _, attribute := range []string{"description", "password_expire_time", "timeout", "permissions"} {
+		err = d.Set(attribute, basic[attribute])
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM User Group error whilst setting attributes %s: %v", attribute, err)
+		}
+	}
 
 	return nil
 }
