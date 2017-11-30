@@ -64,7 +64,10 @@ func resourceRuleRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("[ERROR] BrocadeVTM Rule error whilst retrieving %s: %v", d.Id(), err)
 	}
 
-	d.Set("rule", string(*ruleText))
+	err = d.Set("rule", string(*ruleText))
+	if err != nil {
+		return fmt.Errorf("[ERROR] BrocadeVTM Rule error whilst setting attribute rule :%v", err)
+	}
 	return nil
 }
 

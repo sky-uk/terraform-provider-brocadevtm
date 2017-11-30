@@ -170,13 +170,20 @@ func resourceCloudCredentialsRead(d *schema.ResourceData, m interface{}) error {
 	cloudCredentialsPropertiesConfiguration := cloudCredentialsConfiguration["properties"].(map[string]interface{})
 	cloudCredentialsBasicConfiguration := cloudCredentialsPropertiesConfiguration["basic"].(map[string]interface{})
 
-	d.Set("api_server", cloudCredentialsBasicConfiguration["api_server"])
-	d.Set("cloud_api_timeout", cloudCredentialsBasicConfiguration["cloud_api_timeout"])
-	d.Set("cred1", cloudCredentialsBasicConfiguration["cred1"])
-	d.Set("cred2", cloudCredentialsBasicConfiguration["cred2"])
-	d.Set("cred3", cloudCredentialsBasicConfiguration["cred3"])
-	d.Set("script", cloudCredentialsBasicConfiguration["script"])
-	d.Set("update_interval", cloudCredentialsBasicConfiguration["update_interval"])
+	for _, key := range []string{
+		"api_server",
+		"cloud_api_timeout",
+		"cred1",
+		"cred2",
+		"cred3",
+		"script",
+		"update_interval",
+	} {
+		err := d.Set(key, cloudCredentialsBasicConfiguration[key])
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM Cloud Credentials error whilst setting attribute %s: %v", key, err)
+		}
+	}
 
 	return nil
 }

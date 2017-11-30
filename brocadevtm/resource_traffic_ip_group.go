@@ -267,7 +267,7 @@ func resourceTrafficIPGroupRead(d *schema.ResourceData, m interface{}) error {
 	for _, key := range basicTrafficIPGroupKeys() {
 		err := d.Set(key, trafficIPGroupBasic[key])
 		if err != nil {
-			return fmt.Errorf("[ERROR] BrocadeVTM Traffic IP Group error whilst setting key %s in state", key)
+			return fmt.Errorf("[ERROR] BrocadeVTM Traffic IP Group error whilst setting attribute %s in state", key)
 		}
 	}
 	return nil

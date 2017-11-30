@@ -5,12 +5,11 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
-	"log"
 )
 
 func resourceGlobalSettings() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceGlobalSettingsCreate,
+		Create: resourceGlobalSettingsUpdate,
 		Read:   resourceGlobalSettingsRead,
 		Update: resourceGlobalSettingsUpdate,
 		Delete: resourceGlobalSettingsDelete,
@@ -69,9 +68,9 @@ func resourceGlobalSettings() *schema.Resource {
 						"monitor_memory_size": {
 							Type:         schema.TypeInt,
 							Optional:     true,
-							ValidateFunc: util.ValidateUnsignedInteger,
 							Default:      4096,
 							Description:  "The maximum number of each of nodes, pools or locations that can be monitored. The memory used to store information about nodes, pools and locations is allocated at start-up, so the traffic manager must be restarted after changing this setting.",
+							ValidateFunc: util.IntBetween(4096, 999999),
 						},
 						"rate_class_limit": {
 							Type:         schema.TypeInt,
@@ -136,19 +135,6 @@ func validateSocketOptimizations(v interface{}, k string) (ws []string, errors [
 	return
 }
 
-func resourceGlobalSettingsCreate(d *schema.ResourceData, m interface{}) error {
-
-	// This resource can't actually be created
-	globalSettings := make(map[string]interface{})
-	properties := make(map[string]interface{})
-	basic := d.Get("basic").([]interface{})
-	properties["basic"] = basic[0]
-	globalSettings["properties"] = properties
-
-	d.SetId("global_settings")
-	return resourceGlobalSettingsRead(d, m)
-}
-
 func resourceGlobalSettingsRead(d *schema.ResourceData, m interface{}) error {
 
 	config := m.(map[string]interface{})
@@ -162,33 +148,36 @@ func resourceGlobalSettingsRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("[ERROR] BrocadeVTM error whilst reading %s: %v", "", err)
 	}
 	properties := globalSettings["properties"].(map[string]interface{})
-	log.Println("Properties:\n", properties)
-	d.SetId("global_settings")
-	d.Set("basic", properties["basic"])
 
+	basicSection := make([]map[string]interface{}, 0)
+	basicSection = append(basicSection, properties["basic"].(map[string]interface{}))
+	err = d.Set("basic", basicSection)
+	if err != nil {
+		return fmt.Errorf("[ERROR] BrocadeVTM error whilst setting attribute basic: %v", err)
+	}
 	return nil
 }
 
 func resourceGlobalSettingsUpdate(d *schema.ResourceData, m interface{}) error {
 
-	hasChanges := false
+	// Global Settings can never be created. Only updated.
+
 	globalSettings := make(map[string]interface{})
 	properties := make(map[string]interface{})
 
 	if d.HasChange("basic") {
 		basic := d.Get("basic").([]interface{})
 		properties["basic"] = basic[0]
-		hasChanges = true
-	}
-	if hasChanges {
+
 		config := m.(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
 		globalSettings["properties"] = properties
 		err := client.Set("global_settings", "", globalSettings, nil)
 		if err != nil {
-			return fmt.Errorf("[ERROR] BrocadeVTM DNS error whilst updating %s: %v", "", err)
+			return fmt.Errorf("[ERROR] BrocadeVTM DNS error whilst creating/updating %s: %v", "", err)
 		}
 	}
+	d.SetId("global_settings")
 	return resourceGlobalSettingsRead(d, m)
 }
 
