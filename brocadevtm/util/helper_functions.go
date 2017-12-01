@@ -131,7 +131,7 @@ func TraverseMapTypes(m map[string]interface{}) {
 // ReorderTablesInSection - Reorders the elements of a nested table to match the order within the state file.
 func ReorderTablesInSection(mapToTraverse map[string]interface{}, tableNames map[string]string, sectionName string, d *schema.ResourceData) map[string]interface{} {
 	for key, value := range mapToTraverse[sectionName].(map[string]interface{}) {
-		_, ok := tableNames[key]
+		tableUniqueKey, ok := tableNames[key]
 		if ok {
 			// We create a list of maps from the value
 			valueAsListOfMaps := make([]map[string]interface{}, 0)
@@ -146,7 +146,7 @@ func ReorderTablesInSection(mapToTraverse map[string]interface{}, tableNames map
 				//For each occurance of the key (value within tableNames) in the statefile, We Loop Over the list of that key within the given section of the response from the API
 				for i, responseTableValue := range valueAsListOfMaps {
 					// We compare the name of the key (value within tableNames) block in the state file to that of the API response
-					if stateTableValue.(map[string]interface{})[tableNames[key]] == responseTableValue[tableNames[key]] {
+					if stateTableValue.(map[string]interface{})[tableUniqueKey] == responseTableValue[tableUniqueKey] {
 						//We append the ifList with the correct value as per state file order
 						orderedTableMap = append(orderedTableMap, responseTableValue)
 						// We remove the value we just appended onto orderedTableMap from our valueAsListOfMaps we got from brocade
