@@ -1369,6 +1369,14 @@ func resourceVirtualServerSet(d *schema.ResourceData, m interface{}) error {
 	return resourceVirtualServerRead(d, m)
 }
 
+func tables() map[string]string {
+	return map[string]string{
+		"profile":                  "name",
+		"ocsp_issuers":             "issuer",
+		"server_cert_host_mapping": "host",
+	}
+}
+
 func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 
 	config := m.(map[string]interface{})
