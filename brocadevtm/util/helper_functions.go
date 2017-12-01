@@ -142,13 +142,13 @@ func ReorderTablesInSection(mapToTraverse map[string]interface{}, tableNames map
 			orderedTableMap := make([]map[string]interface{}, 0)
 
 			//We Loop over the current key (value within tableNames) list within the given section of the resource in the state file
-			for _, stateIfValue := range d.Get(sectionName + ".0." + key).([]interface{}) {
+			for _, stateTableValue := range d.Get(sectionName + ".0." + key).([]interface{}) {
 				//For each occurance of the key (value within tableNames) in the statefile, We Loop Over the list of that key within the given section of the response from the API
-				for i, responseIfValue := range valueAsListOfMaps {
+				for i, responseTableValue := range valueAsListOfMaps {
 					// We compare the name of the key (value within tableNames) block in the state file to that of the API response
-					if stateIfValue.(map[string]interface{})[tableNames[key]] == responseIfValue[tableNames[key]] {
+					if stateTableValue.(map[string]interface{})[tableNames[key]] == responseTableValue[tableNames[key]] {
 						//We append the ifList with the correct value as per state file order
-						orderedTableMap = append(orderedTableMap, responseIfValue)
+						orderedTableMap = append(orderedTableMap, responseTableValue)
 						// We remove the value we just appended onto orderedTableMap from our valueAsListOfMaps we got from brocade
 						valueAsListOfMaps = append(valueAsListOfMaps[:i], valueAsListOfMaps[i+1:]...)
 					}
