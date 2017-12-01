@@ -131,8 +131,8 @@ func TraverseMapTypes(m map[string]interface{}) {
 // ReorderTablesInSection - Reorders the elements of a nested table to match the order within the state file.
 func ReorderTablesInSection(mapToTraverse map[string]interface{}, tableNames map[string]string, sectionName string, d *schema.ResourceData) map[string]interface{} {
 	for key, value := range mapToTraverse[sectionName].(map[string]interface{}) {
-		_, ok := tableNames[key];
-		if ok{
+		_, ok := tableNames[key]
+		if ok {
 			// We create a list of maps from the value
 			valueAsListOfMaps := make([]map[string]interface{}, 0)
 			for _, element := range value.([]interface{}) {
