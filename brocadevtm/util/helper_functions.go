@@ -129,10 +129,10 @@ func TraverseMapTypes(m map[string]interface{}) {
 }
 
 // ReorderTablesInSection - Reorders the elements of a nested table to match the order within the state file.
-func ReorderTablesInSection(mapToTraverse map[string]interface{}, tableNames map[string]bool, sectionName, uniqueKeyInTable string, d *schema.ResourceData) map[string]interface{} {
+func ReorderTablesInSection(mapToTraverse map[string]interface{}, tableNames map[string]string, sectionName string, d *schema.ResourceData) map[string]interface{} {
 	for key, value := range mapToTraverse[sectionName].(map[string]interface{}) {
-
-		if tableNames[key] {
+		tableUniqueKey, ok := tableNames[key]
+		if ok {
 			// We create a list of maps from the value
 			valueAsListOfMaps := make([]map[string]interface{}, 0)
 			for _, element := range value.([]interface{}) {
@@ -142,13 +142,13 @@ func ReorderTablesInSection(mapToTraverse map[string]interface{}, tableNames map
 			orderedTableMap := make([]map[string]interface{}, 0)
 
 			//We Loop over the current key (value within tableNames) list within the given section of the resource in the state file
-			for _, stateIfValue := range d.Get(sectionName + ".0." + key).([]interface{}) {
+			for _, stateTableValue := range d.Get(sectionName + ".0." + key).([]interface{}) {
 				//For each occurance of the key (value within tableNames) in the statefile, We Loop Over the list of that key within the given section of the response from the API
-				for i, responseIfValue := range valueAsListOfMaps {
+				for i, responseTableValue := range valueAsListOfMaps {
 					// We compare the name of the key (value within tableNames) block in the state file to that of the API response
-					if stateIfValue.(map[string]interface{})[uniqueKeyInTable] == responseIfValue[uniqueKeyInTable] {
+					if stateTableValue.(map[string]interface{})[tableUniqueKey] == responseTableValue[tableUniqueKey] {
 						//We append the ifList with the correct value as per state file order
-						orderedTableMap = append(orderedTableMap, responseIfValue)
+						orderedTableMap = append(orderedTableMap, responseTableValue)
 						// We remove the value we just appended onto orderedTableMap from our valueAsListOfMaps we got from brocade
 						valueAsListOfMaps = append(valueAsListOfMaps[:i], valueAsListOfMaps[i+1:]...)
 					}
