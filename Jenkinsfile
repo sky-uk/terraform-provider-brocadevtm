@@ -33,7 +33,7 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                 git_branch = env.BRANCH_NAME
                 checkout scm
                 gitHelper.prepareGit('svc-paas-github', 'svc-paas-github@jenkins.paas.int.ovp.bskyb.com')
-
+/*
                 stage 'version'
                 if (autoincVersion()) {
                     writeFile file: version_file, text: version()
@@ -66,10 +66,10 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                 inContainer {
                     goHelper.goTest(project_src_path)
                 }
-
+*/
                 stage 'testacc'
 
-                def branch="3.8"
+                def branch="5.1"
 
                 if (branch == "3.8") {
                     brocadeVTMCredentials="BROCADEVTM_3_8_CREDENTIALS"
@@ -82,7 +82,7 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                     brocadeVTMUnverifiedSSL=env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
                     brocadeVTMAPI="5.1"
                 }
-                
+
                 echo "Brocade VTM Credentials is ${brocadeVTMCredentials}"
                 echo "Brocade VTM Server is ${brocadeVTMServer}"
                 echo "Brocade VTM API version to test against is ${brocadeVTMAPI}"
@@ -96,11 +96,12 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                     }
 
                 }
-
+/*
                 stage 'coverage'
                 inContainer {
                     goHelper.goCoverage(project_src_path)
                 }
+*/
             }
         }
     }
