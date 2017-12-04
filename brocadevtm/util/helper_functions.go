@@ -175,5 +175,3 @@ func ReorderTablesInSection(mapToTraverse map[string]interface{}, tableNames map
 	}
 	return mapToTraverse[sectionName].(map[string]interface{})
 }
-
-
