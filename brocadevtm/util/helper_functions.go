@@ -2,7 +2,6 @@ package util
 
 import (
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 	"reflect"
