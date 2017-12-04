@@ -44,7 +44,7 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                 }
 
                 echo "Starting pipeline for project: [${project_name}], branch: [${git_branch}], version: [${version()}]"
-/*
+
                 stage 'lint'
                 inContainer {
                     goHelper.goLint(project_src_path)
@@ -69,7 +69,7 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                 inContainer {
                     goHelper.goTest(project_src_path)
                 }
-*/
+
                 stage 'testacc'
                 Pattern branch51Regex = ~/^api5_1_/
                 Matcher branch51Matcher = Pattern.compile(branch51Regex).matcher(git_branch)
@@ -99,12 +99,12 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                     }
 
                 }
-/*
+
                 stage 'coverage'
                 inContainer {
                     goHelper.goCoverage(project_src_path)
                 }
-*/
+
             }
         }
     }
