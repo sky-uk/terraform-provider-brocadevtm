@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 	"reflect"
+	"github.com/davecgh/go-spew/spew"
 )
 
 // AddChangedSimpleAttributesToMap : wrapper for d.HasChange & d.Get
@@ -174,5 +175,3 @@ func ReorderTablesInSection(mapToTraverse map[string]interface{}, tableNames map
 	}
 	return mapToTraverse[sectionName].(map[string]interface{})
 }
-
-
