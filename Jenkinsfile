@@ -26,6 +26,7 @@ slackChannel = '#ott-paas'
 
 loadHelpers()
 
+
 slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
     node {
         wrap([$class: 'TimestamperBuildWrapper']) {
@@ -35,7 +36,7 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                 git_branch = env.BRANCH_NAME
                 checkout scm
                 gitHelper.prepareGit('svc-paas-github', 'svc-paas-github@jenkins.paas.int.ovp.bskyb.com')
-/*
+
                 stage 'version'
                 if (autoincVersion()) {
                     writeFile file: version_file, text: version()
@@ -43,7 +44,7 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                 }
 
                 echo "Starting pipeline for project: [${project_name}], branch: [${git_branch}], version: [${version()}]"
-
+/*
                 stage 'lint'
                 inContainer {
                     goHelper.goLint(project_src_path)
