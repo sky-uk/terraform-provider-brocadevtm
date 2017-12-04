@@ -73,13 +73,22 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                 stage 'testacc'
                 def branch51Regex = /^api5_1_.*/
                 def branch51Matcher = (git_branch ==~ branch51Regex)
+                def branch38Regex = /^api3_8_.*/
+                def branch38Matcher = (git_branch ==~ branch38Regex)
 
-                // If the branch starts with 'api5_1_' we want to use the new Brocade VTM. Otherwise we'll use the old one.
+                // If the branch name is prefixed with api5_1_ or api3_8_ we want to use a specific Brocade VTM server. If neither use the default.
                 if (branch51Matcher) {
-                    brocadeVTMCredentials="BROCADEVTM_5_1_CREDENTIALS"
-                    brocadeVTMServer=env.BROCADEVTM_5_1_SERVER
+                    brocadeVTMCredentials = "BROCADEVTM_5_1_CREDENTIALS"
+                    brocadeVTMServer = env.BROCADEVTM_5_1_SERVER
+                    brocadeVTMUnverifiedSSL = env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
+                    brocadeVTMAPI = "5.1"
+
+                } else if(branch38Matcher) {
+                    brocadeVTMCredentials="BROCADEVTM_3_8_CREDENTIALS"
+                    brocadeVTMServer=env.BROCADEVTM_3_8_SERVER
                     brocadeVTMUnverifiedSSL=env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
-                    brocadeVTMAPI="5.1"
+                    brocadeVTMAPI="3.8"
+                    
                 } else {
                     brocadeVTMCredentials="BROCADEVTM_3_8_CREDENTIALS"
                     brocadeVTMServer=env.BROCADEVTM_3_8_SERVER
