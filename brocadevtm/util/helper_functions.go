@@ -141,8 +141,15 @@ func ReorderTablesInSection(mapToTraverse map[string]interface{}, tableNames map
 
 			orderedTableMap := make([]map[string]interface{}, 0)
 
+			var attributeToGet string
+			if sectionName == "basic" {
+				attributeToGet = key
+			} else {
+				attributeToGet = sectionName + ".0." + key
+			}
+
 			//We Loop over the current key (value within tableNames) list within the given section of the resource in the state file
-			for _, stateTableValue := range d.Get(sectionName + ".0." + key).([]interface{}) {
+			for _, stateTableValue := range d.Get(attributeToGet).([]interface{}) {
 				//For each occurance of the key (value within tableNames) in the statefile, We Loop Over the list of that key within the given section of the response from the API
 				for i, responseTableValue := range valueAsListOfMaps {
 					// We compare the name of the key (value within tableNames) block in the state file to that of the API response
