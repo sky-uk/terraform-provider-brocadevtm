@@ -68,10 +68,21 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                 }
 
                 stage 'testacc'
+                def branch="3.8"
+                if (branch == "3.8") {
+                    brocadeVTMCredentials="BROCADEVTM_3_8_CREDENTIALS"
+                    brocadeVTMServer=env.BROCADEVTM_3_8_SERVER
+                    brocadeVTMUnverifiedSSL=env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
+                } else {
+                    brocadeVTMCredentials="BROCADEVTM_5_1_CREDENTIALS"
+                    brocadeVTMServer=env.BROCADEVTM_5_1_SERVER
+                }
+                echo "Brocade VTM Server is ${brocadeVTMServer}"
+
                 inContainer {
-                    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'BROCADEVTM_CREDENTIALS', usernameVariable: 'BROCADEVTM_USERNAME', passwordVariable: 'BROCADEVTM_PASSWORD']]) {
-                        env.BROCADEVTM_SERVER='10.93.59.24:9070'
-                        env.BROCADEVTM_ALLOW_UNVERIFIED_SSL=true
+                    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: brocadeVTMCredentials, usernameVariable: 'BROCADEVTM_USERNAME', passwordVariable: 'BROCADEVTM_PASSWORD']]) {
+                        env.BROCADEVTM_SERVER=brocadeVTMServer
+                        env.BROCADEVTM_ALLOW_UNVERIFIED_SSL=brocadeVTMUnverifiedSSL
                         goHelper.goTestAcc(project_src_path)
                     }
 
