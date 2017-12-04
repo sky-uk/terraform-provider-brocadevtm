@@ -1,5 +1,7 @@
 #!groovy
 
+import java.util.regex.*
+
 project_name = 'terraform-provider-brocadevtm'
 project_owner = 'sky-uk'
 
@@ -68,19 +70,19 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                 }
 */
                 stage 'testacc'
+                Pattern branch51Regex = ~/^api5_1_/
+                Matcher branch51Matcher = Pattern.compile(branch51Regex).matcher(git_branch)
 
-                def branch="5.1"
-
-                if (branch == "3.8") {
-                    brocadeVTMCredentials="BROCADEVTM_3_8_CREDENTIALS"
-                    brocadeVTMServer=env.BROCADEVTM_3_8_SERVER
-                    brocadeVTMUnverifiedSSL=env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
-                    brocadeVTMAPI="3.8"
-                } else {
+                if (branch51Matcher.matchesPartially) {
                     brocadeVTMCredentials="BROCADEVTM_5_1_CREDENTIALS"
                     brocadeVTMServer=env.BROCADEVTM_5_1_SERVER
                     brocadeVTMUnverifiedSSL=env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
                     brocadeVTMAPI="5.1"
+                } else {
+                    brocadeVTMCredentials="BROCADEVTM_3_8_CREDENTIALS"
+                    brocadeVTMServer=env.BROCADEVTM_3_8_SERVER
+                    brocadeVTMUnverifiedSSL=env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
+                    brocadeVTMAPI="3.8"
                 }
 
                 echo "Brocade VTM Credentials is ${brocadeVTMCredentials}"
