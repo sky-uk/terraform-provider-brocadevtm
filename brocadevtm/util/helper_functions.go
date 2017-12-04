@@ -5,7 +5,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 	"reflect"
-	"github.com/davecgh/go-spew/spew"
 )
 
 // AddChangedSimpleAttributesToMap : wrapper for d.HasChange & d.Get
