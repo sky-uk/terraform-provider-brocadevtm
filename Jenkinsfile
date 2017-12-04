@@ -71,10 +71,10 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                 }
 
                 stage 'testacc'
-                Pattern branch51Regex = ~/^api5_1_/
-                Matcher branch51Matcher = Pattern.compile(branch51Regex).matcher(git_branch)
-
-                if (branch51Matcher.matchesPartially) {
+                def branch51Regex = /^api5_1_.*/
+                def branch51Matcher = (git_branch ==~ branch51Regex)
+                
+                if (branch51Matcher) {
                     brocadeVTMCredentials="BROCADEVTM_5_1_CREDENTIALS"
                     brocadeVTMServer=env.BROCADEVTM_5_1_SERVER
                     brocadeVTMUnverifiedSSL=env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
