@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 	"reflect"
@@ -141,13 +142,20 @@ func ReorderTablesInSection(mapToTraverse map[string]interface{}, tableNames map
 
 			orderedTableMap := make([]map[string]interface{}, 0)
 
+			var attributeToGet string
+			if sectionName == "basic" {
+				attributeToGet = key
+			} else {
+				attributeToGet = sectionName + ".0." + key
+			}
+
 			//We Loop over the current key (value within tableNames) list within the given section of the resource in the state file
-			for _, stateTableValue := range d.Get(sectionName + ".0." + key).([]interface{}) {
+			for _, stateTableValue := range d.Get(attributeToGet).([]interface{}) {
 				//For each occurance of the key (value within tableNames) in the statefile, We Loop Over the list of that key within the given section of the response from the API
 				for i, responseTableValue := range valueAsListOfMaps {
 					// We compare the name of the key (value within tableNames) block in the state file to that of the API response
 					if stateTableValue.(map[string]interface{})[tableUniqueKey] == responseTableValue[tableUniqueKey] {
-						//We append the ifList with the correct value as per state file order
+						//We append the ifList with the correct value as per state file ordera
 						orderedTableMap = append(orderedTableMap, responseTableValue)
 						// We remove the value we just appended onto orderedTableMap from our valueAsListOfMaps we got from brocade
 						valueAsListOfMaps = append(valueAsListOfMaps[:i], valueAsListOfMaps[i+1:]...)
@@ -167,3 +175,5 @@ func ReorderTablesInSection(mapToTraverse map[string]interface{}, tableNames map
 	}
 	return mapToTraverse[sectionName].(map[string]interface{})
 }
+
+
