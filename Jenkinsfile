@@ -71,34 +71,25 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                 }
 
                 stage 'testacc'
-                def branch51Regex = /^api5_1_.*/
-                def branch51Matcher = (git_branch ==~ branch51Regex)
-                def branch38Regex = /^api3_8_.*/
-                def branch38Matcher = (git_branch ==~ branch38Regex)
-
-                // If the branch name is prefixed with api5_1_ or api3_8_ we want to use a specific Brocade VTM server. If neither use the default.
-                if (branch51Matcher) {
+                // If the git branch name is prefixed with api5_1_ or api3_8_ we want to use a specific Brocade VTM server. If neither use the default.
+                if (git_branch ==~ /^api5_1_.*/) {
                     brocadeVTMCredentials = "BROCADEVTM_5_1_CREDENTIALS"
                     brocadeVTMServer = env.BROCADEVTM_5_1_SERVER
                     brocadeVTMUnverifiedSSL = env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
                     brocadeVTMAPI = "5.1"
 
-                } else if(branch38Matcher) {
+                } else if(git_branch ==~ /^api3_8_.*/) {
                     brocadeVTMCredentials="BROCADEVTM_3_8_CREDENTIALS"
                     brocadeVTMServer=env.BROCADEVTM_3_8_SERVER
                     brocadeVTMUnverifiedSSL=env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
                     brocadeVTMAPI="3.8"
-                    
+
                 } else {
                     brocadeVTMCredentials="BROCADEVTM_3_8_CREDENTIALS"
                     brocadeVTMServer=env.BROCADEVTM_3_8_SERVER
                     brocadeVTMUnverifiedSSL=env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
                     brocadeVTMAPI="3.8"
                 }
-
-                echo "Brocade VTM Credentials is ${brocadeVTMCredentials}"
-                echo "Brocade VTM Server is ${brocadeVTMServer}"
-                echo "Brocade VTM API version to test against is ${brocadeVTMAPI}"
 
                 inContainer {
                     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: brocadeVTMCredentials, usernameVariable: 'BROCADEVTM_USERNAME', passwordVariable: 'BROCADEVTM_PASSWORD']]) {
