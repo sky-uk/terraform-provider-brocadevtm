@@ -100,7 +100,6 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                         env.BROCADEVTM_API_VERSION=brocadeVTMAPI
                         goHelper.goTestAcc(project_src_path)
                     }
-
                 }
 
                 stage 'coverage'
