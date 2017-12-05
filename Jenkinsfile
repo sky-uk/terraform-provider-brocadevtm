@@ -91,7 +91,7 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                     brocadeVTMAPI="3.8"
                 }
 
-                echo "Using credentials ID: ${brocadeVTMCredentials}, API version ${brocadeVTMAPI} and VTM server ${brocadeVTMServer}"
+                echo "Running acceptance tests using credentials ID: ${brocadeVTMCredentials}, API version: ${brocadeVTMAPI} and VTM server: ${brocadeVTMServer}"
 
                 inContainer {
                     withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: brocadeVTMCredentials, usernameVariable: 'BROCADEVTM_USERNAME', passwordVariable: 'BROCADEVTM_PASSWORD']]) {
