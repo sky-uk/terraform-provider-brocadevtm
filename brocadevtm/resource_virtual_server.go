@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
@@ -234,11 +235,12 @@ func resourceVirtualServer() *schema.Resource {
 										Required:    true,
 									},
 									"urls": {
-										//Type: schema.TypeSet,
-										Type:        schema.TypeList,
+										Type: schema.TypeSet,
+										//Type:        schema.TypeList,
 										Description: "The application scopes which apply to the acceleration profile.",
 										Required:    true,
 										Elem:        &schema.Schema{Type: schema.TypeString},
+										Set:         schema.HashString,
 									},
 								},
 							},
@@ -1412,10 +1414,26 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 		"ssl", "syslog", "tcp", "udp", "web_cache",
 	} {
 		set := make([]map[string]interface{}, 0)
-		attrName := section + ".0"
 		reorderedSection := util.ReorderTablesInSection(props, tables(), section, d)
-		reorderedSection = util.ReorderLists(reorderedSection, attrName, map[string]bool{"urls": true}, d)
 		set = append(set, reorderedSection)
+
+		if section == "aptimizer" {
+			valueAsListOfMaps := make([]map[string]interface{}, 0)
+			for _, element := range set[0]["profile"].([]interface{}) {
+				valueAsListOfMaps = append(valueAsListOfMaps, element.(map[string]interface{}))
+			}
+
+			profilesWithURLSets := make([]map[string]interface{}, 0)
+
+			for _, v := range valueAsListOfMaps {
+				builtMap := make(map[string]interface{})
+				builtMap["name"] = v["name"]
+				builtMap["urls"] = schema.NewSet(schema.HashString, v["urls"].([]interface{}))
+				profilesWithURLSets = append(profilesWithURLSets, builtMap)
+			}
+			set[0]["profile"] = profilesWithURLSets
+		}
+
 		err := d.Set(sectionName(section), set)
 		if err != nil {
 			log.Printf("[ERROR] %s section setting failed: %s", section, err)
