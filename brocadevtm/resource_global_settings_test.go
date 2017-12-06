@@ -120,6 +120,8 @@ func testAccBrocadeGlobalSettingsCreate() string {
     afm_enabled = false
     chunk_size = 16384
     tip_class_limit = 10000
+    data_plane_acceleration_cores = "two"
+    data_plane_acceleration_mode = true
    }
 }`
 }
@@ -135,6 +137,8 @@ func testAccBrocadeGlobalSettingsUpdate() string {
     afm_enabled = false
     chunk_size = 16384
     tip_class_limit = 10000
+    data_plane_acceleration_cores = "two"
+    data_plane_acceleration_mode = true
    }
 }`
 }

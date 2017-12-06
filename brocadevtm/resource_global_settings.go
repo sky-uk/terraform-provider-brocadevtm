@@ -3,6 +3,7 @@ package brocadevtm
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 )
@@ -51,6 +52,19 @@ func resourceGlobalSettings() *schema.Resource {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Description: "Cluster identifier. Generally supplied by Services Director.",
+						},
+						"data_plane_acceleration_cores": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Default:      "one",
+							ValidateFunc: validation.StringInSlice([]string{"one", "two", "four"}, false),
+							Description:  "The number of CPU cores assigned to assist with data plane acceleration.",
+						},
+						"data_plane_acceleration_mode": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether Data Plane Acceleration Mode is enabled.",
 						},
 						"license_servers": {
 							Type:        schema.TypeList,
