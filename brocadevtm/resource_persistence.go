@@ -197,6 +197,21 @@ func resourcePersistenceUpdate(d *schema.ResourceData, m interface{}) error {
 		}
 		hasChanges = true
 	}
+
+	if d.HasChange("subnet_prefix_length_v4") {
+		if v, ok := d.GetOk("subnet_prefix_length_v4"); ok {
+			persistenceBasicConfiguration["subnet_prefix_length_v4"] = v.(int)
+		}
+		hasChanges = true
+	}
+
+	if d.HasChange("subnet_prefix_length_v6") {
+		if v, ok := d.GetOk("subnet_prefix_length_v6"); ok {
+			persistenceBasicConfiguration["subnet_prefix_length_v6"] = v.(int)
+		}
+		hasChanges = true
+	}
+
 	if d.HasChange("type") {
 		if v, ok := d.GetOk("type"); ok && v != "" {
 			persistenceBasicConfiguration["type"] = v.(string)
