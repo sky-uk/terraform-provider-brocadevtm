@@ -545,7 +545,7 @@ resource "brocadevtm_virtual_server" "acctest" {
 		enabled = true
 		profile = [{
 			name = "profile1"
-			urls = ["url1","url2"]
+			urls = ["url2","url1"]
 		},
 		{
 			name = "profile2"

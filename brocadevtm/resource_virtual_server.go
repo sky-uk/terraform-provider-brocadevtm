@@ -234,7 +234,7 @@ func resourceVirtualServer() *schema.Resource {
 										Required:    true,
 									},
 									"urls": {
-										//Type:        schema.TypeSet,
+										//Type: schema.TypeSet,
 										Type:        schema.TypeList,
 										Description: "The application scopes which apply to the acceleration profile.",
 										Required:    true,
@@ -1412,14 +1412,16 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 		"ssl", "syslog", "tcp", "udp", "web_cache",
 	} {
 		set := make([]map[string]interface{}, 0)
-		set = append(set, props[section].(map[string]interface{}))
+		attrName := section + ".0"
+		reorderedSection := util.ReorderTablesInSection(props, tables(), section, d)
+		reorderedSection = util.ReorderLists(reorderedSection, attrName, map[string]bool{"urls": true}, d)
+		set = append(set, reorderedSection)
 		err := d.Set(sectionName(section), set)
 		if err != nil {
 			log.Printf("[ERROR] %s section setting failed: %s", section, err)
 			return err
 		}
 	}
-
 	return nil
 }
 
