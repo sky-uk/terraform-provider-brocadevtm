@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"strconv"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -169,73 +167,4 @@ func ReorderTablesInSection(mapToTraverse map[string]interface{}, tableNames map
 		}
 	}
 	return mapToTraverse[sectionName].(map[string]interface{})
-}
-
-// ReorderLists - reorders list taking from granted what already present in the state file
-// basically this to emulate an unordered list data type and having T not complain for
-// items being in the wrong order...
-func ReorderLists(attr map[string]interface{}, attrName string, unorderedListNames map[string]bool, d *schema.ResourceData) map[string]interface{} {
-	log.Println("[ReorderLists]: attr: \n", spew.Sdump(attr))
-	// we traverse all attribute keys...
-	for key, value := range attr {
-		newValue := value
-		attrProperName := attrName + "." + key
-		log.Println("[ReorderLists]: attr proper name: ", attrProperName)
-		log.Println("[ReorderLists]: key: ", key)
-		// if key type is list of maps or list of interfaces and key is set to be an unordered list we
-		// we take state value for granted...
-		t := reflect.TypeOf(value)
-		log.Println("[ReorderLists]: type of value: ", t.String())
-		log.Println("[ReorderLists]: Value: ", spew.Sdump(value))
-		log.Println("[ReorderLists]: T value: ", d.Get(attrProperName))
-		switch t.String() {
-		case "[]map[string]interface {}", "[]interface {}":
-			if unorderedListNames[key] {
-				log.Println("[ReorderLists] Key should be an unordered list! ", key)
-				// we have to browse the list in the state file and the list from brocade and generate a new list to set into state
-				// for each item in blist, bitem:
-				//	for each item in slist, sitem:
-				//		if sitem == bitem
-				//			newList[spos] = sitem
-				//			delete item in brocade list
-				// newList = append(newList, blist)
-				blist := value.([]interface{})
-				slist := d.Get(attrProperName).([]interface{})
-				remainingItems := make([]interface{}, 0)
-				log.Println("[ReorderLists] blist: ", spew.Sdump(blist))
-				log.Println("[ReorderLists] slist: ", spew.Sdump(slist))
-				for bpos, bitem := range blist {
-					log.Println("[ReorderLists] bpos: ", bpos)
-					found := false
-					for spos, sitem := range slist {
-						log.Println("[ReorderLists] spos: ", spos)
-						if bitem == sitem {
-							found = true
-							newValue.([]interface{})[spos] = sitem
-						}
-					}
-					if found == false {
-						remainingItems = append(remainingItems, bitem)
-					}
-				}
-				newValue = append(newValue.([]interface{}), remainingItems)
-				log.Println("[ReorderLists] NewValue: ", spew.Sdump(newValue))
-			} else {
-				for kk, vv := range value.([]interface{}) {
-					if isMap, ok := vv.(map[string]interface{}); ok {
-						index := strconv.Itoa(kk)
-						attrPPName := attrProperName + "." + index
-						log.Println("[ReorderLists]: attr proper name: ", attrPPName)
-						newValue.([]interface{})[kk] = ReorderLists(isMap, attrPPName, unorderedListNames, d)
-					}
-				}
-			}
-		case "map[string]interface {}":
-			log.Printf("key %s is a map, keep traversing...", key)
-			newValue = ReorderLists(value.(map[string]interface{}), attrProperName, unorderedListNames, d)
-		}
-		// if item is a map, we keep traversing...
-		attr[key] = newValue
-	}
-	return attr
 }
