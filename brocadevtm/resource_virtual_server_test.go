@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/go-brocade-vtm/api/model/3.8/virtual_server"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 )
 
@@ -451,7 +450,7 @@ func testAccBrocadeVTMVirtualServerCheckDestroy(state *terraform.State, name str
 		if id, ok := rs.Primary.Attributes["id"]; ok && id == "" {
 			return nil
 		}
-		var vs virtualserver.VirtualServer
+		vs := make(map[string]interface{})
 		client.WorkWithConfigurationResources()
 		err := client.GetByName("virtual_servers", name, &vs)
 		if err != nil {
@@ -476,8 +475,7 @@ func testAccBrocadeVTMVirtualServerExists(name, resourceName string) resource.Te
 
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
-
-		var vs virtualserver.VirtualServer
+		vs := make(map[string]interface{})
 		client.WorkWithConfigurationResources()
 		err := client.GetByName("virtual_servers", name, &vs)
 		if err != nil {
