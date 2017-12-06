@@ -45,6 +45,16 @@ func resourcePersistence() *schema.Resource {
 				Optional:    true,
 				Description: "Note regarding the session persistence class",
 			},
+			"subnet_prefix_length_v4": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "ensure all requests from this IPv4 subnet, specified as a prefix length, are sent to the same node. If set to 0, requests from different IPv4 addresses will be load-balanced individually.",
+			},
+			"subnet_prefix_length_v6": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "ensure all requests from this IPv6 subnet, specified as a prefix length, are sent to the same node. If set to 0, requests from different IPv6 addresses will be load-balanced individually.",
+			},
 			"type": {
 				Type:         schema.TypeString,
 				Optional:     true,
@@ -103,6 +113,15 @@ func resourcePersistenceCreate(d *schema.ResourceData, m interface{}) error {
 	if v, ok := d.GetOk("note"); ok {
 		persistenceBasicConfiguration["note"] = v.(string)
 	}
+
+	if v, ok := d.GetOk("subnet_prefix_length_v4"); ok {
+		persistenceBasicConfiguration["subnet_prefix_length_v4"] = v.(int)
+	}
+
+	if v, ok := d.GetOk("subnet_prefix_length_v6"); ok {
+		persistenceBasicConfiguration["subnet_prefix_length_v6"] = v.(int)
+	}
+
 	if v, ok := d.GetOk("type"); ok && v != "" {
 		persistenceBasicConfiguration["type"] = v.(string)
 	}
