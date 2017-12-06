@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
@@ -222,7 +221,6 @@ func resourceVirtualServer() *schema.Resource {
 							Default:     false,
 						},
 						"profile": {
-							//Type:        schema.TypeSet,
 							Type:        schema.TypeList,
 							Description: "A table of Aptimizer profiles and the application scopes that apply to them.",
 							Optional:    true,
@@ -235,8 +233,7 @@ func resourceVirtualServer() *schema.Resource {
 										Required:    true,
 									},
 									"urls": {
-										Type: schema.TypeSet,
-										//Type:        schema.TypeList,
+										Type:        schema.TypeSet,
 										Description: "The application scopes which apply to the acceleration profile.",
 										Required:    true,
 										Elem:        &schema.Schema{Type: schema.TypeString},
@@ -407,7 +404,6 @@ func resourceVirtualServer() *schema.Resource {
 							Default:     false,
 						},
 						"zones": {
-							//Type:        schema.TypeSet,
 							Type:        schema.TypeList,
 							Description: "The DNS zones.",
 							Optional:    true,
@@ -490,7 +486,6 @@ func resourceVirtualServer() *schema.Resource {
 							ValidateFunc: validation.StringInSlice([]string{"delete", "ignore", "weaken", "wrap"}, false),
 						},
 						"include_mime": {
-							//Type:        schema.TypeSet,
 							Type:        schema.TypeList,
 							Description: "MIME types to compress. Complete MIME types can be used, or a type can end in a '*' to match multiple types.",
 							Optional:    true,
@@ -604,7 +599,6 @@ func resourceVirtualServer() *schema.Resource {
 							ValidateFunc: validation.IntBetween(4096, 1048576),
 						},
 						"headers_index_blacklist": {
-							//Type:        schema.TypeSet,
 							Type:        schema.TypeList,
 							Description: "A list of header names that should never be compressed using indexing.",
 							Optional:    true,
@@ -618,7 +612,6 @@ func resourceVirtualServer() *schema.Resource {
 							Default:     false,
 						},
 						"headers_index_whitelist": {
-							//Type:        schema.TypeSet,
 							Type:        schema.TypeList,
 							Description: "A list of header names that can be compressed using indexing when the value of headers_index_default is set to False.",
 							Optional:    true,
@@ -959,7 +952,6 @@ func resourceVirtualServer() *schema.Resource {
 							Default:     false,
 						},
 						"client_cert_cas": {
-							//Type:        schema.TypeSet,
 							Type:        schema.TypeList,
 							Description: "The certificate authorities that this virtual server should trust to validate client certificates. If no certificate authorities are selected, and client certificates are requested, then all client certificates will be accepted.",
 							Optional:    true,
@@ -967,7 +959,6 @@ func resourceVirtualServer() *schema.Resource {
 							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 						"elliptic_curves": {
-							//Type:        schema.TypeSet,
 							Type:        schema.TypeList,
 							Description: "The SSL elliptic curve preference list for SSL connections to this virtual server using TLS version 1.0 or higher. Leaving this empty will make the virtual server use the globally configured curve preference list.",
 							Optional:    true,
@@ -975,7 +966,6 @@ func resourceVirtualServer() *schema.Resource {
 							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 						"issued_certs_never_expire": {
-							//Type:        schema.TypeSet,
 							Type:        schema.TypeList,
 							Description: "When the virtual server verifies certificates signed by these certificate authorities, it doesn't check the 'not after' date, i.e., they are considered valid even after their expiration date has passed  (but not if they have been revoked)",
 							Optional:    true,
@@ -989,7 +979,6 @@ func resourceVirtualServer() *schema.Resource {
 							Default:     false,
 						},
 						"ocsp_issuers": {
-							//Type:        schema.TypeSet,
 							Type:        schema.TypeList,
 							Description: "A table of certificate issuer specific OCSP settings",
 							Optional:    true,
@@ -1085,7 +1074,6 @@ func resourceVirtualServer() *schema.Resource {
 							Default:     false,
 						},
 						"server_cert_alt_certificates": {
-							//Type:        schema.TypeSet,
 							Type:        schema.TypeList,
 							Description: "The SSL certificates and corresponding private keys.",
 							Optional:    true,
@@ -1098,7 +1086,6 @@ func resourceVirtualServer() *schema.Resource {
 							Optional:    true,
 						},
 						"server_cert_host_mapping": {
-							//Type:        schema.TypeSet,
 							Type:        schema.TypeList,
 							Description: "Host specific SSL server certificate mappings",
 							Optional:    true,
@@ -1116,7 +1103,6 @@ func resourceVirtualServer() *schema.Resource {
 										Optional:    true,
 									},
 									"alt_certificates": {
-										//Type:        schema.TypeSet,
 										Type:        schema.TypeList,
 										Description: "SSL server certificates for a particular destination IP",
 										Optional:    true,
