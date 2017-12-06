@@ -2,9 +2,10 @@ package util
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 	"reflect"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // AddChangedSimpleAttributesToMap : wrapper for d.HasChange & d.Get
