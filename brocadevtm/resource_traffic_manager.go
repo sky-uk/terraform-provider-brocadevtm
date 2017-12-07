@@ -507,22 +507,6 @@ func resourceTrafficManager() *schema.Resource {
 					},
 				},
 			},
-			"autodiscover": {
-				Type:     schema.TypeList,
-				MaxItems: 1,
-				Computed: true,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"product_id": {
-							Type:        schema.TypeString,
-							Description: "This key overrides the product ID used by traffic manager instances to discover each other when clustering. Traffic managers will only discover each other if their product IDs are the same and their versions are compatible.",
-							Optional:    true,
-							Default:     "ZXTM",
-						},
-					},
-				},
-			},
 			"cluster_comms": {
 				Type:     schema.TypeList,
 				MaxItems: 1,
@@ -611,12 +595,6 @@ func resourceTrafficManager() *schema.Resource {
 							Optional:    true,
 							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
-						"rhi_support": {
-							Type:        schema.TypeBool,
-							Description: "This key does nothing",
-							Optional:    true,
-							Default:     false,
-						},
 					},
 				},
 			},
@@ -650,12 +628,6 @@ func resourceTrafficManager() *schema.Resource {
 							Default:      320,
 							ValidateFunc: util.ValidateUnsignedInteger,
 						},
-						"config_enabled": {
-							Type:        schema.TypeBool,
-							Description: "Whether IP transparency may be used via netfilter/iptables",
-							Optional:    true,
-							Default:     false,
-						},
 						"iptables_enabled": {
 							Type:        schema.TypeBool,
 							Description: "Whether IP transparency may be used via netfilter/iptables. This require Linux 2.6.24 and the iptables socket extension",
@@ -667,7 +639,7 @@ func resourceTrafficManager() *schema.Resource {
 							Description:  "The special routing table ID to use for IP transparency rules",
 							Optional:     true,
 							Default:      320,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntBetween(256, 2147483647),
 						},
 					},
 				},
@@ -684,28 +656,7 @@ func resourceTrafficManager() *schema.Resource {
 							Description:  "The port the Java Extension handler process should listen on",
 							Optional:     true,
 							Default:      9060,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-					},
-				},
-			},
-			"kerberos": {
-				Type:     schema.TypeList,
-				MaxItems: 1,
-				Computed: true,
-				Optional: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"hostname": {
-							Type:        schema.TypeString,
-							Description: "The hostname to use in Kerberos principal names",
-							Optional:    true,
-						},
-						"num_kpt_threads": {
-							Type:         schema.TypeInt,
-							Description:  "How many worker threads the Kerberos Protocol Transition helper process will use",
-							Optional:     true,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntBetween(1024, 65535),
 						},
 					},
 				},
@@ -739,9 +690,9 @@ func resourceTrafficManager() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"bind_ips": {
 							Type:        schema.TypeList,
-							Description: "A list of IP Addresses which the REST API will listen on for connections",
+							Description: "A list of IP Addresses which the REST API will listen on for connections. Read only",
 							Elem:        &schema.Schema{Type: schema.TypeString},
-							Computed:    true,
+							Optional:    true,
 						},
 						"port": {
 							Type:         schema.TypeInt,
@@ -814,7 +765,7 @@ func resourceTrafficManager() *schema.Resource {
 							Description:  "The security level for SNMPv3 communications",
 							Optional:     true,
 							Default:      "noauthnopriv",
-							ValidateFunc: validation.StringInSlice([]string{"noauthnopriv", "authpriv", "noauthnopriv"}, false),
+							ValidateFunc: validation.StringInSlice([]string{"noauthnopriv", "authpriv", "authnopriv"}, false),
 						},
 						"username": {
 							Type:        schema.TypeString,
@@ -844,165 +795,6 @@ func validateApplianceIFBond(v interface{}, k string) (ws []string, errors []err
 	}
 	errors = append(errors, fmt.Errorf("[ERROR] Bond must match regex '^(bond\\d+)?$'"))
 	return
-}
-
-func assignApplianceValues(v []interface{}) map[string]interface{} {
-	values, ok := v[0].(map[string]interface{})
-	applianceValuesMap := make(map[string]interface{})
-	if ok {
-		tableNameList := []string{"hosts", "if", "ip", "routes"}
-		for _, element := range tableNameList {
-			if len(values[element].([]interface{})) > 0 {
-				applianceValuesMap[element] = values[element].([]interface{})
-			}
-		}
-
-		attributeNameList := []string{"gateway_ipv4", "gateway_ipv6", "ipmi_lan_access", "ipmi_lan_addr", "ipmi_lan_gateway", "ipmi_lan_ipsrc",
-			"ipmi_lan_mask", "ipv4_forwarding", "ipv6_forwarding", "licence_agreed", "manageazureroutes", "manageec2conf", "manageiptrans",
-			"managereturnpath", "managevpcconf", "name_servers", "ntpservers", "search_domains", "shim_client_id", "shim_client_key",
-			"shim_enabled", "shim_ips", "shim_load_balance", "shim_log_level", "shim_mode", "shim_portal_url", "shim_proxy_host", "shim_proxy_port",
-			"ssh_enabled", "ssh_password_allowed", "ssh_port", "timezone", "vlans"}
-
-		for _, element := range attributeNameList {
-			applianceValuesMap[element] = values[element]
-		}
-	}
-	return applianceValuesMap
-}
-
-func assignAutoDiscoverValues(v []interface{}) map[string]interface{} {
-	values, ok := v[0].(map[string]interface{})
-	autoDiscoverValuesMap := make(map[string]interface{})
-	if ok {
-		autoDiscoverValuesMap["product_id"] = values["product_id"]
-	}
-	return autoDiscoverValuesMap
-}
-
-func assignClusterCommsValues(v []interface{}) map[string]interface{} {
-	values, ok := v[0].(map[string]interface{})
-	clusterCommsValuesMap := make(map[string]interface{})
-
-	if ok {
-		attributeNameList := []string{"allow_update", "bind_ip", "external_ip", "port"}
-
-		for _, element := range attributeNameList {
-			clusterCommsValuesMap[element] = values[element]
-		}
-	}
-	return clusterCommsValuesMap
-}
-
-func assignEC2Values(v []interface{}) map[string]interface{} {
-	values, ok := v[0].(map[string]interface{})
-	ec2ValuesMap := make(map[string]interface{})
-	if ok {
-
-		attributeNameList := []string{"availability_zone", "instanceid", "trafficips_public_enis", "vpcid"}
-
-		for _, element := range attributeNameList {
-			ec2ValuesMap[element] = values[element]
-		}
-	}
-	return ec2ValuesMap
-}
-
-func assignFaultToleranceValues(v []interface{}) map[string]interface{} {
-	values, ok := v[0].(map[string]interface{})
-	faultToleranceValuesMap := make(map[string]interface{})
-	if ok {
-
-		attributeNameList := []string{"bgp_router_id", "ospfv2_ip", "ospfv2_neighbor_addrs", "rhi_support"}
-
-		for _, element := range attributeNameList {
-			faultToleranceValuesMap[element] = values[element]
-		}
-	}
-	return faultToleranceValuesMap
-}
-
-func assignIPTablesValues(v []interface{}) map[string]interface{} {
-	values, ok := v[0].(map[string]interface{})
-	ipTablesValuesMap := make(map[string]interface{})
-	if ok {
-		ipTablesValuesMap["config_enabled"] = values["config_enabled"]
-	}
-	return ipTablesValuesMap
-}
-
-func assignIPTransValues(v []interface{}) map[string]interface{} {
-	values, ok := v[0].(map[string]interface{})
-	ipTransValuesMap := make(map[string]interface{})
-	if ok {
-		attributeNameList := []string{"fwmark", "iptables_enabled", "routing_table"}
-
-		for _, element := range attributeNameList {
-			ipTransValuesMap[element] = values[element]
-		}
-	}
-	return ipTransValuesMap
-}
-
-func assignJavaValues(v []interface{}) map[string]interface{} {
-	values, ok := v[0].(map[string]interface{})
-	javaValuesMap := make(map[string]interface{})
-	if ok {
-		javaValuesMap["port"] = values["port"]
-	}
-	return javaValuesMap
-}
-
-func assignRemoteLicensingValues(v []interface{}) map[string]interface{} {
-	values, ok := v[0].(map[string]interface{})
-	remoteLicensingValuesMap := make(map[string]interface{})
-	if ok {
-
-		attributeNameList := []string{"email_address", "message"}
-
-		for _, element := range attributeNameList {
-			remoteLicensingValuesMap[element] = values[element]
-		}
-	}
-	return remoteLicensingValuesMap
-}
-
-func assignKerberosValues(v []interface{}) map[string]interface{} {
-	values, ok := v[0].(map[string]interface{})
-	kerberosValuesMap := make(map[string]interface{})
-	if ok {
-		attributeNameList := []string{"hostname", "num_kpt_threads"}
-
-		for _, element := range attributeNameList {
-			kerberosValuesMap[element] = values[element]
-		}
-	}
-	return kerberosValuesMap
-}
-
-func assignRestAPIValues(v []interface{}) map[string]interface{} {
-	values, ok := v[0].(map[string]interface{})
-	restAPIValuesMap := make(map[string]interface{})
-	if ok {
-		attributeNameList := []string{"bind_ips", "port"}
-
-		for _, element := range attributeNameList {
-			restAPIValuesMap[element] = values[element]
-		}
-	}
-	return restAPIValuesMap
-}
-
-func assignSNMPValues(v []interface{}) map[string]interface{} {
-	values, ok := v[0].(map[string]interface{})
-	snmpValuesMap := make(map[string]interface{})
-	if ok {
-		attributeNameList := []string{"allow", "auth_password", "bind_ip", "community", "enabled", "hash_algorithm", "port", "priv_password", "security_level", "username"}
-
-		for _, element := range attributeNameList {
-			snmpValuesMap[element] = values[element]
-		}
-	}
-	return snmpValuesMap
 }
 
 func getTrafficManagerAttributeName(attribute string) string {
@@ -1046,70 +838,18 @@ func resourceTrafficManagerSet(d *schema.ResourceData, m interface{}) error {
 
 	name := d.Get("name").(string)
 
-	tableAttributeList := []string{"appliance_card", "appliance_sysctl", "trafficip"}
-	for _, element := range tableAttributeList {
-		if v, ok := d.GetOk(element); ok {
-			trafficManagerBasicConfiguration[element] = v
+	for _, section := range []string{
+		"appliance", "cluster_comms", "ec2", "fault_tolerance", "iptables", "iptrans", "java", "remote_licensing", "rest_api", "snmp",
+	} {
+		if d.HasChange(section) {
+			trafficManagerPropertiesConfiguration[section] = d.Get(section).([]interface{})[0]
 		}
 	}
 
-	trafficManagerBasicConfiguration["adminMasterXMLIP"] = d.Get("admin_master_xmlip").(string)
-	trafficManagerBasicConfiguration["adminSlaveXMLIP"] = d.Get("admin_slave_xmlip").(string)
-	trafficManagerBasicConfiguration["authenticationServerIP"] = d.Get("authentication_server_ip").(string)
-	trafficManagerBasicConfiguration["num_aptimizer_threads"] = d.Get("num_aptimizer_threads").(int)
-	trafficManagerBasicConfiguration["num_children"] = d.Get("num_children").(int)
-	trafficManagerBasicConfiguration["numberOfCPUs"] = d.Get("number_of_cpus").(int)
-	trafficManagerBasicConfiguration["restServerPort"] = d.Get("rest_server_port").(int)
-	trafficManagerBasicConfiguration["updaterIP"] = d.Get("updater_ip").(string)
-	trafficManagerBasicConfiguration["location"] = d.Get("location").(string)
-	trafficManagerBasicConfiguration["nameip"] = d.Get("nameip").(string)
-
-	if v, ok := d.GetOk("appliance"); ok {
-		trafficManagerPropertiesConfiguration["appliance"] = assignApplianceValues(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("autodiscover"); ok {
-		trafficManagerPropertiesConfiguration["autodiscover"] = assignAutoDiscoverValues(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("cluster_comms"); ok {
-		trafficManagerPropertiesConfiguration["cluster_comms"] = assignClusterCommsValues(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("ec2"); ok {
-		trafficManagerPropertiesConfiguration["ec2"] = assignEC2Values(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("fault_tolerance"); ok {
-		trafficManagerPropertiesConfiguration["fault_tolerance"] = assignFaultToleranceValues(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("iptables"); ok {
-		trafficManagerPropertiesConfiguration["iptables"] = assignIPTablesValues(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("iptrans"); ok {
-		trafficManagerPropertiesConfiguration["iptrans"] = assignIPTransValues(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("java"); ok {
-		trafficManagerPropertiesConfiguration["java"] = assignJavaValues(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("kerberos"); ok {
-		trafficManagerPropertiesConfiguration["kerberos"] = assignKerberosValues(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("remote_licensing"); ok {
-		trafficManagerPropertiesConfiguration["remote_licensing"] = assignRemoteLicensingValues(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("rest_api"); ok {
-		trafficManagerPropertiesConfiguration["rest_api"] = assignRestAPIValues(v.([]interface{}))
-	}
-
-	if v, ok := d.GetOk("snmp"); ok {
-		trafficManagerPropertiesConfiguration["snmp"] = assignSNMPValues(v.([]interface{}))
+	for _, attribute := range []string{"appliance_card", "appliance_sysctl", "trafficip", "num_children", "location", "nameip", "admin_master_xmlip", "admin_slave_xmlip", "authentication_server_ip", "num_aptimizer_threads", "number_of_cpus", "rest_server_port", "updater_ip"} {
+		if d.HasChange(attribute) {
+			trafficManagerBasicConfiguration[getTrafficManagerAttributeName(attribute)] = d.Get(attribute)
+		}
 	}
 
 	trafficManagerPropertiesConfiguration["basic"] = trafficManagerBasicConfiguration
@@ -1143,13 +883,13 @@ func resourceTrafficManagerRead(d *schema.ResourceData, m interface{}) error {
 
 	trafficManagerPropertiesConfig := trafficManagerConfiguration["properties"].(map[string]interface{})
 
-	applianceTables := map[string]string{
+	basicTables := map[string]string{
 		"appliance_card":   "name",
 		"appliance_sysctl": "sysctl",
 		"trafficip":        "name",
 	}
 
-	trafficManagerPropertiesConfig["basic"] = util.ReorderTablesInSection(trafficManagerPropertiesConfig, applianceTables, "basic", d)
+	trafficManagerPropertiesConfig["basic"] = util.ReorderTablesInSection(trafficManagerPropertiesConfig, basicTables, "basic", d)
 	for key, value := range trafficManagerPropertiesConfig["basic"].(map[string]interface{}) {
 		err = d.Set(getTrafficManagerAttributeName(key), value)
 		if err != nil {
@@ -1157,14 +897,14 @@ func resourceTrafficManagerRead(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	applianceNestedTables := map[string]string{
+	applianceTables := map[string]string{
 		"if":     "name",
 		"ip":     "name",
 		"hosts":  "name",
 		"routes": "name",
 	}
 
-	trafficManagerPropertiesConfig["appliance"] = util.ReorderTablesInSection(trafficManagerPropertiesConfig, applianceNestedTables, "appliance", d)
+	trafficManagerPropertiesConfig["appliance"] = util.ReorderTablesInSection(trafficManagerPropertiesConfig, applianceTables, "appliance", d)
 
 	applianceSection := make([]interface{}, 0)
 	applianceSection = append(applianceSection, trafficManagerPropertiesConfig["appliance"].(map[string]interface{}))
@@ -1178,7 +918,7 @@ func resourceTrafficManagerRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("[ERROR] BrocadeVTM error whilst setting Traffic Manager attribute appliance: %v", err)
 	}
 
-	sectionNames := []string{"autodiscover", "cluster_comms", "ec2", "fault_tolerance", "iptables", "iptrans", "java", "kerberos", "remote_licensing", "rest_api", "snmp"}
+	sectionNames := []string{"cluster_comms", "ec2", "fault_tolerance", "iptables", "iptrans", "java", "remote_licensing", "rest_api", "snmp"}
 
 	for _, section := range sectionNames {
 		sectionAsSliceOfInterfaces := make([]interface{}, 0)
