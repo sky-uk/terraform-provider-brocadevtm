@@ -41,7 +41,7 @@ type Client struct {
 func (client *Client) WorkWithStatus() {
 	client.RootPath = apiPrefix + "/" + client.currentVersion + "/status"
 	if client.params.Debug {
-		log.Println("Current Path: ", client.RootPath)
+		log.Println("[DEBUG] Current Path: ", client.RootPath)
 	}
 }
 
@@ -90,7 +90,7 @@ func (client *Client) GetInformation(node string) (map[string]interface{}, error
 func (client *Client) WorkWithConfigurationResources() {
 	client.RootPath = apiPrefix + "/" + client.currentVersion + "/" + configPath
 	if client.params.Debug {
-		log.Println("Current Path: ", client.RootPath)
+		log.Println("[DEBUG] Current Path: ", client.RootPath)
 	}
 }
 
@@ -137,7 +137,7 @@ func Connect(params Params) (*Client, error) {
 		)
 		err := client.request(api)
 		if err != nil || api.StatusCode() != http.StatusOK {
-			log.Println("Error while fetching list of available API versions: ", err)
+			log.Println("[ERROR] Error while fetching list of available API versions: ", err)
 			return nil, err
 		}
 
@@ -151,7 +151,7 @@ func Connect(params Params) (*Client, error) {
 		client.VersionsSupported = versions
 		sort.Sort(sort.Reverse(sort.StringSlice(client.VersionsSupported)))
 		client.currentVersion = client.VersionsSupported[0]
-		log.Println("Working with REST API Version: ", client.currentVersion)
+		log.Println("[DEBUG] Working with REST API Version: ", client.currentVersion)
 
 	}
 
@@ -168,7 +168,7 @@ func (client *Client) GetAllResourceTypes() ([]map[string]interface{}, error) {
 	res := make(map[string]interface{}, 0)
 
 	if client.params.Debug {
-		log.Println("Going to get all resource types, using PATH:\n", path)
+		log.Println("[DEBUG] Going to get all resource types, using PATH:\n", path)
 	}
 	api := rest.NewBaseAPI(
 		http.MethodGet,
@@ -189,12 +189,32 @@ func (client *Client) GetAllResourceTypes() ([]map[string]interface{}, error) {
 	return resTypes, nil
 }
 
+// FormatErrorText - formats the error message including attributes error strings
+func FormatErrorText(tmErr *VTMError) string {
+	retStr := tmErr.ErrorID + ": " + tmErr.ErrorText + "\n"
+
+	for section, sectionMap := range tmErr.ErrorInfo {
+		sectionErrorStr := section + ":\n"
+		for attr, attrErrMap := range sectionMap.(map[string]interface{}) {
+			sectionErrorStr += "    " + attr + ":\n"
+			for attrErrKey, attrErrValue := range attrErrMap.(map[string]interface{}) {
+				sectionErrorStr += "        " + attrErrKey + ": " + attrErrValue.(string) + "\n"
+			}
+		}
+
+		retStr += sectionErrorStr
+	}
+
+	return retStr
+}
+
 func (client *Client) request(api *rest.BaseAPI) error {
 	err := client.restClient.Do(api)
 	client.StatusCode = client.restClient.StatusCode
 	tmErr := api.ErrorObject().(*VTMError)
 	if tmErr.ErrorText != "" {
-		err = fmt.Errorf(tmErr.ErrorText)
+		errStr := FormatErrorText(tmErr)
+		err = fmt.Errorf(errStr)
 	}
 	return err
 }
@@ -207,11 +227,11 @@ func (client *Client) TraverseTree(url string, resources map[string]interface{})
 	res := make(map[string]interface{})
 
 	if url == "" {
-		return fmt.Errorf("Invalid path")
+		return fmt.Errorf("[ERROR] Invalid path")
 	}
 
 	if client.params.Debug {
-		log.Println("Going to get PATH: ", url)
+		log.Println("[DEBUG] Going to get PATH: ", url)
 	}
 	api := rest.NewBaseAPI(
 		http.MethodGet,
@@ -233,7 +253,7 @@ func (client *Client) TraverseTree(url string, resources map[string]interface{})
 					return err
 				}
 			} else {
-				return fmt.Errorf("Strange...I expected a slice of maps")
+				return fmt.Errorf("[ERROR] Strange...I expected a slice of maps")
 			}
 		}
 	} else {
@@ -249,7 +269,7 @@ func (client *Client) GetAllResources(resType string) ([]map[string]interface{},
 	res := make(map[string]interface{})
 
 	if client.params.Debug {
-		log.Println("Going to get all resources, using PATH: ", path)
+		log.Println("[DEBUG] Going to get all resources, using PATH: ", path)
 	}
 	api := rest.NewBaseAPI(
 		http.MethodGet,
@@ -335,7 +355,7 @@ func (client *Client) Delete(resType, name string) error {
 		return err
 	}
 	if api.StatusCode() != http.StatusNoContent {
-		return fmt.Errorf("Error deleting resource %s, status: %d", name, api.StatusCode())
+		return fmt.Errorf(" [ERROR] Error deleting resource %s, status: %d", name, api.StatusCode())
 	}
 	return nil
 }
