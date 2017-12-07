@@ -32,7 +32,7 @@ func TestAccBrocadeVTMMonitorBasic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{ // Step 0
 				Config:      testAccBrocadeVTMMonitorInvalidName(),
-				ExpectError: regexp.MustCompile(`BrocadeVTM Monitor error whilst creating ../virtual_servers/some_random_virtual_server: The path '/api/tm/` + usedVersion + `/config/active/monitors/../virtual_servers/some_random_virtual_server' is invalid`),
+				ExpectError: regexp.MustCompile(`BrocadeVTM Monitor error whilst creating ../virtual_servers/some_random_virtual_server: http.invalid_path: The path '/api/tm/` + usedVersion + `/config/active/monitors/../virtual_servers/some_random_virtual_server' is invalid`),
 			},
 			{ // Step 1
 				Config: testAccBrocadeVTMMonitorCreateTemplate(monitorName),

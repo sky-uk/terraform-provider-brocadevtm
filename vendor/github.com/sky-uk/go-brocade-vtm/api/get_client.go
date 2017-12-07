@@ -10,17 +10,17 @@ func GetClient() (*Client, error) {
 
 	server, ok := os.LookupEnv("BROCADEVTM_SERVER")
 	if ok == false || server == "" {
-		return nil, errors.New("BROCADEVTM_SERVER env var not set")
+		return nil, errors.New("[ERROR] BROCADEVTM_SERVER env var not set")
 	}
 
 	username, ok := os.LookupEnv("BROCADEVTM_USERNAME")
 	if ok == false {
-		return nil, errors.New("BROCADEVTM_USERNAME env var not set")
+		return nil, errors.New("[ERROR] BROCADEVTM_USERNAME env var not set")
 	}
 
 	password, ok := os.LookupEnv("BROCADEVTM_PASSWORD")
 	if ok == false {
-		return nil, errors.New("BROCADEVTM_PASSWORD env var not set")
+		return nil, errors.New("[ERROR] BROCADEVTM_PASSWORD env var not set")
 	}
 
 	params := Params{

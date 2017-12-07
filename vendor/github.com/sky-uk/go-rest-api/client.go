@@ -41,14 +41,14 @@ func (restClient *Client) formatRequestPayload(api *BaseAPI) (io.Reader, error) 
 		case "json":
 			reqBytes, err = json.Marshal(api.RequestObject())
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal("[ERROR] ", err)
 				return nil, err
 			}
 
 		case "xml":
 			reqBytes, err = xml.Marshal(api.RequestObject())
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal("[ERROR] ", err)
 				return nil, err
 			}
 
@@ -60,10 +60,10 @@ func (restClient *Client) formatRequestPayload(api *BaseAPI) (io.Reader, error) 
 	}
 
 	if restClient.Debug {
-		log.Println("--------------------------------------------------------------")
-		log.Println("Request payload:")
-		log.Println(string(reqBytes))
-		log.Println("--------------------------------------------------------------")
+		log.Println("[TRACE] --------------------------------------------------------------")
+		log.Println("[TRACE] Request payload:")
+		log.Println("[TRACE] ", string(reqBytes))
+		log.Println("[TRACE] --------------------------------------------------------------")
 	}
 
 	return requestPayload, nil
@@ -74,7 +74,7 @@ func (restClient *Client) Do(api *BaseAPI) error {
 
 	requestURL := fmt.Sprintf("%s%s", restClient.URL, api.Endpoint())
 	if restClient.Debug {
-		log.Printf("Going to perform request:[%s] %s\n", api.Method(), requestURL)
+		log.Printf("[TRACE] Going to perform request:[%s] %s\n", api.Method(), requestURL)
 	}
 
 	if restClient.Headers == nil {
@@ -93,7 +93,7 @@ func (restClient *Client) Do(api *BaseAPI) error {
 
 	req, err := http.NewRequest(api.Method(), requestURL, requestPayload)
 	if err != nil {
-		log.Println("ERROR building the request: ", err)
+		log.Println("[ERROR] Error building the request: ", err)
 		return err
 	}
 
@@ -119,7 +119,7 @@ func (restClient *Client) Do(api *BaseAPI) error {
 
 	res, err := httpClient.Do(req)
 	if err != nil {
-		log.Println("Error executing request: ", err)
+		log.Println("[ERROR] Error executing request: ", err)
 		return err
 	}
 	defer res.Body.Close()
@@ -132,34 +132,37 @@ func (restClient *Client) handleResponse(apiObj *BaseAPI, res *http.Response) er
 	apiObj.SetStatusCode(res.StatusCode)
 	bodyText, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		log.Println("ERROR reading response: ", err)
+		log.Println("[ERROR] Error reading response: ", err)
 		return err
 	}
 
 	if len(bodyText) > 0 {
-		if restClient.Debug {
-			log.Println("\nBodyText:\n", string(bodyText))
-		}
-		apiObj.SetRawResponse(bodyText)
-
 		contentType := contenttype.GetType(res.Header.Get("Content-Type"))
 		if restClient.Debug {
-			log.Printf("Response content type: %s\n", contentType)
 		}
+
+		if restClient.Debug {
+			log.Println("[TRACE] --------------------------------------------------------------")
+			log.Println("[TRACE] Response content type: ", contentType)
+			log.Println("[TRACE] Response payload:")
+			log.Println("[TRACE] ", string(bodyText))
+			log.Println("[TRACE] --------------------------------------------------------------")
+		}
+		apiObj.SetRawResponse(bodyText)
 
 		switch contentType {
 		case "json":
 			if apiObj.StatusCode() >= http.StatusOK && apiObj.StatusCode() < http.StatusBadRequest {
 				err := json.Unmarshal(bodyText, apiObj.ResponseObject())
 				if err != nil {
-					log.Println("ERROR unmarshalling response: ", err)
+					log.Println("[ERROR] Error unmarshalling response: ", err)
 					return err
 				}
 			} else {
 				if apiObj.ErrorObject() != nil {
 					err := json.Unmarshal(bodyText, apiObj.ErrorObject())
 					if err != nil {
-						log.Printf("Error unmarshalling error response:\n%v", err)
+						log.Printf("[ERROR] Error unmarshalling error response:\n%v", err)
 						return err
 					}
 				}
@@ -171,14 +174,14 @@ func (restClient *Client) handleResponse(apiObj *BaseAPI, res *http.Response) er
 			if apiObj.StatusCode() >= http.StatusOK && apiObj.StatusCode() < http.StatusBadRequest {
 				err := xml.Unmarshal(bodyText, apiObj.ResponseObject())
 				if err != nil {
-					log.Println("ERROR unmarshalling response: ", err)
+					log.Println("[ERROR] Error unmarshalling response: ", err)
 					return err
 				}
 			} else {
 				if apiObj.ErrorObject() != nil {
 					err := xml.Unmarshal(bodyText, apiObj.ErrorObject())
 					if err != nil {
-						log.Printf("Error unmarshalling error response:\n%v", err)
+						log.Printf("[ERROR] Error unmarshalling error response:\n%v", err)
 					}
 				}
 				errMsg := fmt.Sprintf("Response status code: %d", apiObj.StatusCode())
@@ -190,7 +193,7 @@ func (restClient *Client) handleResponse(apiObj *BaseAPI, res *http.Response) er
 				if pstream, is := apiObj.ResponseObject().(*[]byte); is {
 					*pstream = bodyText
 				} else {
-					log.Println("[WARN]: Response object expected to be *[]byte")
+					log.Println("[WARN] Response object expected to be *[]byte")
 				}
 			}
 
@@ -199,12 +202,12 @@ func (restClient *Client) handleResponse(apiObj *BaseAPI, res *http.Response) er
 				if pstream, is := apiObj.ResponseObject().(*string); is {
 					*pstream = string(bodyText)
 				} else {
-					log.Println("[WARN]: Response object expected to be *string")
+					log.Println("[WARN] Response object expected to be *string")
 				}
 			}
 
 		default:
-			log.Printf("Content type %s not supported yet", contentType)
+			log.Printf("[WARN] Content type %s not supported yet", contentType)
 		}
 	} else {
 	}
