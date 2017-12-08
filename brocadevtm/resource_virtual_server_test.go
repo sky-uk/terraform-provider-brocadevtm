@@ -475,7 +475,6 @@ func testAccBrocadeVTMVirtualServerExists(name, resourceName string) resource.Te
 
 		config := testAccProvider.Meta().(map[string]interface{})
 		client := config["jsonClient"].(*api.Client)
-
 		vs := make(map[string]interface{})
 		client.WorkWithConfigurationResources()
 		err := client.GetByName("virtual_servers", name, &vs)

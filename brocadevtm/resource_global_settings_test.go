@@ -35,6 +35,8 @@ func TestAccBrocadeVTMResourceGlobalSettings(t *testing.T) {
 					resource.TestCheckResourceAttr("brocadevtm_global_settings.global_settings", "basic.0.afm_enabled", "false"),
 					resource.TestCheckResourceAttr("brocadevtm_global_settings.global_settings", "basic.0.chunk_size", "16384"),
 					resource.TestCheckResourceAttr("brocadevtm_global_settings.global_settings", "basic.0.tip_class_limit", "10000"),
+					resource.TestCheckResourceAttr("brocadevtm_global_settings.global_settings", "basic.0.data_plane_acceleration_cores", "two"),
+					resource.TestCheckResourceAttr("brocadevtm_global_settings.global_settings", "basic.0.data_plane_acceleration_mode", "true"),
 				),
 			},
 			{
@@ -51,6 +53,8 @@ func TestAccBrocadeVTMResourceGlobalSettings(t *testing.T) {
 					resource.TestCheckResourceAttr("brocadevtm_global_settings.global_settings", "basic.0.afm_enabled", "false"),
 					resource.TestCheckResourceAttr("brocadevtm_global_settings.global_settings", "basic.0.chunk_size", "16384"),
 					resource.TestCheckResourceAttr("brocadevtm_global_settings.global_settings", "basic.0.tip_class_limit", "10000"),
+					resource.TestCheckResourceAttr("brocadevtm_global_settings.global_settings", "basic.0.data_plane_acceleration_cores", "four"),
+					resource.TestCheckResourceAttr("brocadevtm_global_settings.global_settings", "basic.0.data_plane_acceleration_mode", "false"),
 				),
 			},
 		},
@@ -120,6 +124,8 @@ func testAccBrocadeGlobalSettingsCreate() string {
     afm_enabled = false
     chunk_size = 16384
     tip_class_limit = 10000
+    data_plane_acceleration_cores = "two"
+    data_plane_acceleration_mode = true
    }
 }`
 }
@@ -135,6 +141,8 @@ func testAccBrocadeGlobalSettingsUpdate() string {
     afm_enabled = false
     chunk_size = 16384
     tip_class_limit = 10000
+    data_plane_acceleration_cores = "four"
+    data_plane_acceleration_mode = false
    }
 }`
 }
