@@ -5,8 +5,10 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/sky-uk/go-brocade-vtm/api"
 	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
+	"log"
 	"net/http"
 	"regexp"
 )
@@ -14,9 +16,9 @@ import (
 func resourceTrafficManager() *schema.Resource {
 	return &schema.Resource{
 
-		Create: resourceTrafficManagerCreate,
+		Create: resourceTrafficManagerSet,
 		Read:   resourceTrafficManagerRead,
-		Update: resourceTrafficManagerUpdate,
+		Update: resourceTrafficManagerSet,
 		Delete: resourceTrafficManagerDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -38,7 +40,7 @@ func resourceTrafficManager() *schema.Resource {
 				Default:     "0.0.0.0",
 			},
 			"appliance_card": {
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Description: "The table of network cards of a hardware appliance",
 				Optional:    true,
 				Elem: &schema.Resource{
@@ -64,7 +66,7 @@ func resourceTrafficManager() *schema.Resource {
 				},
 			},
 			"appliance_sysctl": {
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Description: "Custom kernel parameters applied by the user with sysctl interface",
 				Optional:    true,
 				Elem: &schema.Resource{
@@ -141,7 +143,7 @@ func resourceTrafficManager() *schema.Resource {
 				Computed:    true,
 			},
 			"trafficip": {
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Description: "Custom kernel parameters applied by the user with sysctl interface",
 				Optional:    true,
 				Elem: &schema.Resource{
@@ -168,8 +170,9 @@ func resourceTrafficManager() *schema.Resource {
 			},
 			"appliance": {
 				Type:     schema.TypeList,
-				Optional: true,
 				MaxItems: 1,
+				Optional: true,
+				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"gateway_ipv4": {
@@ -184,11 +187,11 @@ func resourceTrafficManager() *schema.Resource {
 						},
 						"hostname": {
 							Type:        schema.TypeString,
-							Description: "Name (hostname.domainname) of the appliance",
-							Optional:    true,
+							Description: "Name (hostname.domainname) of the appliance. This value is Read Only",
+							Computed:    true,
 						},
 						"hosts": {
-							Type:        schema.TypeSet,
+							Type:        schema.TypeList,
 							Description: "A table of hostname to static ip address mappings, to be placed in the /etc/ hosts file",
 							Optional:    true,
 							Elem: &schema.Resource{
@@ -207,7 +210,7 @@ func resourceTrafficManager() *schema.Resource {
 							},
 						},
 						"if": {
-							Type:        schema.TypeSet,
+							Type:        schema.TypeList,
 							Description: "A table of network interface specific settings",
 							Optional:    true,
 							Elem: &schema.Resource{
@@ -222,6 +225,13 @@ func resourceTrafficManager() *schema.Resource {
 										Description: "Whether auto-negotiation should be enabled for the interface",
 										Optional:    true,
 										Default:     true,
+									},
+									"bmode": {
+										Type:         schema.TypeString,
+										Description:  "The trunk of which the interface should be a member",
+										Optional:     true,
+										Default:      "802_3ad",
+										ValidateFunc: validation.StringInSlice([]string{"802_3ad"}, true),
 									},
 									"bond": {
 										Type:         schema.TypeString,
@@ -253,7 +263,7 @@ func resourceTrafficManager() *schema.Resource {
 							},
 						},
 						"ip": {
-							Type:        schema.TypeSet,
+							Type:        schema.TypeList,
 							Description: "A table of network interfaces and their network settings.",
 							Optional:    true,
 							Elem: &schema.Resource{
@@ -352,12 +362,6 @@ func resourceTrafficManager() *schema.Resource {
 							Optional:    true,
 							Default:     true,
 						},
-						"managesysctl": {
-							Type:        schema.TypeBool,
-							Description: "Whether or not the software manages user specified sysctl keys",
-							Optional:    true,
-							Computed:    true,
-						},
 						"managevpcconf": {
 							Type:        schema.TypeBool,
 							Description: "Whether or not the software manages the EC2-VPC secondary IPs",
@@ -378,7 +382,7 @@ func resourceTrafficManager() *schema.Resource {
 							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 						"routes": {
-							Type:        schema.TypeSet,
+							Type:        schema.TypeList,
 							Description: "A table of destination IP addresses and routing details to reach them.",
 							Optional:    true,
 							Elem: &schema.Resource{
@@ -503,6 +507,274 @@ func resourceTrafficManager() *schema.Resource {
 					},
 				},
 			},
+			"cluster_comms": {
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Computed: true,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"allow_update": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not this instance of the software can send configuration updates to other members of the cluster. When not clustered this key is ignored.",
+							Optional:    true,
+							Default:     false,
+						},
+						"bind_ip": {
+							Type:        schema.TypeString,
+							Description: "The IP address that the software should bind to for internal administration communications.",
+							Optional:    true,
+							Default:     "*",
+						},
+						"external_ip": {
+							Type:        schema.TypeString,
+							Description: "This is the optional external ip of the traffic manager, which is used to circumvent natting when traffic managers in a cluster span different networks.",
+							Optional:    true,
+						},
+						"port": {
+							Type:         schema.TypeInt,
+							Description:  "The port that the software should listen on for internal administration communications.",
+							Optional:     true,
+							Default:      9080,
+							ValidateFunc: util.ValidatePortNumber,
+						},
+					},
+				},
+			},
+			"ec2": {
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Computed: true,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"availability_zone": {
+							Type:        schema.TypeString,
+							Description: "The availability zone of this EC2 instance, should be set when the appliance is first booted. Not required for non-EC2 systems.",
+							Optional:    true,
+						},
+						"instanceid": {
+							Type:        schema.TypeString,
+							Description: "The EC2 instance ID of this EC2 virtual appliance, should be set when the appliance is first booted. Not required for non-EC2 systems.",
+							Optional:    true,
+						},
+						"trafficips_public_enis": {
+							Type:        schema.TypeList,
+							Description: "List of MAC addresses of interfaces which the traffic manager can use to associate the EC2 elastic IPs (Traffic IPs) to the instance.",
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"vpcid": {
+							Type:        schema.TypeString,
+							Description: "The ID of the VPC the instance is in, should be set when the appliance is first booted. Not required for non-VPC EC2 or non-EC2 systems.",
+							Optional:    true,
+						},
+					},
+				},
+			},
+			"fault_tolerance": {
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Computed: true,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"bgp_router_id": {
+							Type:        schema.TypeString,
+							Description: "The BGP router id If set to empty, then the IPv4 address used to communicate with the default IPv4 gateway is used instead. Specifying 0.0.0.0 will stop the traffic manager routing software from running the BGP protocol.",
+							Optional:    true,
+						},
+						"ospfv2_ip": {
+							Type:        schema.TypeString,
+							Description: "The traffic manager's permanent IPv4 address which the routing software will use for peering and transit traffic, and as its OSPF router ID. If set to empty, then the address used to communicate with the default IPv4 gateway is used instead. Specifying 0.0.0.0 will stop the traffic manager routing software from running the OSPF protocol.",
+							Optional:    true,
+						},
+						"ospfv2_neighbor_addrs": {
+							Type:        schema.TypeList,
+							Description: "The IP addresses of routers which are expected to be found as OSPFv2 neighbors of the traffic manager. The special  value %gateway% is a placeholder for the default gateway",
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+					},
+				},
+			},
+			"iptables": {
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Computed: true,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"config_enabled": {
+							Type:        schema.TypeBool,
+							Description: "This key overrides the product ID used by traffic manager instances to discover each other when clustering. Traffic managers will only discover each other if their product IDs are the same and their versions are compatible.",
+							Optional:    true,
+							Default:     false,
+						},
+					},
+				},
+			},
+			"iptrans": {
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Computed: true,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"fwmark": {
+							Type:         schema.TypeInt,
+							Description:  "The netfilter forwarding mark to use for IP transparency rules",
+							Optional:     true,
+							Default:      320,
+							ValidateFunc: util.ValidateUnsignedInteger,
+						},
+						"iptables_enabled": {
+							Type:        schema.TypeBool,
+							Description: "Whether IP transparency may be used via netfilter/iptables. This require Linux 2.6.24 and the iptables socket extension",
+							Optional:    true,
+							Default:     false,
+						},
+						"routing_table": {
+							Type:         schema.TypeInt,
+							Description:  "The special routing table ID to use for IP transparency rules",
+							Optional:     true,
+							Default:      320,
+							ValidateFunc: validation.IntBetween(256, 2147483647),
+						},
+					},
+				},
+			},
+			"java": {
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Computed: true,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"port": {
+							Type:         schema.TypeInt,
+							Description:  "The port the Java Extension handler process should listen on",
+							Optional:     true,
+							Default:      9060,
+							ValidateFunc: validation.IntBetween(1024, 65535),
+						},
+					},
+				},
+			},
+			"remote_licensing": {
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Computed: true,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"email_address": {
+							Type:        schema.TypeString,
+							Description: "The e-mail address sent as part of a remote licensing request",
+							Optional:    true,
+						},
+						"message": {
+							Type:        schema.TypeString,
+							Description: "A free-text field sent as part of a remote licensing request",
+							Optional:    true,
+						},
+					},
+				},
+			},
+			"rest_api": {
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Computed: true,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"bind_ips": {
+							Type:        schema.TypeList,
+							Description: "A list of IP Addresses which the REST API will listen on for connections. Read only",
+							Elem:        &schema.Schema{Type: schema.TypeString},
+							Optional:    true,
+						},
+						"port": {
+							Type:         schema.TypeInt,
+							Description:  "The port on which the REST API should listen for requests",
+							Optional:     true,
+							Default:      9070,
+							ValidateFunc: util.ValidatePortNumber,
+						},
+					},
+				},
+			},
+			"snmp": {
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Computed: true,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"allow": {
+							Type:        schema.TypeList,
+							Description: "restrict which IP addresses can access the SNMP command responder service. The value can be all, localhost, or a list of IP CIDR subnet masks",
+							Elem:        &schema.Schema{Type: schema.TypeString},
+							Optional:    true,
+						},
+						"auth_password": {
+							Type:        schema.TypeString,
+							Description: "The authentication password. Required (minimum length 8 characters) if security_level includes authentication",
+							Optional:    true,
+							Sensitive:   true,
+						},
+						"bind_ip": {
+							Type:        schema.TypeString,
+							Description: "The IP address the SNMP service should bind its listen port to.  The value * (asterisk) means SNMP will listen on all IP addresses",
+							Optional:    true,
+							Default:     "*",
+						},
+						"community": {
+							Type:        schema.TypeString,
+							Description: "The community string required for SNMPv1 and SNMPv2c commands.  (If empty, all SNMPv1 and SNMPv2c commands will be rejected)",
+							Optional:    true,
+							Default:     "public",
+						},
+						"enabled": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not the SNMP command responder service should be enabled on this traffic manager",
+							Optional:    true,
+							Default:     false,
+						},
+						"hash_algorithm": {
+							Type:         schema.TypeString,
+							Description:  "The hash algorithm for authenticated SNMPv3 communications.",
+							Optional:     true,
+							Default:      "md5",
+							ValidateFunc: validation.StringInSlice([]string{"md5", "sha1"}, false),
+						},
+						"port": {
+							Type:        schema.TypeString,
+							Description: "The port the SNMP command responder service should listen on. The value default denotes port 161 if the software is running with root privileges, and 1161 otherwise",
+							Optional:    true,
+							Default:     "default",
+						},
+						"priv_password": {
+							Type:        schema.TypeString,
+							Description: "The privacy password. Required (minimum length 8 characters) if security_level includes privacy (message encryption)",
+							Optional:    true,
+							Sensitive:   true,
+						},
+						"security_level": {
+							Type:         schema.TypeString,
+							Description:  "The security level for SNMPv3 communications",
+							Optional:     true,
+							Default:      "noauthnopriv",
+							ValidateFunc: validation.StringInSlice([]string{"noauthnopriv", "authpriv", "authnopriv"}, false),
+						},
+						"username": {
+							Type:        schema.TypeString,
+							Description: "The username required for SNMP v3 commands.  (If empty, all SNMPv3 commands will be rejected)",
+							Optional:    true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -525,31 +797,39 @@ func validateApplianceIFBond(v interface{}, k string) (ws []string, errors []err
 	return
 }
 
-func assignApplianceValues(v []interface{}) map[string]interface{} {
-	values := v[0].(map[string]interface{})
-	applianceValuesMap := make(map[string]interface{})
-
-	tableNameList := []string{"hosts", "if", "ip", "routes"}
-	for _, element := range tableNameList {
-		if len(values[element].(*schema.Set).List()) > 0 {
-			applianceValuesMap[element] = values[element].(*schema.Set).List()
-		}
+func getTrafficManagerAttributeName(attribute string) string {
+	switch attribute {
+	case "adminMasterXMLIP":
+		return "admin_master_xmlip"
+	case "admin_master_xmlip":
+		return "adminMasterXMLIP"
+	case "adminSlaveXMLIP":
+		return "admin_slave_xmlip"
+	case "admin_slave_xmlip":
+		return "adminSlaveXMLIP"
+	case "authenticationServerIP":
+		return "authentication_server_ip"
+	case "authentication_server_ip":
+		return "authenticationServerIP"
+	case "number_of_cpus":
+		return "numberOfCPUs"
+	case "numberOfCPUs":
+		return "number_of_cpus"
+	case "restServerPort":
+		return "rest_server_port"
+	case "rest_server_port":
+		return "restServerPort"
+	case "updaterIP":
+		return "updater_ip"
+	case "updater_ip":
+		return "updaterIP"
+	default:
+		return attribute
 	}
 
-	attributeNameList := []string{"gateway_ipv4", "gateway_ipv6", "ipmi_lan_access", "ipmi_lan_addr", "ipmi_lan_gateway", "ipmi_lan_ipsrc",
-		"ipmi_lan_mask", "ipv4_forwarding", "ipv6_forwarding", "licence_agreed", "manageazureroutes", "manageec2conf", "manageiptrans",
-		"managereturnpath", "managevpcconf", "name_servers", "ntpservers", "search_domains", "shim_client_id", "shim_client_key",
-		"shim_enabled", "shim_ips", "shim_load_balance", "shim_log_level", "shim_mode", "shim_portal_url", "shim_proxy_host", "shim_proxy_port",
-		"ssh_enabled", "ssh_password_allowed", "ssh_port", "timezone", "vlans"}
-
-	for _, element := range attributeNameList {
-		applianceValuesMap[element] = values[element]
-	}
-
-	return applianceValuesMap
 }
 
-func resourceTrafficManagerCreate(d *schema.ResourceData, m interface{}) error {
+func resourceTrafficManagerSet(d *schema.ResourceData, m interface{}) error {
 	config := m.(map[string]interface{})
 	client := config["jsonClient"].(*api.Client)
 	trafficManagerConfiguration := make(map[string]interface{})
@@ -558,26 +838,18 @@ func resourceTrafficManagerCreate(d *schema.ResourceData, m interface{}) error {
 
 	name := d.Get("name").(string)
 
-	tableAttributeList := []string{"appliance_card", "appliance_sysctl", "trafficip"}
-	for _, element := range tableAttributeList {
-		if v, ok := d.GetOk(element); ok {
-			trafficManagerBasicConfiguration[element] = v.(*schema.Set).List()
+	for _, section := range []string{
+		"appliance", "cluster_comms", "ec2", "fault_tolerance", "iptables", "iptrans", "java", "remote_licensing", "rest_api", "snmp",
+	} {
+		if d.HasChange(section) {
+			trafficManagerPropertiesConfiguration[section] = d.Get(section).([]interface{})[0]
 		}
 	}
 
-	trafficManagerBasicConfiguration["adminMasterXMLIP"] = d.Get("admin_master_xmlip").(string)
-	trafficManagerBasicConfiguration["adminSlaveXMLIP"] = d.Get("admin_slave_xmlip").(string)
-	trafficManagerBasicConfiguration["authenticationServerIP"] = d.Get("authentication_server_ip").(string)
-	trafficManagerBasicConfiguration["num_aptimizer_threads"] = d.Get("num_aptimizer_threads").(int)
-	trafficManagerBasicConfiguration["num_children"] = d.Get("num_children").(int)
-	trafficManagerBasicConfiguration["numberOfCPUs"] = d.Get("number_of_cpus").(int)
-	trafficManagerBasicConfiguration["restServerPort"] = d.Get("rest_server_port").(int)
-	trafficManagerBasicConfiguration["updaterIP"] = d.Get("updater_ip").(string)
-	trafficManagerBasicConfiguration["location"] = d.Get("location").(string)
-	trafficManagerBasicConfiguration["nameip"] = d.Get("nameip")
-
-	if v, ok := d.GetOk("appliance"); ok {
-		trafficManagerPropertiesConfiguration["appliance"] = assignApplianceValues(v.([]interface{}))
+	for _, attribute := range []string{"appliance_card", "appliance_sysctl", "trafficip", "num_children", "location", "nameip", "admin_master_xmlip", "admin_slave_xmlip", "authentication_server_ip", "num_aptimizer_threads", "number_of_cpus", "rest_server_port", "updater_ip"} {
+		if d.HasChange(attribute) {
+			trafficManagerBasicConfiguration[getTrafficManagerAttributeName(attribute)] = d.Get(attribute)
+		}
 	}
 
 	trafficManagerPropertiesConfiguration["basic"] = trafficManagerBasicConfiguration
@@ -611,87 +883,56 @@ func resourceTrafficManagerRead(d *schema.ResourceData, m interface{}) error {
 
 	trafficManagerPropertiesConfig := trafficManagerConfiguration["properties"].(map[string]interface{})
 
-	for i, element := range trafficManagerPropertiesConfig["basic"].(map[string]interface{}) {
-		switch i {
-		case "adminMasterXMLIP":
-			d.Set("admin_master_xmlip", element)
-		case "adminSlaveXMLIP":
-			d.Set("admin_slave_xmlip", element)
-		case "authenticationServerIP":
-			d.Set("authentication_server_ip", element)
-		case "numberOfCPUs":
-			d.Set("number_of_cpus", element)
-		case "restServerPort":
-			d.Set("rest_server_port", element)
-		case "updaterIP":
-			d.Set("updater_ip", element)
-		default:
-			d.Set(i, element)
+	basicTables := map[string]string{
+		"appliance_card":   "name",
+		"appliance_sysctl": "sysctl",
+		"trafficip":        "name",
+	}
+
+	trafficManagerPropertiesConfig["basic"] = util.ReorderTablesInSection(trafficManagerPropertiesConfig, basicTables, "basic", d)
+	for key, value := range trafficManagerPropertiesConfig["basic"].(map[string]interface{}) {
+		err = d.Set(getTrafficManagerAttributeName(key), value)
+		if err != nil {
+			return fmt.Errorf("[ERROR] BrocadeVTM error whilst setting Traffic Manager attribute %s: %v", getTrafficManagerAttributeName(key), err)
 		}
 	}
-	d.Set("appliance", trafficManagerPropertiesConfig["appliance"])
+
+	applianceTables := map[string]string{
+		"if":     "name",
+		"ip":     "name",
+		"hosts":  "name",
+		"routes": "name",
+	}
+
+	trafficManagerPropertiesConfig["appliance"] = util.ReorderTablesInSection(trafficManagerPropertiesConfig, applianceTables, "appliance", d)
+
+	applianceSection := make([]interface{}, 0)
+	applianceSection = append(applianceSection, trafficManagerPropertiesConfig["appliance"].(map[string]interface{}))
+
+	err = d.Set("appliance", applianceSection)
+
+	if err != nil {
+		log.Println("[ERROR]  Response we're trying to set")
+		spew.Dump(applianceSection)
+
+		return fmt.Errorf("[ERROR] BrocadeVTM error whilst setting Traffic Manager attribute appliance: %v", err)
+	}
+
+	sectionNames := []string{"cluster_comms", "ec2", "fault_tolerance", "iptables", "iptrans", "java", "remote_licensing", "rest_api", "snmp"}
+
+	for _, section := range sectionNames {
+		sectionAsSliceOfInterfaces := make([]interface{}, 0)
+		sectionAsSliceOfInterfaces = append(sectionAsSliceOfInterfaces, trafficManagerPropertiesConfig[section].(map[string]interface{}))
+
+		err := d.Set(section, sectionAsSliceOfInterfaces)
+		if err != nil {
+			log.Println("[ERROR]  Response we're trying to set")
+			spew.Dump(section)
+			return fmt.Errorf("[ERROR] BrocadeVTM error whilst setting Traffic Manager attribute %s: %v", section, err)
+		}
+	}
 
 	return nil
-}
-
-func resourceTrafficManagerUpdate(d *schema.ResourceData, m interface{}) error {
-	config := m.(map[string]interface{})
-	client := config["jsonClient"].(*api.Client)
-	trafficManagerConfiguration := make(map[string]interface{})
-	trafficManagerPropertiesConfiguration := make(map[string]interface{})
-	trafficManagerBasicConfiguration := make(map[string]interface{})
-
-	tableAttributeList := []string{"appliance_card", "appliance_sysctl", "trafficip"}
-	for _, element := range tableAttributeList {
-		if d.HasChange(element) {
-			trafficManagerBasicConfiguration[element] = d.Get(element).(*schema.Set).List()
-		}
-	}
-
-	if d.HasChange("admin_master_xmlip") {
-		trafficManagerBasicConfiguration["adminMasterXMLIP"] = d.Get("admin_master_xmlip")
-	}
-	if d.HasChange("admin_slave_xmlip") {
-		trafficManagerBasicConfiguration["adminSlaveXMLIP"] = d.Get("admin_slave_xmlip").(string)
-	}
-	if d.HasChange("authentication_server_ip") {
-		trafficManagerBasicConfiguration["authenticationServerIP"] = d.Get("authentication_server_ip").(string)
-	}
-	if d.HasChange("num_aptimizer_threads") {
-		trafficManagerBasicConfiguration["num_aptimizer_threads"] = d.Get("num_aptimizer_threads").(int)
-	}
-	if d.HasChange("num_children") {
-		trafficManagerBasicConfiguration["num_children"] = d.Get("num_children").(int)
-	}
-	if d.HasChange("number_of_cpus") {
-		trafficManagerBasicConfiguration["numberOfCPUs"] = d.Get("number_of_cpus").(int)
-	}
-	if d.HasChange("rest_server_port") {
-		trafficManagerBasicConfiguration["restServerPort"] = d.Get("rest_server_port").(int)
-	}
-	if d.HasChange("updater_ip") {
-		trafficManagerBasicConfiguration["updaterIP"] = d.Get("updater_ip").(string)
-	}
-	if d.HasChange("location") {
-		trafficManagerBasicConfiguration["location"] = d.Get("location").(string)
-	}
-	if d.HasChange("nameip") {
-		trafficManagerBasicConfiguration["nameip"] = d.Get("nameip").(string)
-	}
-
-	if d.HasChange("appliance") {
-		trafficManagerPropertiesConfiguration["appliance"] = assignApplianceValues(d.Get("appliance").([]interface{}))
-	}
-
-	trafficManagerPropertiesConfiguration["basic"] = trafficManagerBasicConfiguration
-	trafficManagerConfiguration["properties"] = trafficManagerPropertiesConfiguration
-
-	err := client.Set("traffic_managers", d.Id(), &trafficManagerConfiguration, nil)
-	if err != nil {
-		return fmt.Errorf("[ERROR] BrocadeVTM error whilst updating Traffic Manager %s: %v", d.Id(), err)
-	}
-
-	return resourceTrafficManagerRead(d, m)
 }
 
 func resourceTrafficManagerDelete(d *schema.ResourceData, m interface{}) error {

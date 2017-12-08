@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/sky-uk/go-brocade-vtm/api"
-	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm/util"
 	"net/http"
 )
 
@@ -42,22 +41,23 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "admin_master_xmlip", "1.1.1.1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "admin_slave_xmlip", "1.1.1.2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.#", "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "name"), "cardOne"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "interfaces.#"), "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "interfaces.0"), "interface1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "interfaces.1"), "interface2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "label"), "eth0:0"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "name"), "cardTwo"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "interfaces.0"), "interface3"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "interfaces.1"), "interface4"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "label"), "eth0:1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.0.name", "cardOne"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.0.interfaces.#", "2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.0.interfaces.0", "interface1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.0.interfaces.1", "interface2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.0.label", "eth0:0"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.1.name", "cardTwo"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.1.interfaces.#", "2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.1.interfaces.0", "interface3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.1.interfaces.1", "interface4"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.1.label", "eth0:1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_sysctl.#", "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "sysctl"), "sysctrl1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "description"), "sysctrl1 description"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "value"), "valueOne"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "sysctl"), "sysctrl2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "description"), "sysctrl2 description"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "value"), "valueTwo"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_sysctl.0.sysctl", "sysctrl1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_sysctl.0.description", "sysctrl1 description"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_sysctl.0.value", "valueOne"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_sysctl.1.sysctl", "sysctrl2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_sysctl.1.description", "sysctrl2 description"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_sysctl.1.value", "valueTwo"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "authentication_server_ip", "0.0.0.0"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "location", "locationtest"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "nameip", "1.1.1.1"),
@@ -66,45 +66,44 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "number_of_cpus", "0"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "rest_server_port", "10"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.#", "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "name"), "networkinterface1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.#"), "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.0"), "0.0.0.0/24"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.1"), "1.1.1.1/24"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "name"), "networkinterface2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.0"), "0.0.0.0/20"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.1"), "1.1.1.1/20"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.0.name", "networkinterface1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.0.networks.#", "2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.0.networks.0", "0.0.0.0/24"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.0.networks.1", "1.1.1.1/24"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.1.name", "networkinterface2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.1.networks.0", "0.0.0.0/20"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.1.networks.1", "1.1.1.1/20"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "updater_ip", "0.0.0.0"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.#", "1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.gateway_ipv4", "127.0.0.1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.gateway_ipv6", "2001:db8:0:1234:0:567:8:2"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.hostname", "example.domain"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.hosts.#", "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.hosts", "name"), "host1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.hosts", "ip_address"), "127.0.0.1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.hosts", "name"), "host2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.hosts", "ip_address"), "127.0.0.2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.hosts.0.name", "host1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.hosts.0.ip_address", "127.0.0.1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.hosts.1.name", "host2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.hosts.1.ip_address", "127.0.0.2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.#", "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "name"), "if1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "autoneg"), "true"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "bond"), "bond1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "duplex"), "false"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "mtu"), "1500"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "speed"), "100"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "name"), "if2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "autoneg"), "false"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "bond"), "bond2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "duplex"), "true"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "mtu"), "1550"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "speed"), "10"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.0.name", "if1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.0.autoneg", "true"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.0.bond", "bond1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.0.duplex", "false"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.0.mtu", "1500"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.0.speed", "100"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.1.name", "if2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.1.autoneg", "false"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.1.bond", "bond2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.1.duplex", "true"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.1.mtu", "1550"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.1.speed", "10"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.#", "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "name"), "eth0"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "addr"), "127.0.0.1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "isexternal"), "true"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "mask"), "255.255.254.0"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "name"), "eth1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "addr"), "127.0.0.2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "isexternal"), "false"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "mask"), "255.255.255.0"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.0.name", "eth0"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.0.addr", "127.0.0.1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.0.isexternal", "false"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.0.mask", "255.255.255.0"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.1.name", "eth1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.1.addr", "127.0.0.2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.1.isexternal", "true"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.1.mask", "255.255.254.0"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ipmi_lan_access", "true"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ipmi_lan_addr", "127.0.0.1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ipmi_lan_gateway", "192.168.4.3"),
@@ -117,7 +116,6 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.manageec2conf", "true"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.manageiptrans", "true"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.managereturnpath", "true"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.managesysctl", "true"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.managevpcconf", "true"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.name_servers.#", "2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.name_servers.0", "127.0.0.1"),
@@ -126,10 +124,10 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ntpservers.0", "127.0.0.3"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ntpservers.1", "127.0.0.4"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.routes.#", "1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.routes", "name"), "127.0.0.1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.routes", "gw"), "192.168.4.3"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.routes", "if"), "if1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.routes", "mask"), "255.255.255.0"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.routes.0.name", "127.0.0.1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.routes.0.gw", "192.168.4.3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.routes.0.if", "if1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.routes.0.mask", "255.255.255.0"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.search_domains.#", "2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.search_domains.0", "searchdomain1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.search_domains.1", "searchdomain2"),
@@ -150,6 +148,48 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.vlans.#", "2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.vlans.0", "vlan.1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.vlans.1", "vlan.2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "cluster_comms.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "cluster_comms.0.allow_update", "true"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "cluster_comms.0.bind_ip", "127.0.0.1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "cluster_comms.0.external_ip", "127.0.0.2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "cluster_comms.0.port", "9080"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.bgp_router_id", "127.0.0.1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_ip", "127.0.0.1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_neighbor_addrs.#", "3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_neighbor_addrs.0", "127.0.0.1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_neighbor_addrs.1", "127.0.0.2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_neighbor_addrs.2", "127.0.0.3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptables.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptables.0.config_enabled", "true"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptrans.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptrans.0.fwmark", "50"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptrans.0.iptables_enabled", "true"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptrans.0.routing_table", "300"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "java.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "java.0.port", "1500"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "remote_licensing.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "remote_licensing.0.email_address", "test1@testemail.dev"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "remote_licensing.0.message", "message1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "rest_api.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "rest_api.0.port", "500"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "rest_api.0.bind_ips.#", "2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "rest_api.0.bind_ips.0", "127.0.0.1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "rest_api.0.bind_ips.1", "127.0.0.2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.allow.#", "3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.allow.0", "127.0.0.1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.allow.1", "127.0.0.2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.allow.2", "127.0.0.3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.auth_password", "testpassword"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.bind_ip", "127.0.0.5"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.community", "public"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.enabled", "true"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.hash_algorithm", "md5"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.port", "50"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.priv_password", "privpassword"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.security_level", "noauthnopriv"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.username", "username1"),
 				),
 			},
 
@@ -161,22 +201,23 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "admin_master_xmlip", "1.1.1.3"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "admin_slave_xmlip", "1.1.1.4"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.#", "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "name"), "cardOneUpdated"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "interfaces.#"), "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "interfaces.0"), "interface5"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "interfaces.1"), "interface6"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "label"), "eth0:2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "name"), "cardTwoUpdated"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "interfaces.0"), "interface7"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "interfaces.1"), "interface8"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_card", "label"), "eth0:3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.0.name", "cardOneUpdated"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.0.interfaces.#", "2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.0.interfaces.0", "interface5"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.0.interfaces.1", "interface6"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.0.label", "eth0:2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.1.name", "cardTwoUpdated"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.1.interfaces.#", "2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.1.interfaces.0", "interface7"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.1.interfaces.1", "interface8"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_card.1.label", "eth0:3"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_sysctl.#", "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "sysctl"), "sysctrl1Updated"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "description"), "sysctrl1 description Updated"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "value"), "valueOneUpdated"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "sysctl"), "sysctrl2Updated"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "description"), "sysctrl2 description Updated"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance_sysctl", "value"), "valueTwoUpdated"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_sysctl.0.sysctl", "sysctrl1Updated"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_sysctl.0.description", "sysctrl1 description Updated"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_sysctl.0.value", "valueOneUpdated"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_sysctl.1.sysctl", "sysctrl2Updated"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_sysctl.1.description", "sysctrl2 description Updated"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance_sysctl.1.value", "valueTwoUpdated"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "authentication_server_ip", "0.0.0.1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "location", "locationtestUpdated"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "nameip", "2.2.2.2"),
@@ -185,45 +226,44 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "number_of_cpus", "1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "rest_server_port", "15"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.#", "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "name"), "networkinterface1Updated"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.#"), "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.0"), "1.0.0.0/24"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.1"), "2.1.1.1/24"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "name"), "networkinterface2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.0"), "1.0.0.0/20"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("trafficip", "networks.1"), "2.1.1.1/20"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.0.name", "networkinterface1Updated"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.0.networks.#", "2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.0.networks.0", "1.0.0.0/24"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.0.networks.1", "2.1.1.1/24"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.1.name", "networkinterface2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.1.networks.0", "1.0.0.0/20"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "trafficip.1.networks.1", "2.1.1.1/20"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "updater_ip", "0.0.0.1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.#", "1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.gateway_ipv4", "127.0.0.2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.gateway_ipv6", "2001:db8:0:1234:0:567:8:3"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.hostname", "example.domainupdated"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.hosts.#", "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.hosts", "name"), "host3"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.hosts", "ip_address"), "127.0.0.3"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.hosts", "name"), "host4"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.hosts", "ip_address"), "127.0.0.4"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.hosts.0.name", "host3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.hosts.0.ip_address", "127.0.0.3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.hosts.1.name", "host4"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.hosts.1.ip_address", "127.0.0.4"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.#", "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "name"), "if3"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "autoneg"), "false"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "bond"), "bond3"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "duplex"), "true"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "mtu"), "3000"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "speed"), "1000"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "name"), "if4"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "autoneg"), "true"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "bond"), "bond4"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "duplex"), "false"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "mtu"), "1800"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.if", "speed"), "100"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.0.name", "if3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.0.autoneg", "false"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.0.bond", "bond3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.0.duplex", "true"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.0.mtu", "3000"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.0.speed", "1000"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.1.name", "if4"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.1.autoneg", "true"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.1.bond", "bond4"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.1.duplex", "false"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.1.mtu", "1800"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.if.1.speed", "100"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.#", "2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "name"), "eth0"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "addr"), "127.0.0.1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "isexternal"), "false"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "mask"), "255.255.255.0"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "name"), "eth1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "addr"), "127.0.0.2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "isexternal"), "false"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.ip", "mask"), "255.255.254.0"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.0.name", "eth0"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.0.addr", "127.0.0.1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.0.isexternal", "false"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.0.mask", "255.255.255.0"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.1.name", "eth1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.1.addr", "127.0.0.2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.1.isexternal", "true"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ip.1.mask", "255.255.254.0"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ipmi_lan_access", "false"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ipmi_lan_addr", "127.0.0.2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ipmi_lan_gateway", "192.168.4.4"),
@@ -236,7 +276,6 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.manageec2conf", "false"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.manageiptrans", "false"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.managereturnpath", "false"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.managesysctl", "false"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.managevpcconf", "false"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.name_servers.#", "2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.name_servers.0", "127.0.0.3"),
@@ -245,10 +284,10 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ntpservers.0", "127.0.0.4"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ntpservers.1", "127.0.0.5"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.routes.#", "1"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.routes", "name"), "127.0.0.2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.routes", "gw"), "192.168.4.4"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.routes", "if"), "if2"),
-					util.AccTestCheckValueInKeyPattern(trafficManagerResourceName, compileRegex("appliance.0.routes", "mask"), "255.255.254.0"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.routes.0.name", "127.0.0.2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.routes.0.gw", "192.168.4.4"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.routes.0.if", "if2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.routes.0.mask", "255.255.254.0"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.search_domains.#", "2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.search_domains.0", "searchdomain3"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.search_domains.1", "searchdomain4"),
@@ -269,6 +308,48 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.vlans.#", "2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.vlans.0", "vlan.3"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.vlans.1", "vlan.4"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "cluster_comms.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "cluster_comms.0.allow_update", "false"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "cluster_comms.0.bind_ip", "127.0.0.3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "cluster_comms.0.external_ip", "127.0.0.4"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "cluster_comms.0.port", "9081"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.bgp_router_id", "127.0.0.2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_ip", "127.0.0.2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_neighbor_addrs.#", "3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_neighbor_addrs.0", "127.0.0.3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_neighbor_addrs.1", "127.0.0.4"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_neighbor_addrs.2", "127.0.0.5"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptables.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptables.0.config_enabled", "false"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptrans.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptrans.0.fwmark", "100"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptrans.0.iptables_enabled", "false"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptrans.0.routing_table", "600"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "java.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "java.0.port", "3000"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "remote_licensing.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "remote_licensing.0.email_address", "test2@testemail.dev"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "remote_licensing.0.message", "message2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "rest_api.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "rest_api.0.port", "1000"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "rest_api.0.bind_ips.#", "2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "rest_api.0.bind_ips.0", "127.0.0.3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "rest_api.0.bind_ips.1", "127.0.0.4"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.#", "1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.allow.#", "3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.allow.0", "127.0.0.4"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.allow.1", "127.0.0.5"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.allow.2", "127.0.0.6"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.auth_password", "testpasswordupdate"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.bind_ip", "127.0.0.6"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.community", "private"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.enabled", "false"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.hash_algorithm", "sha1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.port", "100"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.priv_password", "privpasswordupdate"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.security_level", "authpriv"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "snmp.0.username", "usernameupdated"),
 				),
 			},
 		},
@@ -375,7 +456,6 @@ func testAccBrocadeTrafficManagerCreate(name string) string {
        appliance = {
            gateway_ipv4 = "127.0.0.1"
 	   gateway_ipv6 = "2001:db8:0:1234:0:567:8:2"
-	   hostname = "example.domain"
 
 	   hosts = [
 	   	{
@@ -406,66 +486,116 @@ func testAccBrocadeTrafficManagerCreate(name string) string {
             speed = "10"
           }
 
-       ]
-       ip = [
-        {
-         name = "eth0"
-         addr = "127.0.0.1"
-         isexternal = false
-         mask = "255.255.255.0"
-        },
-        {
-         name = "eth1"
-         addr = "127.0.0.2"
-         isexternal = true
-         mask = "255.255.254.0"
-        }
-       ]
+	  ]
+	  ip = [
+		{
+		 name = "eth0"
+		 addr = "127.0.0.1"
+		 isexternal = false
+		 mask = "255.255.255.0"
+		},
+		{
+		 name = "eth1"
+		 addr = "127.0.0.2"
+		 isexternal = true
+		 mask = "255.255.254.0"
+		}
+	  ]
 
-        ipmi_lan_access = true
-       ipmi_lan_addr = "127.0.0.1"
-       ipmi_lan_gateway = "192.168.4.3"
-       ipmi_lan_ipsrc = "dhcp"
-       ipmi_lan_mask = "255.255.255.0"
-       ipv4_forwarding = true
-       ipv6_forwarding = true
-       licence_agreed = true
-       manageazureroutes = true
-       manageec2conf = true
-       manageiptrans = true
-       managereturnpath = true
-       managesysctl = true
-       managevpcconf = true
-       name_servers = ["127.0.0.1","127.0.0.2"]
-       ntpservers = ["127.0.0.3","127.0.0.4"]
+	       ipmi_lan_access = true
+	       ipmi_lan_addr = "127.0.0.1"
+	       ipmi_lan_gateway = "192.168.4.3"
+	       ipmi_lan_ipsrc = "dhcp"
+	       ipmi_lan_mask = "255.255.255.0"
+	       ipv4_forwarding = true
+	       ipv6_forwarding = true
+	       licence_agreed = true
+	       manageazureroutes = true
+	       manageec2conf = true
+	       manageiptrans = true
+	       managereturnpath = true
+	       managevpcconf = true
+	       name_servers = ["127.0.0.1","127.0.0.2"]
+	       ntpservers = ["127.0.0.3","127.0.0.4"]
 
-       routes = [
-          {
-            name = "127.0.0.1"
-            gw = "192.168.4.3"
-            if = "if1"
-            mask = "255.255.255.0"
-          }
-       ]
+	       routes = [
+		  {
+		    name = "127.0.0.1"
+		    gw = "192.168.4.3"
+		    if = "if1"
+		    mask = "255.255.255.0"
+		  }
+	       ]
 
-       search_domains = ["searchdomain1","searchdomain2"]
-       shim_client_id = "id1"
-       shim_client_key = "key1"
-       shim_enabled = true
-       shim_ips = "ip1,ip2,ip3"
-       shim_load_balance = "priority"
-       shim_log_level = "debug"
-       shim_mode = "local"
-       shim_portal_url = "127.0.0.1"
-       shim_proxy_host = "127.0.0.2"
-       shim_proxy_port = 444
-       ssh_enabled = true
-       ssh_password_allowed = true
-       ssh_port = 22
-       timezone = "UTC"
-       vlans = ["vlan.1","vlan.2"]
+	       search_domains = ["searchdomain1","searchdomain2"]
+	       shim_client_id = "id1"
+	       shim_client_key = "key1"
+	       shim_enabled = true
+	       shim_ips = "ip1,ip2,ip3"
+	       shim_load_balance = "priority"
+	       shim_log_level = "debug"
+	       shim_mode = "local"
+	       shim_portal_url = "127.0.0.1"
+	       shim_proxy_host = "127.0.0.2"
+	       shim_proxy_port = 444
+	       ssh_enabled = true
+	       ssh_password_allowed = true
+	       ssh_port = 22
+	       timezone = "UTC"
+	       vlans = ["vlan.1","vlan.2"]
 
        }
+
+       cluster_comms = {
+		allow_update = true
+		bind_ip = "127.0.0.1"
+		external_ip = "127.0.0.2"
+		port = 9080
+       }
+
+	fault_tolerance = {
+		bgp_router_id = "127.0.0.1"
+		ospfv2_ip = "127.0.0.1"
+		ospfv2_neighbor_addrs = ["127.0.0.1","127.0.0.2","127.0.0.3"]
+	}
+
+	iptables = {
+		config_enabled = true
+	}
+
+	iptrans = {
+		fwmark = 50
+		iptables_enabled = true
+		routing_table = 300
+	}
+
+	java = {
+		port = 1500
+	}
+
+	remote_licensing = {
+		email_address = "test1@testemail.dev"
+		message = "message1"
+	}
+
+	rest_api = {
+		port = 500
+		bind_ips = ["127.0.0.1","127.0.0.2"]
+	}
+
+	snmp = {
+		allow = ["127.0.0.1","127.0.0.2","127.0.0.3"]
+		auth_password = "testpassword"
+		bind_ip = "127.0.0.5"
+		community = "public"
+		enabled = true
+		hash_algorithm = "md5"
+		port = 50
+		priv_password = "privpassword"
+		security_level = "noauthnopriv"
+		username = "username1"
+	}
+
 }
 `, name)
 }
@@ -524,7 +654,6 @@ func testAccBrocadeTrafficManagerUpdate(name string) string {
 	appliance = {
            gateway_ipv4 = "127.0.0.2"
 	   gateway_ipv6 = "2001:db8:0:1234:0:567:8:3"
-	   hostname = "example.domainupdated"
 
 	   hosts = [
 	   	{
@@ -583,7 +712,6 @@ func testAccBrocadeTrafficManagerUpdate(name string) string {
        manageec2conf = false
        manageiptrans = false
        managereturnpath = false
-       managesysctl = false
        managevpcconf = false
        name_servers = ["127.0.0.3","127.0.0.4"]
        ntpservers = ["127.0.0.4","127.0.0.5"]
@@ -614,6 +742,56 @@ func testAccBrocadeTrafficManagerUpdate(name string) string {
        timezone = "GMT"
        vlans = ["vlan.3","vlan.4"]
        }
+
+        cluster_comms = {
+		allow_update = false
+		bind_ip = "127.0.0.3"
+		external_ip = "127.0.0.4"
+		port = 9081
+       }
+
+	fault_tolerance = {
+		bgp_router_id = "127.0.0.2"
+		ospfv2_ip = "127.0.0.2"
+		ospfv2_neighbor_addrs = ["127.0.0.3","127.0.0.4","127.0.0.5"]
+	}
+
+	iptables = {
+		config_enabled = false
+	}
+
+	iptrans = {
+		fwmark = 100
+		iptables_enabled = false
+		routing_table = 600
+	}
+
+	java = {
+		port = 3000
+	}
+
+	remote_licensing = {
+		email_address = "test2@testemail.dev"
+		message = "message2"
+	}
+
+	rest_api = {
+		port = 1000
+		bind_ips = ["127.0.0.3","127.0.0.4"]
+	}
+
+	snmp = {
+		allow = ["127.0.0.4","127.0.0.5","127.0.0.6"]
+		auth_password = "testpasswordupdate"
+		bind_ip = "127.0.0.6"
+		community = "private"
+		enabled = false
+		hash_algorithm = "sha1"
+		port = 100
+		priv_password = "privpasswordupdate"
+		security_level = "authpriv"
+		username = "usernameupdated"
+	}
 }
 `, name)
 }
