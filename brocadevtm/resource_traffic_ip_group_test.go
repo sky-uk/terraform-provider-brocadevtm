@@ -78,7 +78,7 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ip_assignment_mode", "alphabetic"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ip_mapping.#", "1"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingIPPattern, "192.168.34.56"),
-					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.24"),
+					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.27"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ipaddresses.#", "1"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipAddressesPattern, "192.168.100.10"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "keeptogether", "true"),
@@ -110,8 +110,8 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ip_mapping.#", "2"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingIPPattern, "192.168.34.56"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingIPPattern, "192.168.34.64"),
-					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.24"),
-					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.24"),
+					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.27"),
+					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.27"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ipaddresses.#", "2"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipAddressesPattern, "192.168.100.11"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipAddressesPattern, "192.168.100.12"),
@@ -144,8 +144,8 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ip_mapping.#", "2"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingIPPattern, "192.168.34.64"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingIPPattern, "192.168.34.56"),
-					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.24"),
-					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.24"),
+					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.27"),
+					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.27"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ipaddresses.#", "1"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipAddressesPattern, "192.168.100.12"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "keeptogether", "true"),
@@ -301,7 +301,7 @@ resource "brocadevtm_traffic_ip_group" "acctest" {
   ip_mapping = [
     {
       ip = "192.168.34.56"
-      traffic_manager = "10.93.59.24"
+      traffic_manager = "10.93.59.27"
     },
   ]
   ipaddresses = ["192.168.100.10"]
@@ -331,11 +331,11 @@ resource "brocadevtm_traffic_ip_group" "acctest" {
   ip_mapping = [
     {
       ip = "192.168.34.56"
-      traffic_manager = "10.93.59.24"
+      traffic_manager = "10.93.59.27"
     },
     {
       ip = "192.168.34.64"
-      traffic_manager = "10.93.59.24"
+      traffic_manager = "10.93.59.27"
     },
   ]
   ipaddresses = ["192.168.100.11", "192.168.100.12"]
@@ -365,17 +365,18 @@ resource "brocadevtm_traffic_ip_group" "acctest" {
   ip_mapping = [
     {
       ip = "192.168.34.64"
-      traffic_manager = "10.93.59.24"
+      traffic_manager = "10.93.59.27"
     },
     {
       ip = "192.168.34.56"
-      traffic_manager = "10.93.59.24"
+
+      traffic_manager = "10.93.59.27"
     },
   ]
   ipaddresses = ["192.168.100.12"]
   keeptogether = true
   location = 5
-  machines = [ "192.168.10.11", "10.93.59.24" ]
+  machines = [ "192.168.10.11", "10.93.59.27" ]
   mode = "singlehosted"
   multicast = "232.123.23.48"
   note = "Acceptance test - update 2"
