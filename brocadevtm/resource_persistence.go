@@ -170,7 +170,6 @@ func resourcePersistenceRead(d *schema.ResourceData, m interface{}) error {
 func resourcePersistenceUpdate(d *schema.ResourceData, m interface{}) error {
 
 	name := d.Id()
-	hasChanges := false
 	persistenceBasicConfiguration := make(map[string]interface{})
 	persistencePropertiesConfiguration := make(map[string]interface{})
 	persistenceConfiguration := make(map[string]interface{})
@@ -179,62 +178,52 @@ func resourcePersistenceUpdate(d *schema.ResourceData, m interface{}) error {
 		if v, ok := d.GetOk("cookie"); ok {
 			persistenceBasicConfiguration["cookie"] = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("delete") {
 		persistenceBasicConfiguration["delete"] = d.Get("delete").(bool)
-		hasChanges = true
 	}
 	if d.HasChange("failure_mode") {
 		if v, ok := d.GetOk("failure_mode"); ok && v != "" {
 			persistenceBasicConfiguration["failure_mode"] = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("note") {
 		if v, ok := d.GetOk("note"); ok {
 			persistenceBasicConfiguration["note"] = v.(string)
 		}
-		hasChanges = true
 	}
 
 	if d.HasChange("subnet_prefix_length_v4") {
 		if v, ok := d.GetOk("subnet_prefix_length_v4"); ok {
 			persistenceBasicConfiguration["subnet_prefix_length_v4"] = v.(int)
 		}
-		hasChanges = true
 	}
 
 	if d.HasChange("subnet_prefix_length_v6") {
 		if v, ok := d.GetOk("subnet_prefix_length_v6"); ok {
 			persistenceBasicConfiguration["subnet_prefix_length_v6"] = v.(int)
 		}
-		hasChanges = true
 	}
 
 	if d.HasChange("type") {
 		if v, ok := d.GetOk("type"); ok && v != "" {
 			persistenceBasicConfiguration["type"] = v.(string)
 		}
-		hasChanges = true
 	}
 	if d.HasChange("url") {
 		if v, ok := d.GetOk("url"); ok {
 			persistenceBasicConfiguration["url"] = v.(string)
 		}
-		hasChanges = true
 	}
 	persistencePropertiesConfiguration["basic"] = persistenceBasicConfiguration
 	persistenceConfiguration["properties"] = persistencePropertiesConfiguration
-
-	if hasChanges {
-		config := m.(map[string]interface{})
-		client := config["jsonClient"].(*api.Client)
-		err := client.Set("persistence", name, &persistenceConfiguration, nil)
-		if err != nil {
-			return fmt.Errorf("[ERROR] BrocadeVTM Persistence error whilst creating %s: %v", name, err)
-		}
+	config := m.(map[string]interface{})
+	client := config["jsonClient"].(*api.Client)
+	err := client.Set("persistence", name, &persistenceConfiguration, nil)
+	if err != nil {
+		return fmt.Errorf("[ERROR] BrocadeVTM Persistence error whilst creating %s: %v", name, err)
 	}
+
 	d.SetId(name)
 	return resourcePersistenceRead(d, m)
 }
