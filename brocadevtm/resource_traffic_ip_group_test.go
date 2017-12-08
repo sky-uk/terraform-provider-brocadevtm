@@ -273,6 +273,7 @@ func testAccBrocadeVTMTrafficIPGroupCreateTemplate(trafficIPGroupName string) st
 	return fmt.Sprintf(`
 resource "brocadevtm_traffic_ip_group" "acctest" {
   name = "%s"
+  backend_traffic_ips=["192.168.10.49","192.168.10.54"]
   enabled = true
   hash_source_port = true
   ip_assignment_mode = "alphabetic"
@@ -302,6 +303,7 @@ func testAccBrocadeVTMTrafficIPGroupUpdateTemplate(trafficIPGroupName string) st
 	return fmt.Sprintf(`
 resource "brocadevtm_traffic_ip_group" "acctest" {
   name = "%s"
+  backend_traffic_ips=["192.168.10.49","192.168.10.54"]
   enabled = false
   hash_source_port = false
   ip_assignment_mode = "balanced"
@@ -335,6 +337,7 @@ func testAccBrocadeVTMTrafficIPGroupUpdate2Template(trafficIPGroupName string) s
 	return fmt.Sprintf(`
 resource "brocadevtm_traffic_ip_group" "acctest" {
   name = "%s"
+  backend_traffic_ips=["192.168.10.28","192.168.10.34"]
   enabled = true
   hash_source_port = true
   ip_assignment_mode = "alphabetic"
