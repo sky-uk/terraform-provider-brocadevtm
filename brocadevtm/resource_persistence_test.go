@@ -47,7 +47,7 @@ func TestAccBrocadeVTMPersistenceBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(persistenceResourceName, "delete", "true"),
 					resource.TestCheckResourceAttr(persistenceResourceName, "failure_mode", "url"),
 					resource.TestCheckResourceAttr(persistenceResourceName, "note", "Acceptance test"),
-						resource.TestCheckResourceAttr(persistenceResourceName, "subnet_prefix_length_v4", "24"),
+					resource.TestCheckResourceAttr(persistenceResourceName, "subnet_prefix_length_v4", "24"),
 					resource.TestCheckResourceAttr(persistenceResourceName, "subnet_prefix_length_v6", "64"),
 					resource.TestCheckResourceAttr(persistenceResourceName, "type", "cookie"),
 					resource.TestCheckResourceAttr(persistenceResourceName, "url", "http://www.example.com/"),
