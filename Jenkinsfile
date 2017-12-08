@@ -72,23 +72,17 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
 
                 stage 'testacc'
                 // If the git branch name is prefixed with api5_1_ or api3_8_ we want to use a specific Brocade VTM server. If neither use the default.
-                if (git_branch ==~ /^api5_1_.*/) {
-                    brocadeVTMCredentials = "BROCADEVTM_5_1_CREDENTIALS"
-                    brocadeVTMServer = env.BROCADEVTM_5_1_SERVER
-                    brocadeVTMUnverifiedSSL = env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
-                    brocadeVTMAPI = "5.1"
-
-                } else if(git_branch ==~ /^api3_8_.*/) {
+                if(git_branch ==~ /^api3_8_.*/) {
                     brocadeVTMCredentials="BROCADEVTM_3_8_CREDENTIALS"
                     brocadeVTMServer=env.BROCADEVTM_3_8_SERVER
                     brocadeVTMUnverifiedSSL=env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
                     brocadeVTMAPI="3.8"
 
                 } else {
-                    brocadeVTMCredentials="BROCADEVTM_3_8_CREDENTIALS"
-                    brocadeVTMServer=env.BROCADEVTM_3_8_SERVER
-                    brocadeVTMUnverifiedSSL=env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
-                    brocadeVTMAPI="3.8"
+                    brocadeVTMCredentials = "BROCADEVTM_5_1_CREDENTIALS"
+                    brocadeVTMServer = env.BROCADEVTM_5_1_SERVER
+                    brocadeVTMUnverifiedSSL = env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
+                    brocadeVTMAPI = "5.1"
                 }
 
                 echo "Running acceptance tests using credentials ID: ${brocadeVTMCredentials}, API version: ${brocadeVTMAPI} and VTM server: ${brocadeVTMServer}"
