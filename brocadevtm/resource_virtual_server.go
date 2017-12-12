@@ -286,7 +286,7 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "The length of time that the virtual server should keep an idle keepalive connection before discarding it. A value of 0 (zero) will mean that the keepalives are never closed by the traffic manager.",
 							Optional:     true,
 							Default:      10,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"max_client_buffer": {
 							Type:         schema.TypeInt,
@@ -307,7 +307,7 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  " The total amount of time a transaction can take, counted from the first byte being received until the transaction is complete. ",
 							Optional:     true,
 							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 
 						"server_first_banner": {
@@ -320,7 +320,7 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "A connection should be closed if no additional data has been received for this period of time. A value of 0 (zero) will disable this timeout.",
 							Optional:     true,
 							Default:      300,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 					},
 				},
