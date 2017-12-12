@@ -423,16 +423,10 @@ resource "brocadevtm_pool" "acctest" {
 resource "brocadevtm_virtual_server" "acctest" {
 
 	name = "%s"
-	add_cluster_ip = false
-	add_x_forwarded_for = false
-	add_x_forwarded_proto = false
-	autodetect_upgrade_headers = false
 	bandwidth_class = "testUpdate"
-	close_with_rst = false
-	completionrules = ["completionRule2","completionRule3"]
+	completion_rules = ["completionRule2","completionRule3"]
 	connect_timeout = 100
 	enabled = false
-	ftp_force_server_secure = false
 	glb_services = ["testservice3","testservice4"]
 	listen_on_any = false
 	listen_on_hosts = ["host3","host4"]
@@ -445,10 +439,7 @@ resource "brocadevtm_virtual_server" "acctest" {
 	request_rules = ["ruleThree"]
 	response_rules = ["ruleFour"]
 	slm_class = "testClassUpdate"
-	so_nagle = false
-	ssl_client_cert_headers = "simple"
 	ssl_decrypt = false
-	ssl_honor_fallback_scsv = "use_default"
 	transparent = false
 	connection_errors = {
 		error_file = "testErrorFileUpdate"
@@ -600,7 +591,6 @@ resource "brocadevtm_virtual_server" "acctest" {
 		ocsp_stapling = false
 	    ocsp_time_tolerance = 55
 	    ocsp_timeout = 25
-	    prefer_sslv3 = false
 	    request_client_cert = "require"
 	    send_close_alerts = false
 	    server_cert_alt_certificates = ["testssl002"]
@@ -615,12 +605,10 @@ resource "brocadevtm_virtual_server" "acctest" {
 		]
 
 		signature_algorithms = "ECDSA_SHA256"
-		ssl_ciphers = "SSL_RSA_WITH_RC4_128_SHA"
-		ssl_support_ssl2 = "disabled"
-		ssl_support_ssl3 = "disabled"
-		ssl_support_tls1 = "disabled"
-		ssl_support_tls1_1 = "disabled"
-		ssl_support_tls1_2 = "disabled"
+		support_ssl3 = "disabled"
+		support_tls1 = "disabled"
+		support_tls1_1 = "disabled"
+		support_tls1_2 = "disabled"
 		trust_magic = false
 	  }
 
