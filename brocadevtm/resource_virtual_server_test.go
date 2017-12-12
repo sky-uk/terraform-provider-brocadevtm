@@ -38,17 +38,13 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMVirtualServerExists(virtualServerName, resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", virtualServerName),
-					resource.TestCheckResourceAttr(resourceName, "add_cluster_ip", "true"),
-					resource.TestCheckResourceAttr(resourceName, "add_x_forwarded_for", "true"),
-					resource.TestCheckResourceAttr(resourceName, "add_x_forwarded_proto", "true"),
-					resource.TestCheckResourceAttr(resourceName, "autodetect_upgrade_headers", "true"),
-					resource.TestCheckResourceAttr(resourceName, "close_with_rst", "true"),
-					resource.TestCheckResourceAttr(resourceName, "completionrules.#", "2"),
-					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("completionrules"), "completionRule1"),
-					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("completionrules"), "completionRule2"),
+					resource.TestCheckResourceAttr(resourceName, "bandwidth_class", "test"),
+					resource.TestCheckResourceAttr(resourceName, "bypass_data_plane_acceleration", "true"),
+					resource.TestCheckResourceAttr(resourceName, "completion_rules.#", "2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("completion_rules"), "completionRule1"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("completion_rules"), "completionRule2"),
 					resource.TestCheckResourceAttr(resourceName, "connect_timeout", "50"),
 					resource.TestCheckResourceAttr(resourceName, "enabled", "true"),
-					resource.TestCheckResourceAttr(resourceName, "ftp_force_server_secure", "true"),
 					resource.TestCheckResourceAttr(resourceName, "glb_services.#", "2"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("glb_services"), "testservice"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("glb_services"), "testservice2"),
@@ -59,11 +55,13 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "listen_on_traffic_ips.#", "2"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("listen_on_traffic_ips"), "ip1"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("listen_on_traffic_ips"), "ip2"),
+					resource.TestCheckResourceAttr(resourceName, "max_concurrent_connections", "2"),
 					resource.TestCheckResourceAttr(resourceName, "note", "create acceptance test"),
 					resource.TestCheckResourceAttr(resourceName, "pool", "test-pool"),
 					resource.TestCheckResourceAttr(resourceName, "port", "50"),
 					resource.TestCheckResourceAttr(resourceName, "protection_class", "testProtectionClass"),
 					resource.TestCheckResourceAttr(resourceName, "protocol", "dns"),
+					resource.TestCheckResourceAttr(resourceName, "proxy_protocol", "true"),
 					resource.TestCheckResourceAttr(resourceName, "request_rules.#", "2"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("request_rules"), "ruleOne"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("request_rules"), "ruleTwo"),
@@ -71,18 +69,27 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("response_rules"), "ruleOne"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("response_rules"), "ruleTwo"),
 					resource.TestCheckResourceAttr(resourceName, "slm_class", "testClass"),
-					resource.TestCheckResourceAttr(resourceName, "so_nagle", "true"),
-					resource.TestCheckResourceAttr(resourceName, "ssl_client_cert_headers", "all"),
 					resource.TestCheckResourceAttr(resourceName, "ssl_decrypt", "true"),
-					resource.TestCheckResourceAttr(resourceName, "ssl_honor_fallback_scsv", "enabled"),
 					resource.TestCheckResourceAttr(resourceName, "transparent", "true"),
 					resource.TestCheckResourceAttr(resourceName, "connection_errors.0.error_file", "testErrorFile"),
 					resource.TestCheckResourceAttr(resourceName, "smtp.0.expect_starttls", "true"),
 					resource.TestCheckResourceAttr(resourceName, "tcp.0.proxy_close", "true"),
+					resource.TestCheckResourceAttr(resourceName, "tcp.0.close_with_rst", "true"),
+					resource.TestCheckResourceAttr(resourceName, "tcp.0.nagle", "true"),
 					resource.TestCheckResourceAttr(resourceName, "aptimizer.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.#", "3"),
-					resource.TestCheckResourceAttr(resourceName, "bandwidth_class", "test"),
+					resource.TestCheckResourceAttr(resourceName, "auth.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.saml_nameid_format", "none"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.saml_sp_acs_url", "http://www.example.dev"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.saml_sp_entity_id", "testentityid"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.saml_time_tolerance", "5"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.session_cookie_attributes", "HttpOnly"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.session_cookie_name", "testcookie"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.session_log_external_state", "true"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.session_timeout", "3600"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.type", "none"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.verbose", "true"),
 					resource.TestCheckResourceAttr(resourceName, "vs_connection.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "vs_connection.0.keepalive", "true"),
 					resource.TestCheckResourceAttr(resourceName, "vs_connection.0.keepalive_timeout", "500"),
@@ -109,6 +116,7 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "ftp.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.0.data_source_port", "10"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.0.force_client_secure", "true"),
+					resource.TestCheckResourceAttr(resourceName, "ftp.0.force_server_secure", "true"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.0.port_range_high", "50"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.0.port_range_low", "5"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.0.ssl_data", "true"),
@@ -124,10 +132,15 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.min_size", "5"),
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.no_size", "true"),
 					resource.TestCheckResourceAttr(resourceName, "http.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "http.0.add_cluster_ip", "true"),
+					resource.TestCheckResourceAttr(resourceName, "http.0.add_x_forwarded_for", "true"),
+					resource.TestCheckResourceAttr(resourceName, "http.0.add_x_forwarded_proto", "true"),
+					resource.TestCheckResourceAttr(resourceName, "http.0.autodetect_upgrade_headers", "true"),
 					resource.TestCheckResourceAttr(resourceName, "http.0.chunk_overhead_forwarding", "eager"),
 					resource.TestCheckResourceAttr(resourceName, "http.0.location_regex", "testregex"),
 					resource.TestCheckResourceAttr(resourceName, "http.0.location_replace", "testlocationreplace"),
 					resource.TestCheckResourceAttr(resourceName, "http.0.location_rewrite", "never"),
+					resource.TestCheckResourceAttr(resourceName, "http.0.strip_x_forwarded_proto", "true"),
 					resource.TestCheckResourceAttr(resourceName, "http.0.mime_default", "text/html"),
 					resource.TestCheckResourceAttr(resourceName, "http.0.mime_detect", "true"),
 					resource.TestCheckResourceAttr(resourceName, "http2.#", "1"),
@@ -142,6 +155,7 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_whitelist.#", "2"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("http2", "headers_index_whitelist"), "header3"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("http2", "headers_index_whitelist"), "header4"),
+					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_size_limit", "200000"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.idle_timeout_no_streams", "60"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.idle_timeout_open_streams", "120"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.max_concurrent_streams", "10"),
@@ -149,6 +163,13 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "http2.0.max_header_padding", "10"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.merge_cookie_headers", "true"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.stream_window_size", "200"),
+					resource.TestCheckResourceAttr(resourceName, "l4accel.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "l4accel.0.rst_on_service_failure", "true"),
+					resource.TestCheckResourceAttr(resourceName, "l4accel.0.service_ip_snat", "true"),
+					resource.TestCheckResourceAttr(resourceName, "l4accel.0.state_sync", "true"),
+					resource.TestCheckResourceAttr(resourceName, "l4accel.0.tcp_msl", "50"),
+					resource.TestCheckResourceAttr(resourceName, "l4accel.0.timeout", "150"),
+					resource.TestCheckResourceAttr(resourceName, "l4accel.0.udp_count_requests", "true"),
 					resource.TestCheckResourceAttr(resourceName, "log.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "log.0.client_connection_failures", "true"),
 					resource.TestCheckResourceAttr(resourceName, "log.0.enabled", "true"),
@@ -157,6 +178,7 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "log.0.server_connection_failures", "true"),
 					resource.TestCheckResourceAttr(resourceName, "log.0.session_persistence_verbose", "true"),
 					resource.TestCheckResourceAttr(resourceName, "log.0.ssl_failures", "true"),
+					resource.TestCheckResourceAttr(resourceName, "log.0.ssl_resumption_failures", "true"),
 					resource.TestCheckResourceAttr(resourceName, "recent_connections.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "recent_connections.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourceName, "recent_connections.0.save_all", "true"),
@@ -198,7 +220,6 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_stapling", "true"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_time_tolerance", "50"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_timeout", "20"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.prefer_sslv3", "true"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.request_client_cert", "request"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.send_close_alerts", "true"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.server_cert_alt_certificates.#", "1"),
@@ -218,18 +239,24 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert8"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert9"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.signature_algorithms", "RSA_SHA256"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_ciphers", "SSL_RSA_WITH_AES_128_CBC_SHA256"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_support_ssl2", "use_default"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_support_ssl3", "disabled"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_support_tls1", "enabled"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_support_tls1_1", "use_default"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_support_tls1_2", "disabled"),
+					resource.TestCheckResourceAttr(resourceName, "ssl.0.cipher_suites", "SSL_RSA_WITH_AES_128_CBC_SHA256"),
+					resource.TestCheckResourceAttr(resourceName, "ssl.0.support_ssl3", "disabled"),
+					resource.TestCheckResourceAttr(resourceName, "ssl.0.support_tls1", "enabled"),
+					resource.TestCheckResourceAttr(resourceName, "ssl.0.support_tls1_1", "use_default"),
+					resource.TestCheckResourceAttr(resourceName, "ssl.0.support_tls1_2", "disabled"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.trust_magic", "true"),
 					resource.TestCheckResourceAttr(resourceName, "syslog.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "syslog.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourceName, "syslog.0.format", "syslog/format"),
 					resource.TestCheckResourceAttr(resourceName, "syslog.0.ip_end_point", "127.0.0.1:515"),
 					resource.TestCheckResourceAttr(resourceName, "syslog.0.msg_len_limit", "500"),
+					resource.TestCheckResourceAttr(resourceName, "transaction_export.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "transaction_export.0.brief", "true"),
+					resource.TestCheckResourceAttr(resourceName, "transaction_export.0.enabled", "true"),
+					resource.TestCheckResourceAttr(resourceName, "transaction_export.0.hi_res", "true"),
+					resource.TestCheckResourceAttr(resourceName, "transaction_export.0.http_header_blacklist.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "transaction_export.0.http_header_blacklist.0", "bl1"),
+					resource.TestCheckResourceAttr(resourceName, "transaction_export.0.http_header_blacklist.1", "bl2"),
 					resource.TestCheckResourceAttr(resourceName, "udp.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "udp.0.end_point_persistence", "true"),
 					resource.TestCheckResourceAttr(resourceName, "udp.0.port_smp", "true"),
@@ -248,17 +275,13 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMVirtualServerExists(virtualServerName, resourceName),
 					resource.TestCheckResourceAttr(resourceName, "name", virtualServerName),
-					resource.TestCheckResourceAttr(resourceName, "add_cluster_ip", "false"),
-					resource.TestCheckResourceAttr(resourceName, "add_x_forwarded_for", "false"),
-					resource.TestCheckResourceAttr(resourceName, "add_x_forwarded_proto", "false"),
-					resource.TestCheckResourceAttr(resourceName, "autodetect_upgrade_headers", "false"),
-					resource.TestCheckResourceAttr(resourceName, "close_with_rst", "false"),
-					resource.TestCheckResourceAttr(resourceName, "completionrules.#", "2"),
-					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("completionrules"), "completionRule2"),
-					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("completionrules"), "completionRule3"),
+					resource.TestCheckResourceAttr(resourceName, "bandwidth_class", "testUpdate"),
+					resource.TestCheckResourceAttr(resourceName, "bypass_data_plane_acceleration", "false"),
+					resource.TestCheckResourceAttr(resourceName, "completion_rules.#", "2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("completion_rules"), "completionRule2"),
+					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("completion_rules"), "completionRule3"),
 					resource.TestCheckResourceAttr(resourceName, "connect_timeout", "100"),
 					resource.TestCheckResourceAttr(resourceName, "enabled", "false"),
-					resource.TestCheckResourceAttr(resourceName, "ftp_force_server_secure", "false"),
 					resource.TestCheckResourceAttr(resourceName, "glb_services.#", "2"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("glb_services"), "testservice3"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("glb_services"), "testservice4"),
@@ -268,28 +291,39 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("listen_on_hosts"), "host4"),
 					resource.TestCheckResourceAttr(resourceName, "listen_on_traffic_ips.#", "1"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("listen_on_traffic_ips"), "ip1"),
+					resource.TestCheckResourceAttr(resourceName, "max_concurrent_connections", "4"),
 					resource.TestCheckResourceAttr(resourceName, "note", "update acceptance test"),
 					resource.TestCheckResourceAttr(resourceName, "pool", "test-pool"),
 					resource.TestCheckResourceAttr(resourceName, "port", "100"),
 					resource.TestCheckResourceAttr(resourceName, "protection_class", "testProtectionClassUpdate"),
 					resource.TestCheckResourceAttr(resourceName, "protocol", "ftp"),
+					resource.TestCheckResourceAttr(resourceName, "proxy_protocol", "false"),
 					resource.TestCheckResourceAttr(resourceName, "request_rules.#", "1"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("request_rules"), "ruleThree"),
 					resource.TestCheckResourceAttr(resourceName, "response_rules.#", "1"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSet("response_rules"), "ruleFour"),
 					resource.TestCheckResourceAttr(resourceName, "slm_class", "testClassUpdate"),
-					resource.TestCheckResourceAttr(resourceName, "so_nagle", "false"),
-					resource.TestCheckResourceAttr(resourceName, "ssl_client_cert_headers", "simple"),
 					resource.TestCheckResourceAttr(resourceName, "ssl_decrypt", "false"),
-					resource.TestCheckResourceAttr(resourceName, "ssl_honor_fallback_scsv", "use_default"),
 					resource.TestCheckResourceAttr(resourceName, "transparent", "false"),
 					resource.TestCheckResourceAttr(resourceName, "connection_errors.0.error_file", "testErrorFileUpdate"),
 					resource.TestCheckResourceAttr(resourceName, "smtp.0.expect_starttls", "false"),
 					resource.TestCheckResourceAttr(resourceName, "tcp.0.proxy_close", "false"),
+					resource.TestCheckResourceAttr(resourceName, "tcp.0.close_with_rst", "false"),
+					resource.TestCheckResourceAttr(resourceName, "tcp.0.nagle", "false"),
 					resource.TestCheckResourceAttr(resourceName, "aptimizer.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.enabled", "true"),
 					resource.TestCheckResourceAttr(resourceName, "aptimizer.0.profile.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "bandwidth_class", "testUpdate"),
+					resource.TestCheckResourceAttr(resourceName, "auth.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.saml_nameid_format", "unspecified"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.saml_sp_acs_url", "http://www.exampleupdated.dev"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.saml_sp_entity_id", "testentityidupdated"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.saml_time_tolerance", "10"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.session_cookie_attributes", "HttpOnly; SameSite=Strict"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.session_cookie_name", "testcookieupdated"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.session_log_external_state", "false"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.session_timeout", "7200"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.type", "saml_sp"),
+					resource.TestCheckResourceAttr(resourceName, "auth.0.verbose", "false"),
 					resource.TestCheckResourceAttr(resourceName, "vs_connection.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "vs_connection.0.keepalive", "false"),
 					resource.TestCheckResourceAttr(resourceName, "vs_connection.0.keepalive_timeout", "250"),
@@ -315,6 +349,7 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "ftp.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.0.data_source_port", "15"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.0.force_client_secure", "false"),
+					resource.TestCheckResourceAttr(resourceName, "ftp.0.force_server_secure", "false"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.0.port_range_high", "55"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.0.port_range_low", "7"),
 					resource.TestCheckResourceAttr(resourceName, "ftp.0.ssl_data", "false"),
@@ -328,12 +363,17 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.min_size", "50"),
 					resource.TestCheckResourceAttr(resourceName, "gzip.0.no_size", "false"),
 					resource.TestCheckResourceAttr(resourceName, "http.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "http.0.add_cluster_ip", "false"),
+					resource.TestCheckResourceAttr(resourceName, "http.0.add_x_forwarded_for", "false"),
+					resource.TestCheckResourceAttr(resourceName, "http.0.add_x_forwarded_proto", "false"),
+					resource.TestCheckResourceAttr(resourceName, "http.0.autodetect_upgrade_headers", "false"),
 					resource.TestCheckResourceAttr(resourceName, "http.0.chunk_overhead_forwarding", "lazy"),
 					resource.TestCheckResourceAttr(resourceName, "http.0.location_regex", "testregexupdate"),
 					resource.TestCheckResourceAttr(resourceName, "http.0.location_replace", "testlocationreplaceupdate"),
 					resource.TestCheckResourceAttr(resourceName, "http.0.location_rewrite", "if_host_matches"),
 					resource.TestCheckResourceAttr(resourceName, "http.0.mime_default", "application/json"),
 					resource.TestCheckResourceAttr(resourceName, "http.0.mime_detect", "false"),
+					resource.TestCheckResourceAttr(resourceName, "http.0.strip_x_forwarded_proto", "false"),
 					resource.TestCheckResourceAttr(resourceName, "http2.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.connect_timeout", "75"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.data_frame_size", "100"),
@@ -346,6 +386,7 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_index_whitelist.#", "2"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("http2", "headers_index_whitelist"), "header1"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("http2", "headers_index_whitelist"), "header2"),
+					resource.TestCheckResourceAttr(resourceName, "http2.0.headers_size_limit", "400000"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.idle_timeout_no_streams", "80"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.idle_timeout_open_streams", "150"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.max_concurrent_streams", "15"),
@@ -353,6 +394,13 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "http2.0.max_header_padding", "13"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.merge_cookie_headers", "false"),
 					resource.TestCheckResourceAttr(resourceName, "http2.0.stream_window_size", "201"),
+					resource.TestCheckResourceAttr(resourceName, "l4accel.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "l4accel.0.rst_on_service_failure", "false"),
+					resource.TestCheckResourceAttr(resourceName, "l4accel.0.service_ip_snat", "false"),
+					resource.TestCheckResourceAttr(resourceName, "l4accel.0.state_sync", "false"),
+					resource.TestCheckResourceAttr(resourceName, "l4accel.0.tcp_msl", "60"),
+					resource.TestCheckResourceAttr(resourceName, "l4accel.0.timeout", "300"),
+					resource.TestCheckResourceAttr(resourceName, "l4accel.0.udp_count_requests", "false"),
 					resource.TestCheckResourceAttr(resourceName, "log.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "log.0.client_connection_failures", "false"),
 					resource.TestCheckResourceAttr(resourceName, "log.0.enabled", "false"),
@@ -361,6 +409,7 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "log.0.server_connection_failures", "false"),
 					resource.TestCheckResourceAttr(resourceName, "log.0.session_persistence_verbose", "false"),
 					resource.TestCheckResourceAttr(resourceName, "log.0.ssl_failures", "false"),
+					resource.TestCheckResourceAttr(resourceName, "log.0.ssl_resumption_failures", "false"),
 					resource.TestCheckResourceAttr(resourceName, "recent_connections.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "recent_connections.0.enabled", "false"),
 					resource.TestCheckResourceAttr(resourceName, "recent_connections.0.save_all", "false"),
@@ -397,7 +446,6 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_stapling", "false"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_time_tolerance", "55"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.ocsp_timeout", "25"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.prefer_sslv3", "false"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.request_client_cert", "require"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.send_close_alerts", "false"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.server_cert_alt_certificates.#", "1"),
@@ -410,18 +458,24 @@ func TestAccBrocadeVTMVirtualServerBasic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert1"),
 					util.AccTestCheckValueInKeyPattern(resourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_cert_host_mapping"), "altcert3"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.signature_algorithms", "ECDSA_SHA256"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_ciphers", "SSL_RSA_WITH_RC4_128_SHA"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_support_ssl2", "disabled"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_support_ssl3", "disabled"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_support_tls1", "disabled"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_support_tls1_1", "disabled"),
-					resource.TestCheckResourceAttr(resourceName, "ssl.0.ssl_support_tls1_2", "disabled"),
+					resource.TestCheckResourceAttr(resourceName, "ssl.0.cipher_suites", "SSL_RSA_WITH_RC4_128_SHA"),
+					resource.TestCheckResourceAttr(resourceName, "ssl.0.support_ssl3", "disabled"),
+					resource.TestCheckResourceAttr(resourceName, "ssl.0.support_tls1", "disabled"),
+					resource.TestCheckResourceAttr(resourceName, "ssl.0.support_tls1_1", "disabled"),
+					resource.TestCheckResourceAttr(resourceName, "ssl.0.support_tls1_2", "disabled"),
 					resource.TestCheckResourceAttr(resourceName, "ssl.0.trust_magic", "false"),
 					resource.TestCheckResourceAttr(resourceName, "syslog.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "syslog.0.enabled", "false"),
 					resource.TestCheckResourceAttr(resourceName, "syslog.0.format", "syslog/formatupdate"),
 					resource.TestCheckResourceAttr(resourceName, "syslog.0.ip_end_point", "127.0.0.1:700"),
 					resource.TestCheckResourceAttr(resourceName, "syslog.0.msg_len_limit", "505"),
+					resource.TestCheckResourceAttr(resourceName, "transaction_export.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "transaction_export.0.brief", "false"),
+					resource.TestCheckResourceAttr(resourceName, "transaction_export.0.enabled", "false"),
+					resource.TestCheckResourceAttr(resourceName, "transaction_export.0.hi_res", "false"),
+					resource.TestCheckResourceAttr(resourceName, "transaction_export.0.http_header_blacklist.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "transaction_export.0.http_header_blacklist.0", "bl3"),
+					resource.TestCheckResourceAttr(resourceName, "transaction_export.0.http_header_blacklist.1", "bl4"),
 					resource.TestCheckResourceAttr(resourceName, "udp.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "udp.0.end_point_persistence", "false"),
 					resource.TestCheckResourceAttr(resourceName, "udp.0.port_smp", "false"),
@@ -504,32 +558,26 @@ func testAccBrocadeVTMVirtualServerCreate(virtualServerName string) string {
 resource "brocadevtm_virtual_server" "acctest" {
 
 	name = "%s"
-	add_cluster_ip = true
-	add_x_forwarded_for = true
-	add_x_forwarded_proto = true
-	autodetect_upgrade_headers = true
 	bandwidth_class = "test"
-	close_with_rst = true
-	completionrules = ["completionRule1","completionRule2"]
+	bypass_data_plane_acceleration = true
+	completion_rules = ["completionRule1","completionRule2"]
 	connect_timeout = 50
 	enabled = true
-	ftp_force_server_secure = true
 	glb_services = ["testservice","testservice2"]
 	listen_on_any = true
 	listen_on_hosts = ["host2","host1"]
 	listen_on_traffic_ips = ["ip1","ip2"]
+	max_concurrent_connections = 2
 	note = "create acceptance test"
 	pool = "test-pool"
 	port = 50
 	protection_class = "testProtectionClass"
 	protocol = "dns"
+	proxy_protocol = true
 	request_rules = ["ruleOne","ruleTwo"]
 	response_rules = ["ruleOne","ruleTwo"]
 	slm_class = "testClass"
-	so_nagle = true
-	ssl_client_cert_headers = "all"
 	ssl_decrypt = true
-	ssl_honor_fallback_scsv = "enabled"
 	transparent = true
 	connection_errors = {
 		error_file = "testErrorFile"
@@ -538,6 +586,8 @@ resource "brocadevtm_virtual_server" "acctest" {
 		expect_starttls = true
 	}
 	tcp = {
+		close_with_rst = true
+		nagle = true
 		proxy_close = true
 	}
 	aptimizer = {
@@ -555,6 +605,19 @@ resource "brocadevtm_virtual_server" "acctest" {
 			urls = ["url6","url7","url8","url9"]
 		}
 		]
+	}
+
+	auth = {
+		saml_nameid_format = "none"
+		saml_sp_acs_url = "http://www.example.dev"
+		saml_sp_entity_id = "testentityid"
+		saml_time_tolerance = 5
+		session_cookie_attributes = "HttpOnly"
+		session_cookie_name = "testcookie"
+		session_log_external_state = true
+		session_timeout = 3600
+		type = "none"
+		verbose = true
 	}
 
 	vs_connection = {
@@ -587,6 +650,7 @@ resource "brocadevtm_virtual_server" "acctest" {
 	ftp = {
 		data_source_port = 10
 		force_client_secure = true
+		force_server_secure = true
 		port_range_high = 50
 		port_range_low = 5
 		ssl_data = true
@@ -603,12 +667,17 @@ resource "brocadevtm_virtual_server" "acctest" {
 	}
 
 	http = {
+		add_cluster_ip = true
+		add_x_forwarded_for = true
+		add_x_forwarded_proto = true
+		autodetect_upgrade_headers = true
 		chunk_overhead_forwarding = "eager"
 		location_regex = "testregex"
 		location_replace = "testlocationreplace"
 		location_rewrite = "never"
 		mime_default = "text/html"
 		mime_detect = true
+		strip_x_forwarded_proto = true
 	}
 
 	http2 = {
@@ -619,6 +688,7 @@ resource "brocadevtm_virtual_server" "acctest" {
 		headers_index_blacklist = ["header1","header2"]
 		headers_index_default = true
 		headers_index_whitelist = ["header3","header4"]
+		headers_size_limit = 200000
 		idle_timeout_no_streams = 60
 		idle_timeout_open_streams = 120
 		max_concurrent_streams = 10
@@ -626,6 +696,15 @@ resource "brocadevtm_virtual_server" "acctest" {
 		max_header_padding = 10
 		merge_cookie_headers = true
 		stream_window_size = 200
+	}
+
+	l4accel = {
+		rst_on_service_failure = true
+		service_ip_snat = true
+		state_sync = true
+		tcp_msl = 50
+		timeout = 150
+		udp_count_requests = true
 	}
 
 	log = {
@@ -636,6 +715,7 @@ resource "brocadevtm_virtual_server" "acctest" {
 		server_connection_failures = true
 		session_persistence_verbose = true
 		ssl_failures = true
+		ssl_resumption_failures = true
 	}
 
 	recent_connections = {
@@ -682,7 +762,6 @@ resource "brocadevtm_virtual_server" "acctest" {
 			required = "optional"
 			responder_cert = "respondercert"
 			signer = "fakesigner"
-			url = "fake.url"
 		},
 		{
 			issuer = "issuerName2"
@@ -691,14 +770,12 @@ resource "brocadevtm_virtual_server" "acctest" {
 			required = "optional"
 			responder_cert = "respondercert2"
 			signer = "fakesigner2"
-			url = "fake2.url"
 		},
 		]
 		ocsp_max_response_age = 50
 		ocsp_stapling = true
 	    	ocsp_time_tolerance = 50
 	    	ocsp_timeout = 20
-	    	prefer_sslv3 = true
 	    	request_client_cert = "request"
 	    	send_close_alerts = true
 	    	server_cert_alt_certificates = ["testssl001"]
@@ -724,12 +801,11 @@ resource "brocadevtm_virtual_server" "acctest" {
 		]
 
 		signature_algorithms = "RSA_SHA256"
-		ssl_ciphers = "SSL_RSA_WITH_AES_128_CBC_SHA256"
-		ssl_support_ssl2 = "use_default"
-		ssl_support_ssl3 = "disabled"
-		ssl_support_tls1 = "enabled"
-		ssl_support_tls1_1 = "use_default"
-		ssl_support_tls1_2 = "disabled"
+		cipher_suites = "SSL_RSA_WITH_AES_128_CBC_SHA256"
+		support_ssl3 = "disabled"
+		support_tls1 = "enabled"
+		support_tls1_1 = "use_default"
+		support_tls1_2 = "disabled"
 		trust_magic = true
 	  }
 
@@ -738,6 +814,13 @@ resource "brocadevtm_virtual_server" "acctest" {
 	    format = "syslog/format"
 	    ip_end_point = "127.0.0.1:515"
 	    msg_len_limit = 500
+	  }
+
+	  transaction_export = {
+	  	brief = true
+	  	enabled = true
+	  	hi_res = true
+	  	http_header_blacklist = ["bl1","bl2"]
 	  }
 
 	  udp = {
@@ -764,32 +847,26 @@ func testAccBrocadeVTMVirtualServerUpdate(virtualServerName string) string {
 resource "brocadevtm_virtual_server" "acctest" {
 
 	name = "%s"
-	add_cluster_ip = false
-	add_x_forwarded_for = false
-	add_x_forwarded_proto = false
-	autodetect_upgrade_headers = false
 	bandwidth_class = "testUpdate"
-	close_with_rst = false
-	completionrules = ["completionRule2","completionRule3"]
+	bypass_data_plane_acceleration = false
+	completion_rules = ["completionRule2","completionRule3"]
 	connect_timeout = 100
 	enabled = false
-	ftp_force_server_secure = false
 	glb_services = ["testservice3","testservice4"]
 	listen_on_any = false
 	listen_on_hosts = ["host3","host4"]
 	listen_on_traffic_ips = ["ip1"]
+	max_concurrent_connections = 4
 	note = "update acceptance test"
 	pool = "test-pool"
 	port = 100
 	protection_class = "testProtectionClassUpdate"
 	protocol = "ftp"
+	proxy_protocol = false
 	request_rules = ["ruleThree"]
 	response_rules = ["ruleFour"]
 	slm_class = "testClassUpdate"
-	so_nagle = false
-	ssl_client_cert_headers = "simple"
 	ssl_decrypt = false
-	ssl_honor_fallback_scsv = "use_default"
 	transparent = false
 	connection_errors = {
 		error_file = "testErrorFileUpdate"
@@ -798,6 +875,8 @@ resource "brocadevtm_virtual_server" "acctest" {
 		expect_starttls = false
 	}
 	tcp = {
+		close_with_rst = false
+		nagle = false
 		proxy_close = false
 	}
 	aptimizer = {
@@ -807,6 +886,19 @@ resource "brocadevtm_virtual_server" "acctest" {
 			urls = ["url4","url3"]
 		}
 		]
+	}
+
+	auth = {
+		saml_nameid_format = "unspecified"
+		saml_sp_acs_url = "http://www.exampleupdated.dev"
+		saml_sp_entity_id = "testentityidupdated"
+		saml_time_tolerance = 10
+		session_cookie_attributes = "HttpOnly; SameSite=Strict"
+		session_cookie_name = "testcookieupdated"
+		session_log_external_state = false
+		session_timeout = 7200
+		type = "saml_sp"
+		verbose = false
 	}
 
 	vs_connection = {
@@ -839,6 +931,7 @@ resource "brocadevtm_virtual_server" "acctest" {
 	ftp = {
 		data_source_port = 15
 		force_client_secure = false
+		force_server_secure = false
 		port_range_high = 55
 		port_range_low = 7
 		ssl_data = false
@@ -855,12 +948,17 @@ resource "brocadevtm_virtual_server" "acctest" {
 	}
 
 	http = {
+		add_cluster_ip = false
+		add_x_forwarded_for = false
+		add_x_forwarded_proto = false
+		autodetect_upgrade_headers = false
 		chunk_overhead_forwarding = "lazy"
 		location_regex = "testregexupdate"
 		location_replace = "testlocationreplaceupdate"
 		location_rewrite = "if_host_matches"
 		mime_default = "application/json"
 		mime_detect = false
+		strip_x_forwarded_proto = false
 	}
 
 	http2 = {
@@ -871,6 +969,7 @@ resource "brocadevtm_virtual_server" "acctest" {
 		headers_index_blacklist = ["header3","header4"]
 		headers_index_default = true
 		headers_index_whitelist = ["header1","header2"]
+		headers_size_limit = 400000
 		idle_timeout_no_streams = 80
 		idle_timeout_open_streams = 150
 		max_concurrent_streams = 15
@@ -878,6 +977,15 @@ resource "brocadevtm_virtual_server" "acctest" {
 		max_header_padding = 13
 		merge_cookie_headers = false
 		stream_window_size = 201
+	}
+
+	l4accel = {
+		rst_on_service_failure = false
+		service_ip_snat = false
+		state_sync = false
+		tcp_msl = 60
+		timeout = 300
+		udp_count_requests = false
 	}
 
 	log = {
@@ -888,6 +996,7 @@ resource "brocadevtm_virtual_server" "acctest" {
 		server_connection_failures = false
 		session_persistence_verbose = false
 		ssl_failures = false
+		ssl_resumption_failures = false
 	}
 
 	recent_connections = {
@@ -934,14 +1043,12 @@ resource "brocadevtm_virtual_server" "acctest" {
 				required = "optional"
 				responder_cert = "respondercert"
 				signer = "fakesigner"
-				url = "fake.url"
 			},
 		]
 		ocsp_max_response_age = 55
 		ocsp_stapling = false
 	    ocsp_time_tolerance = 55
 	    ocsp_timeout = 25
-	    prefer_sslv3 = false
 	    request_client_cert = "require"
 	    send_close_alerts = false
 	    server_cert_alt_certificates = ["testssl002"]
@@ -955,12 +1062,11 @@ resource "brocadevtm_virtual_server" "acctest" {
 		]
 
 		signature_algorithms = "ECDSA_SHA256"
-		ssl_ciphers = "SSL_RSA_WITH_RC4_128_SHA"
-		ssl_support_ssl2 = "disabled"
-		ssl_support_ssl3 = "disabled"
-		ssl_support_tls1 = "disabled"
-		ssl_support_tls1_1 = "disabled"
-		ssl_support_tls1_2 = "disabled"
+		cipher_suites = "SSL_RSA_WITH_RC4_128_SHA"
+		support_ssl3 = "disabled"
+		support_tls1 = "disabled"
+		support_tls1_1 = "disabled"
+		support_tls1_2 = "disabled"
 		trust_magic = false
 	  }
 
@@ -969,6 +1075,13 @@ resource "brocadevtm_virtual_server" "acctest" {
 	    format = "syslog/formatupdate"
 	    ip_end_point = "127.0.0.1:700"
 	    msg_len_limit = 505
+	  }
+
+	transaction_export = {
+	  	brief = false
+	  	enabled = false
+	  	hi_res = false
+	  	http_header_blacklist = ["bl3","bl4"]
 	  }
 
 	  udp = {

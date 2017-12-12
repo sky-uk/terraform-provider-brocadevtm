@@ -25,42 +25,18 @@ func resourceVirtualServer() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
-			"add_cluster_ip": {
-				Type:        schema.TypeBool,
-				Description: "Whether or not the virtual server should add an 'X-Cluster-Client-Ip' header to the request that contains the remote client's IP address.",
-				Optional:    true,
-				Default:     true,
-			},
-			"add_x_forwarded_for": {
-				Type:        schema.TypeBool,
-				Description: "Whether or not the virtual server should append the remote client's IP address to the 'X-Forwarded-For header'. If the header does not exist, it will be added.",
-				Optional:    true,
-				Default:     false,
-			},
-			"add_x_forwarded_proto": {
-				Type:        schema.TypeBool,
-				Description: "Whether or not the virtual server should add an 'X-Forwarded-Proto' header to the request that contains the original protocol used by the client to connect to the traffic manager.",
-				Optional:    true,
-				Default:     false,
-			},
-			"autodetect_upgrade_headers": {
-				Type:        schema.TypeBool,
-				Description: "Whether the traffic manager should check for HTTP responses that confirm an HTTP connection is transitioning to the WebSockets protocol. ",
-				Optional:    true,
-				Default:     false,
-			},
 			"bandwidth_class": {
 				Type:        schema.TypeString,
 				Description: "The bandwidth management class that this server should use, if any.",
 				Optional:    true,
 			},
-			"close_with_rst": {
+			"bypass_data_plane_acceleration": {
 				Type:        schema.TypeBool,
-				Description: "Whether or not connections from clients should be closed with a RST packet, rather than a FIN packet.",
+				Description: "Whether this service should, where possible, bypass data plane acceleration mechanisms.",
 				Optional:    true,
 				Default:     false,
 			},
-			"completionrules": {
+			"completion_rules": {
 				Type:        schema.TypeSet,
 				Description: "Rules that are run at the end of a transaction, in order, comma separated.",
 				Optional:    true,
@@ -71,17 +47,11 @@ func resourceVirtualServer() *schema.Resource {
 				Description:  "The time, in seconds, to wait for data from a new connection. If no data isreceived within this time, the connection will be closed. A value of 0 (zero) will disable the timeout.",
 				Optional:     true,
 				Default:      10,
-				ValidateFunc: util.ValidateUnsignedInteger,
+				ValidateFunc: validation.IntAtLeast(0),
 			},
 			"enabled": {
 				Type:        schema.TypeBool,
 				Description: "Whether the virtual server is enabled.",
-				Optional:    true,
-				Default:     false,
-			},
-			"ftp_force_server_secure": {
-				Type:        schema.TypeBool,
-				Description: "Whether or not the virtual server should require that incoming FTP data connections from the nodes originate from the same IP address as the node",
 				Optional:    true,
 				Default:     false,
 			},
@@ -109,14 +79,12 @@ func resourceVirtualServer() *schema.Resource {
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			/*
-				"mss": {
-					Type:         schema.TypeInt,
-					Description:  "The maximum TCP segment size. This will place a maximum on the size of TCP segments that are sent by this machine, and will advertise to the client this value as the maximum size of TCP segment to send to this machine. Setting this to zero causes the default maximum TCP segment size to be advertised and used.",
-					Optional:     true,
-					ValidateFunc: util.ValidateUnsignedInteger,
-				},
-			*/
+			"max_concurrent_connections": {
+				Type:         schema.TypeInt,
+				Description:  "The maximum number of concurrent TCP connections that will be handled by this virtual server. If set to 0 the number of concurrent TCP connections will not be limited",
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(0),
+			},
 			"note": {
 				Type:        schema.TypeString,
 				Description: " A description for the virtual server.",
@@ -149,6 +117,12 @@ func resourceVirtualServer() *schema.Resource {
 					"siptcp", "sipudp", "smtp", "ssl", "stream", "telnet", "udp", "udpstreaming",
 				}, false),
 			},
+			"proxy_protocol": {
+				Type:        schema.TypeBool,
+				Description: "Expect connections to the traffic manager to be prefixed with a PROXY protocol header.",
+				Optional:    true,
+				Default:     false,
+			},
 			"request_rules": {
 				Type:        schema.TypeSet,
 				Description: "Rules to be applied to incoming requests, in order, comma separated.",
@@ -166,39 +140,11 @@ func resourceVirtualServer() *schema.Resource {
 				Description: "The service level monitoring class that this server should use, if any.",
 				Optional:    true,
 			},
-			"so_nagle": {
-				Type:        schema.TypeBool,
-				Description: "Whether or not Nagle's algorithm should be used for TCP connections.",
-				Optional:    true,
-				Default:     false,
-			},
-			"ssl_client_cert_headers": {
-				Type:        schema.TypeString,
-				Description: "What HTTP headers the virtual server should add to each request to show the data in the client certificate.",
-				Optional:    true,
-				Default:     "none",
-				ValidateFunc: validation.StringInSlice([]string{
-					"all",
-					"none",
-					"simple",
-				}, false),
-			},
 			"ssl_decrypt": {
 				Type:        schema.TypeBool,
 				Description: "Whether or not the virtual server should decrypt incoming SSL traffic.",
 				Optional:    true,
 				Default:     false,
-			},
-			"ssl_honor_fallback_scsv": {
-				Type:        schema.TypeString,
-				Description: " Whether or not the Fallback SCSV sent by TLS clients is honored by this virtual server. ",
-				Optional:    true,
-				Default:     "use_default",
-				ValidateFunc: validation.StringInSlice([]string{
-					"disabled",
-					"enabled",
-					"use_default",
-				}, false),
 			},
 			"transparent": {
 				Type:        schema.TypeBool,
@@ -246,6 +192,82 @@ func resourceVirtualServer() *schema.Resource {
 				},
 			},
 
+			"auth": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"saml_idp": {
+							Type:        schema.TypeString,
+							Description: "Name of the Trusted Identity Provider configuration to use",
+							Optional:    true,
+						},
+						"saml_nameid_format": {
+							Type:         schema.TypeString,
+							Description:  "The NameID format to request and expect from the identity provider",
+							Optional:     true,
+							Default:      "none",
+							ValidateFunc: validation.StringInSlice([]string{"emailaddress", "none", "unspecified"}, false),
+						},
+						"saml_sp_acs_url": {
+							Type:        schema.TypeString,
+							Description: "The 'Assertion Consumer Service' endpoint for the SAML service provider on this virtual server",
+							Optional:    true,
+						},
+						"saml_sp_entity_id": {
+							Type:        schema.TypeString,
+							Description: "The entity ID to be used by the SAML service provider function on this virtual server",
+							Optional:    true,
+						},
+						"saml_time_tolerance": {
+							Type:        schema.TypeInt,
+							Description: "Time tolerance on authentication checks. When checking time-stamps and expiry dates against the current time on the system, allow a tolerance of this many seconds.",
+							Optional:    true,
+							Default:     5,
+						},
+						"session_cookie_attributes": {
+							Type:        schema.TypeString,
+							Description: "Attributes of cookie used for authentication session",
+							Optional:    true,
+							Default:     "HttpOnly; SameSite=Strict",
+						},
+						"session_cookie_name": {
+							Type:        schema.TypeString,
+							Description: "Name of cookie used for authentication session",
+							Optional:    true,
+							Default:     "VS_SamlSP_Auth",
+						},
+						"session_log_external_state": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not to include state of authentication sessions stored encrypted on the client as plaintext in the logs",
+							Optional:    true,
+							Default:     false,
+						},
+						"session_timeout": {
+							Type:        schema.TypeInt,
+							Description: "Timeout on authentication session",
+							Optional:    true,
+							Default:     7200,
+						},
+						"type": {
+							Type:         schema.TypeString,
+							Description:  "Type of authentication to apply to requests to the virtual server",
+							Optional:     true,
+							Default:      "none",
+							ValidateFunc: validation.StringInSlice([]string{"saml_sp", "none"}, false),
+						},
+						"verbose": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not to include state of authentication sessions stored encrypted on the client as plaintext in the logs",
+							Optional:    true,
+							Default:     false,
+						},
+					},
+				},
+			},
+
 			"vs_connection": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -264,7 +286,7 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "The length of time that the virtual server should keep an idle keepalive connection before discarding it. A value of 0 (zero) will mean that the keepalives are never closed by the traffic manager.",
 							Optional:     true,
 							Default:      10,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"max_client_buffer": {
 							Type:         schema.TypeInt,
@@ -285,7 +307,7 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  " The total amount of time a transaction can take, counted from the first byte being received until the transaction is complete. ",
 							Optional:     true,
 							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 
 						"server_first_banner": {
@@ -298,7 +320,7 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "A connection should be closed if no additional data has been received for this period of time. A value of 0 (zero) will disable this timeout.",
 							Optional:     true,
 							Default:      300,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 					},
 				},
@@ -434,6 +456,12 @@ func resourceVirtualServer() *schema.Resource {
 							Optional:    true,
 							Default:     false,
 						},
+						"force_server_secure": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not the virtual server should require that incoming FTP data connections from the nodes originate from the same IP address as the node.",
+							Optional:    true,
+							Default:     false,
+						},
 						"port_range_high": {
 							Type:         schema.TypeInt,
 							Description:  "If non-zero, then this controls the upper bound of the port range to use for FTP data connections.",
@@ -497,14 +525,14 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "Maximum document size to compress (0 means unlimited).",
 							Optional:     true,
 							Default:      10000000,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"min_size": {
 							Type:         schema.TypeInt,
 							Description:  "Minimum document size to compress.",
 							Optional:     true,
 							Default:      1000,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"no_size": {
 							Type:        schema.TypeBool,
@@ -523,6 +551,30 @@ func resourceVirtualServer() *schema.Resource {
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"add_cluster_ip": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not the virtual server should add an 'X-Cluster-Client-Ip' header to the request that contains the remote client's IP address.",
+							Optional:    true,
+							Default:     true,
+						},
+						"add_x_forwarded_for": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not the virtual server should append the remote client's IP address to the 'X-Forwarded-For header'. If the header does not exist, it will be added.",
+							Optional:    true,
+							Default:     false,
+						},
+						"add_x_forwarded_proto": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not the virtual server should add an 'X-Forwarded-Proto' header to the request that contains the original protocol used by the client to connect to the traffic manager.",
+							Optional:    true,
+							Default:     false,
+						},
+						"autodetect_upgrade_headers": {
+							Type:        schema.TypeBool,
+							Description: "Whether the traffic manager should check for HTTP responses that confirm an HTTP connection is transitioning to the WebSockets protocol. ",
+							Optional:    true,
+							Default:     false,
+						},
 						"chunk_overhead_forwarding": {
 							Type:         schema.TypeString,
 							Description:  "Handling of HTTP chunk overhead.",
@@ -560,6 +612,12 @@ func resourceVirtualServer() *schema.Resource {
 							Optional:    true,
 							Default:     false,
 						},
+						"strip_x_forwarded_proto": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not the virtual server should strip the 'X-Forwarded-Proto' header from incoming requests.",
+							Optional:    true,
+							Default:     false,
+						},
 					},
 				},
 			},
@@ -576,7 +634,7 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "The time, in seconds, to wait for a request on a new HTTP/2 connection.",
 							Optional:     true,
 							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"data_frame_size": {
 							Type:         schema.TypeInt,
@@ -618,26 +676,32 @@ func resourceVirtualServer() *schema.Resource {
 							Computed:    true,
 							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
+						"headers_size_limit": {
+							Type:        schema.TypeInt,
+							Description: "The maximum size, in bytes, of decompressed headers for an HTTP/2 request. If the limit is exceeded, the connection on which the request was sent will be dropped. A value of 0 disables the limit check. ",
+							Optional:    true,
+							Default:     262144,
+						},
 						"idle_timeout_no_streams": {
 							Type:         schema.TypeInt,
 							Description:  "The time, in seconds, to wait for a new HTTP/2 request on a previously used HTTP/2 connection that has no open HTTP/2 streams. A value of 0 disables the timeout.",
 							Optional:     true,
 							Default:      120,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"idle_timeout_open_streams": {
 							Type:         schema.TypeInt,
 							Description:  "The time, in seconds, to wait for data on an idle HTTP/2 connection, which has open streams, when no data has been sent recently. A value of 0 disables the timeout.",
 							Optional:     true,
 							Default:      600,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"max_concurrent_streams": {
 							Type:         schema.TypeInt,
 							Description:  "This setting controls the number of streams a client is permitted to open concurrently on a single connection.",
 							Optional:     true,
 							Default:      200,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"max_frame_size": {
 							Type:         schema.TypeInt,
@@ -651,7 +715,7 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "The maximum size, in bytes, of the random-length padding to add to HTTP/2 header frames. The padding, a random number of zero bytes up to the maximum specified.",
 							Optional:     true,
 							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"merge_cookie_headers": {
 							Type:        schema.TypeBool,
@@ -664,7 +728,7 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "This setting controls the flow control window for each HTTP/2 stream.",
 							Optional:     true,
 							Default:      65535,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 					},
 				},
@@ -697,6 +761,55 @@ func resourceVirtualServer() *schema.Resource {
 				},
 			},
 
+			"l4accel": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"rst_on_service_failure": {
+							Type:        schema.TypeBool,
+							Description: "Whether the virtual server should send a TCP RST packet or ICMP error message if a service is unavailable, or if an established connection to a node fails.",
+							Optional:    true,
+							Default:     false,
+						},
+						"service_ip_snat": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not backend connections should be configured to use the ingress service IP as the source IP for the back-end connection when Source NAT is enabled for the pool used by the service. ",
+							Optional:    true,
+							Default:     false,
+						},
+						"state_sync": {
+							Type:        schema.TypeBool,
+							Description: "Whether the state of active connections will be synchronized across the cluster for L4Accel services, such that connections will persist in the event of a failover.",
+							Optional:    true,
+							Default:     false,
+						},
+						"tcp_msl": {
+							Type:         schema.TypeInt,
+							Description:  "The maximum segment lifetime, in seconds, of a TCP segment being handled by the traffic manager.",
+							Optional:     true,
+							Default:      8,
+							ValidateFunc: validation.IntBetween(1, 60),
+						},
+						"timeout": {
+							Type:         schema.TypeInt,
+							Description:  "The number of seconds after which a connection will be closed if no further packets have been received on it.",
+							Optional:     true,
+							Default:      1800,
+							ValidateFunc: validation.IntBetween(120, 3600),
+						},
+						"udp_count_requests": {
+							Type:        schema.TypeBool,
+							Description: "Whether a connection should be closed when the number of UDP response datagrams received from the server is equal to the number of request datagrams that have been sent by the client. If set to No the connection will be closed after the first response has been received from the server.",
+							Optional:    true,
+							Default:     false,
+						},
+					},
+				},
+			},
+
 			"log": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -704,15 +817,6 @@ func resourceVirtualServer() *schema.Resource {
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						//always_flush field is stated to exist in brocade API documentation but does not appear to exist in corresponding API version
-						/*
-							"always_flush": {
-								Type:        schema.TypeBool,
-								Description: "Write log data to disk immediately, rather than buffering data.",
-								Optional:    true,
-								Default:     false,
-							},
-						*/
 						"client_connection_failures": {
 							Type:        schema.TypeBool,
 							Description: "Should the virtual server log failures occurring on connections to clients.",
@@ -758,6 +862,12 @@ func resourceVirtualServer() *schema.Resource {
 						"ssl_failures": {
 							Type:        schema.TypeBool,
 							Description: "Should the virtual server log failures occurring on SSL secure negotiation.",
+							Optional:    true,
+							Default:     false,
+						},
+						"ssl_resumption_failures": {
+							Type:        schema.TypeBool,
+							Description: "Should the virtual server log messages when attempts to resume SSL sessions (either from the session cache or a session ticket) fail.",
 							Optional:    true,
 							Default:     false,
 						},
@@ -823,21 +933,21 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "If non-zero this controls the upper bound of the port range to use for streaming data connections.",
 							Optional:     true,
 							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"streaming_port_range_low": {
 							Type:         schema.TypeInt,
 							Description:  "If non-zero this controls the lower bound of the port range to use for streaming data connections.",
 							Optional:     true,
 							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"streaming_timeout": {
 							Type:         schema.TypeInt,
 							Description:  "If non-zero data-streams associated with RTSP connections will timeout if no data is transmitted for this many seconds",
 							Optional:     true,
 							Default:      30,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 					},
 				},
@@ -868,7 +978,7 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "this setting limits the amount of memory each SIP client can use. When the limit is reached new requests will be sent a 413 response. If the value is set to 0 (zero) the memory limit is disabled.",
 							Optional:     true,
 							Default:      65536,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"mode": {
 							Type:         schema.TypeString,
@@ -888,21 +998,21 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "If non-zero this controls the upper bound of the port range to use for streaming data connections.",
 							Optional:     true,
 							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"streaming_port_range_low": {
 							Type:         schema.TypeInt,
 							Description:  "If non-zero this controls the lower bound of the port range to use for streaming data connections.",
 							Optional:     true,
 							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"streaming_timeout": {
 							Type:         schema.TypeInt,
 							Description:  "If non-zero a UDP stream will timeout when no data has been seen within this time.",
 							Optional:     true,
 							Default:      60,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"timeout_messages": {
 							Type:        schema.TypeBool,
@@ -915,7 +1025,7 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "The virtual server should discard a SIP transaction when no further messages have been seen within this time.",
 							Optional:     true,
 							Default:      30,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 					},
 				},
@@ -951,12 +1061,24 @@ func resourceVirtualServer() *schema.Resource {
 							Optional:    true,
 							Default:     false,
 						},
+						"cipher_suites": {
+							Type:        schema.TypeString,
+							Description: "The SSL/TLS cipher suites to allow for connections to this virtual server. Leaving this empty will make the virtual server use the globally configured cipher suites",
+							Optional:    true,
+						},
 						"client_cert_cas": {
 							Type:        schema.TypeList,
 							Description: "The certificate authorities that this virtual server should trust to validate client certificates. If no certificate authorities are selected, and client certificates are requested, then all client certificates will be accepted.",
 							Optional:    true,
 							Computed:    true,
 							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"client_cert_headers": {
+							Type:         schema.TypeString,
+							Description:  "What HTTP headers the virtual server should add to each request to show the data in the client certificate.",
+							Optional:     true,
+							Default:      "none",
+							ValidateFunc: validation.StringInSlice([]string{"all", "none", "simple"}, false),
 						},
 						"elliptic_curves": {
 							Type:        schema.TypeList,
@@ -965,12 +1087,25 @@ func resourceVirtualServer() *schema.Resource {
 							Computed:    true,
 							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
+						"honor_fallback_scsv": {
+							Type:         schema.TypeString,
+							Description:  "Whether or not the Fallback SCSV sent by TLS clients is honored by this virtual server.",
+							Optional:     true,
+							Default:      "use_default",
+							ValidateFunc: validation.StringInSlice([]string{"disabled", "enabled", "use_default"}, false),
+						},
 						"issued_certs_never_expire": {
 							Type:        schema.TypeList,
 							Description: "When the virtual server verifies certificates signed by these certificate authorities, it doesn't check the 'not after' date, i.e., they are considered valid even after their expiration date has passed  (but not if they have been revoked)",
 							Optional:    true,
 							Computed:    true,
 							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						"issued_certs_never_expire_depth": {
+							Type:        schema.TypeInt,
+							Description: "This setting gives the number of certificates in a certificate chain beyond those listed as issued_certs_never_expire whose certificate expiry will not be checked. ",
+							Optional:    true,
+							Default:     1,
 						},
 						"ocsp_enable": {
 							Type:        schema.TypeBool,
@@ -1032,7 +1167,7 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "The number of seconds for which an OCSP response is considered valid if it has not yet exceeded the time specified in the 'nextUpdate' field. If set to 0 (zero) then OCSP responses are considered valid until the time specified in their 'nextUpdate' field.",
 							Optional:     true,
 							Default:      0,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"ocsp_stapling": {
 							Type:        schema.TypeBool,
@@ -1045,20 +1180,14 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "The number of seconds outside the permitted range for which the 'thisUpdate' and 'nextUpdate' fields of an OCSP response are still considered valid.",
 							Optional:     true,
 							Default:      30,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"ocsp_timeout": {
 							Type:         schema.TypeInt,
 							Description:  "The number of seconds after which OCSP requests will be timed out.",
 							Optional:     true,
 							Default:      10,
-							ValidateFunc: util.ValidateUnsignedInteger,
-						},
-						"prefer_sslv3": {
-							Type:        schema.TypeBool,
-							Description: "Deprecated. Formerly allowed a preference for SSLv3 for performance reasons.",
-							Optional:    true,
-							Default:     false,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"request_client_cert": {
 							Type:         schema.TypeString,
@@ -1112,45 +1241,47 @@ func resourceVirtualServer() *schema.Resource {
 								},
 							},
 						},
+						"session_cache_enabled": {
+							Type:         schema.TypeString,
+							Description:  "Whether or not use of the session cache is enabled for this virtual server.",
+							Optional:     true,
+							Default:      "use_default",
+							ValidateFunc: validation.StringInSlice([]string{"disabled", "enabled", "use_default"}, false),
+						},
+						"session_tickets_enabled": {
+							Type:         schema.TypeString,
+							Description:  "Whether or not use of session tickets is enabled for this virtual server",
+							Optional:     true,
+							Default:      "use_default",
+							ValidateFunc: validation.StringInSlice([]string{"disabled", "enabled", "use_default"}, false),
+						},
 						"signature_algorithms": {
 							Type:        schema.TypeString,
 							Description: "The SSL signature algorithms preference list for SSL connections to this virtual server using TLS version 1.2 or higher.",
 							Optional:    true,
 						},
-						"ssl_ciphers": {
-							Type:        schema.TypeString,
-							Description: "The SSL/TLS ciphers to allow for connections to this virtual server. ",
-							Optional:    true,
-						},
-						"ssl_support_ssl2": {
-							Type:         schema.TypeString,
-							Description:  "Whether or not SSLv2 is enabled for this virtual server",
-							Optional:     true,
-							Default:      "use_default",
-							ValidateFunc: validation.StringInSlice([]string{"use_default", "disabled", "enabled"}, false),
-						},
-						"ssl_support_ssl3": {
+						"support_ssl3": {
 							Type:         schema.TypeString,
 							Description:  "Whether or not SSLv3 is enabled for this virtual server",
 							Optional:     true,
 							Default:      "use_default",
 							ValidateFunc: validation.StringInSlice([]string{"use_default", "disabled", "enabled"}, false),
 						},
-						"ssl_support_tls1": {
+						"support_tls1": {
 							Type:         schema.TypeString,
 							Description:  "Whether or not TLSv1.0 is enabled for this virtual server",
 							Optional:     true,
 							Default:      "use_default",
 							ValidateFunc: validation.StringInSlice([]string{"use_default", "disabled", "enabled"}, false),
 						},
-						"ssl_support_tls1_1": {
+						"support_tls1_1": {
 							Type:         schema.TypeString,
 							Description:  "Whether or not TLSv1.1 is enabled for this virtual server",
 							Optional:     true,
 							Default:      "use_default",
 							ValidateFunc: validation.StringInSlice([]string{"use_default", "disabled", "enabled"}, false),
 						},
-						"ssl_support_tls1_2": {
+						"support_tls1_2": {
 							Type:         schema.TypeString,
 							Description:  "Whether or not TLSv1.2 is enabled for this virtual server",
 							Optional:     true,
@@ -1209,11 +1340,59 @@ func resourceVirtualServer() *schema.Resource {
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"close_with_rst": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not connections from clients should be closed with a RST packet, rather than a FIN packet.",
+							Optional:    true,
+							Default:     false,
+						},
+						"nagle": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not Nagle's algorithm should be used for TCP connections",
+							Optional:    true,
+							Default:     false,
+						},
 						"proxy_close": {
 							Type:        schema.TypeBool,
 							Description: "If set to Yes the traffic manager will send the client FIN to the back-end server and wait for a server response instead of closing the connection immediately. ",
 							Optional:    true,
 							Default:     false,
+						},
+					},
+				},
+			},
+
+			"transaction_export": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"brief": {
+							Type:        schema.TypeBool,
+							Description: "Whether to export a restricted set of metadata about transactions processed by this virtual server.",
+							Optional:    true,
+							Default:     false,
+						},
+						"enabled": {
+							Type:        schema.TypeBool,
+							Description: "Export metadata about transactions handled by this service to the globally configured endpoint.",
+							Optional:    true,
+							Default:     false,
+						},
+						"hi_res": {
+							Type:        schema.TypeBool,
+							Description: "Whether the transaction processing timeline included in the metadata export is recorded with a high, microsecond, resolution. If set to No, timestamps will be recorded with a resolution of milliseconds.",
+							Optional:    true,
+							Default:     false,
+						},
+						"http_header_blacklist": {
+							Type:        schema.TypeList,
+							Description: "The set of HTTP header names for which corresponding values should be redacted from the metadata exported by this virtual server.",
+							Optional:    true,
+							Computed:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 					},
 				},
@@ -1250,7 +1429,14 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "The virtual server should discard any UDP connection and reclaim resources when no further UDP traffic has been seen within this time.",
 							Optional:     true,
 							Default:      7,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
+						},
+						"udp_end_transaction": {
+							Type:         schema.TypeString,
+							Description:  "When the traffic manager should consider a UDP transaction to have ended",
+							Optional:     true,
+							Default:      "one_response",
+							ValidateFunc: validation.StringInSlice([]string{"match_requests", "one_response", "timeout"}, false),
 						},
 					},
 				},
@@ -1279,21 +1465,21 @@ func resourceVirtualServer() *schema.Resource {
 							Description:  "Time period to cache error pages for.",
 							Optional:     true,
 							Default:      30,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"max_time": {
 							Type:         schema.TypeInt,
 							Description:  "Maximum time period to cache web pages for.",
 							Optional:     true,
 							Default:      600,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 						"refresh_time": {
 							Type:         schema.TypeInt,
 							Description:  "If a cached page is about to expire within this time, the traffic manager will start to forward some new requests on to the web servers. Setting this value to 0 will stop the traffic manager updating the cache before it expires.",
 							Optional:     true,
 							Default:      2,
-							ValidateFunc: util.ValidateUnsignedInteger,
+							ValidateFunc: validation.IntAtLeast(0),
 						},
 					},
 				},
@@ -1304,12 +1490,19 @@ func resourceVirtualServer() *schema.Resource {
 
 func basicVirtualServerKeys() []string {
 	return []string{
-		"add_cluster_ip", "add_x_forwarded_for", "add_x_forwarded_proto", "autodetect_upgrade_headers",
-		"bandwidth_class", "close_with_rst", "completionrules", "connect_timeout", "enabled",
-		"ftp_force_server_secure", "glb_services", "listen_on_any", "listen_on_hosts", "listen_on_traffic_ips",
-		"note", "pool", "port", "protection_class", "protocol", "request_rules", "response_rules",
-		"slm_class", "so_nagle", "ssl_client_cert_headers", "ssl_decrypt", "ssl_honor_fallback_scsv",
-		"transparent",
+		"bandwidth_class", "bypass_data_plane_acceleration", "completion_rules", "connect_timeout", "enabled",
+		"glb_services", "listen_on_any", "listen_on_hosts", "listen_on_traffic_ips", "max_concurrent_connections", "note", "pool", "port", "protection_class",
+		"protocol", "proxy_protocol", "request_rules", "response_rules",
+		"slm_class", "ssl_decrypt", "transparent",
+	}
+}
+
+func virtualServerSectionNames() []string {
+	return []string{
+		"aptimizer", "auth", "vs_connection", "connection_errors", "cookie",
+		"dns", "ftp", "gzip", "http", "http2", "kerberos_protocol_transition",
+		"l4accel", "log", "recent_connections", "request_tracing", "rtsp", "sip", "smtp",
+		"ssl", "syslog", "tcp", "udp", "web_cache", "transaction_export",
 	}
 }
 
@@ -1335,12 +1528,7 @@ func resourceVirtualServerSet(d *schema.ResourceData, m interface{}) error {
 
 	util.GetSection(d, "basic", pros, basicVirtualServerKeys())
 
-	for _, section := range []string{
-		"aptimizer", "vs_connection", "connection_errors", "cookie",
-		"dns", "ftp", "gzip", "http", "http2", "kerberos_protocol_transition",
-		"log", "recent_connections", "request_tracing", "rtsp", "sip", "smtp",
-		"ssl", "syslog", "tcp", "udp", "web_cache",
-	} {
+	for _, section := range virtualServerSectionNames() {
 		if d.HasChange(section) {
 			pros[sectionName(section)] = d.Get(section).([]interface{})[0]
 		}
@@ -1350,6 +1538,7 @@ func resourceVirtualServerSet(d *schema.ResourceData, m interface{}) error {
 	util.TraverseMapTypes(res)
 	err := client.Set("virtual_servers", name, res, nil)
 	if err != nil {
+		log.Println("[ERROR] ", client.RootPath)
 		return fmt.Errorf("[ERROR] BrocadeVTM Virtual Server error whilst creating/updating %s: %s", name, err)
 	}
 	d.SetId(name)
@@ -1393,14 +1582,9 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	for _, section := range []string{
-		"aptimizer", "connection", "connection_errors", "cookie", "dns", "ftp",
-		"gzip", "http", "http2", "kerberos_protocol_transition", "log",
-		"recent_connections", "request_tracing", "rtsp", "sip", "smtp",
-		"ssl", "syslog", "tcp", "udp", "web_cache",
-	} {
+	for _, section := range virtualServerSectionNames() {
 		set := make([]map[string]interface{}, 0)
-		reorderedSection := util.ReorderTablesInSection(props, tables(), section, d)
+		reorderedSection := util.ReorderTablesInSection(props, tables(), sectionName(section), d)
 		set = append(set, reorderedSection)
 
 		if section == "aptimizer" {
@@ -1420,7 +1604,7 @@ func resourceVirtualServerRead(d *schema.ResourceData, m interface{}) error {
 			set[0]["profile"] = profilesWithURLSets
 		}
 
-		err := d.Set(sectionName(section), set)
+		err := d.Set(section, set)
 		if err != nil {
 			log.Printf("[ERROR] %s section setting failed: %s", section, err)
 			return err
