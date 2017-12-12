@@ -860,7 +860,6 @@ resource "brocadevtm_virtual_server" "acctest" {
 		]
 
 		signature_algorithms = "ECDSA_SHA256"
-		ssl_ciphers = "SSL_RSA_WITH_RC4_128_SHA"
 		support_ssl3 = "disabled"
 		support_tls1 = "disabled"
 		support_tls1_1 = "disabled"
