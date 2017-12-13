@@ -96,34 +96,30 @@ func TestAccPool_Basic(t *testing.T) {
 				ExpectError: regexp.MustCompile(`must be a valid port number in the range 1 to 65535`),
 			},
 			{ // Step 18
-				Config:      testAccPoolInvalidSSL2Option(poolName),
-				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
-			},
-			{ // Step 19
 				Config:      testAccPoolInvalidSSL3Option(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
 			},
-			{ // Step 20
+			{ // Step 19
 				Config:      testAccPoolInvalidTLS1Option(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
 			},
-			{ // Step 21
+			{ // Step 20
 				Config:      testAccPoolInvalidTLS1_1Option(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
 			},
-			{ // Step 22
+			{ // Step 21
 				Config:      testAccPoolInvalidTLS1_2Option(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[disabled enabled use_default\]`),
 			},
-			{ // Step 23
+			{ // Step 22
 				Config:      testAccPoolInvalidUDPAcceptFrom(poolName),
 				ExpectError: regexp.MustCompile(`to be one of \[all dest_ip_only dest_only ip_mask\]`),
 			},
-			{ // Step 24
+			{ // Step 23
 				Config:      testAccPoolInvalidUDPAcceptFromMask(poolName),
 				ExpectError: regexp.MustCompile(`must be in the format xxx.xxx.xxx.xxx/xx e.g. 10.0.0.0/8`),
 			},
-			{ // Step 25
+			{ // Step 24
 				Config: testAccPoolCreateTemplate(poolName),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckPoolExists(poolResourceName),
@@ -197,6 +193,8 @@ func TestAccPool_Basic(t *testing.T) {
 					//util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("kerberos_protocol_transition", "principle"), ""),
 					//util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("kerberos_protocol_transition", "target"), ""),
 					resource.TestCheckResourceAttr(poolResourceName, "load_balancing.#", "1"),
+					resource.TestCheckResourceAttr(poolResourceName, "l4accel.#", "1"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("l4accel", "snat"), "true"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("load_balancing", "algorithm"), "weighted_least_connections"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("load_balancing", "priority_enabled"), "true"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("load_balancing", "priority_nodes"), "3"),
@@ -219,12 +217,11 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "send_close_alerts"), "true"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_name"), "true"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "signature_algorithms"), "ECDSA_SHA224 DSA_SHA256"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_ciphers"), "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_ssl2"), "enabled"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_ssl3"), "enabled"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1"), "enabled"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1_1"), "enabled"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1_2"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "cipher_suites"), "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "support_ssl3"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "support_tls1"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "support_tls1_1"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "support_tls1_2"), "enabled"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "strict_verify"), "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "tcp.#", "1"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("tcp", "nagle"), "true"),
@@ -234,7 +231,7 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "response_timeout"), "0"),
 				),
 			},
-			{ // Step 26
+			{ // Step 25
 				Config: testAccPoolUpdateTemplate(poolName),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckPoolExists(poolResourceName),
@@ -307,6 +304,8 @@ func TestAccPool_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(poolResourceName, "http.#", "1"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("http", "keepalive"), "false"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("http", "keepalive_non_idempotent"), "false"),
+					resource.TestCheckResourceAttr(poolResourceName, "l4accel.#", "1"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("l4accel", "snat"), "false"),
 					//resource.TestCheckResourceAttr(poolResourceName, "kerberos_protocol_transition.#", "1"),
 					//util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("kerberos_protocol_transition", "principle"), ""),
 					//util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSet("kerberos_protocol_transition", "target"), ""),
@@ -331,12 +330,11 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "send_close_alerts"), "false"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_name"), "false"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "signature_algorithms"), "RSA_SHA224 ECDSA_SHA224 DSA_SHA256"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_ciphers"), "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_ssl2"), "use_default"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_ssl3"), "use_default"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1"), "use_default"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1_1"), "use_default"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1_2"), "use_default"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "cipher_suites"), "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "support_ssl3"), "use_default"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "support_tls1"), "use_default"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "support_tls1_1"), "use_default"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "support_tls1_2"), "use_default"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "strict_verify"), "false"),
 					resource.TestCheckResourceAttr(poolResourceName, "tcp.#", "1"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("tcp", "nagle"), "false"),
@@ -346,7 +344,7 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "response_timeout"), "5"),
 				),
 			},
-			{ // Step 27
+			{ // Step 26
 				Config: testAccPoolCreateTemplateNodesList(poolName),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckPoolExists(poolResourceName),
@@ -441,12 +439,11 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "send_close_alerts"), "true"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "server_name"), "true"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "signature_algorithms"), "ECDSA_SHA224 DSA_SHA256"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_ciphers"), "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_ssl2"), "enabled"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_ssl3"), "enabled"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1"), "enabled"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1_1"), "enabled"),
-					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "ssl_support_tls1_2"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "cipher_suites"), "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "support_ssl3"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "support_tls1"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "support_tls1_1"), "enabled"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "support_tls1_2"), "enabled"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("ssl", "strict_verify"), "true"),
 					resource.TestCheckResourceAttr(poolResourceName, "tcp.#", "1"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("tcp", "nagle"), "true"),
@@ -456,7 +453,7 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("udp", "response_timeout"), "0"),
 				),
 			},
-			{ // Step 28
+			{ // Step 27
 				Config: testAccPoolUpdateTemplateNodesList(poolName),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckPoolExists(poolResourceName),
@@ -845,27 +842,6 @@ resource "brocadevtm_pool" "acctest" {
 }`, poolName)
 }
 
-func testAccPoolInvalidSSL2Option(poolName string) string {
-	return fmt.Sprintf(`
-resource "brocadevtm_pool" "acctest" {
-  name = "%s"
-  nodes_table = [
-    {
-      node = "192.168.10.10:80"
-      priority = 5
-      state = "draining"
-      weight = 2
-    },
-  ]
-  ssl = [
-    {
-    	enabled = true
-    	ssl_support_ssl2 = "INVALID"
-    },
-  ]
-}`, poolName)
-}
-
 func testAccPoolInvalidSSL3Option(poolName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_pool" "acctest" {
@@ -881,7 +857,7 @@ resource "brocadevtm_pool" "acctest" {
   ssl = [
     {
     	enabled = true
-    	ssl_support_ssl3 = "INVALID"
+    	support_ssl3 = "INVALID"
     },
   ]
 }`, poolName)
@@ -902,7 +878,7 @@ resource "brocadevtm_pool" "acctest" {
   ssl = [
     {
     	enabled = true
-    	ssl_support_tls1 = "INVALID"
+    	support_tls1 = "INVALID"
     },
   ]
 }`, poolName)
@@ -923,7 +899,7 @@ resource "brocadevtm_pool" "acctest" {
   ssl = [
     {
     	enabled = true
-    	ssl_support_tls1_1 = "INVALID"
+    	support_tls1_1 = "INVALID"
     },
   ]
 }`, poolName)
@@ -944,7 +920,7 @@ resource "brocadevtm_pool" "acctest" {
   ssl = [
     {
     	enabled = true
-    	ssl_support_tls1_2 = "INVALID"
+    	support_tls1_2 = "INVALID"
     },
   ]
 }`, poolName)
@@ -1052,6 +1028,10 @@ resource "brocadevtm_pool" "acctest" {
       queue_timeout = 14
     },
   ]
+
+ l4accel = {
+ 	snat = true
+ }
   dns_autoscale = [
     {
       enabled = true
@@ -1106,12 +1086,11 @@ resource "brocadevtm_pool" "acctest" {
        send_close_alerts = true
        server_name = true
        signature_algorithms = "ECDSA_SHA224 DSA_SHA256"
-       ssl_ciphers = "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
-       ssl_support_ssl2 = "enabled"
-       ssl_support_ssl3 = "enabled"
-       ssl_support_tls1 = "enabled"
-       ssl_support_tls1_1 = "enabled"
-       ssl_support_tls1_2 = "enabled"
+       cipher_suites = "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+       support_ssl3 = "enabled"
+       support_tls1 = "enabled"
+       support_tls1_1 = "enabled"
+       support_tls1_2 = "enabled"
        strict_verify = true
     },
   ]
@@ -1216,6 +1195,10 @@ resource "brocadevtm_pool" "acctest" {
       keepalive_non_idempotent = false
     },
   ]
+
+   l4accel = {
+ 	snat = false
+ }
   /*
   kerberos_protocol_transition = [
     {
@@ -1252,12 +1235,11 @@ resource "brocadevtm_pool" "acctest" {
        send_close_alerts = false
        server_name = false
        signature_algorithms = "RSA_SHA224 ECDSA_SHA224 DSA_SHA256"
-       ssl_ciphers = "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
-       ssl_support_ssl2 = "use_default"
-       ssl_support_ssl3 = "use_default"
-       ssl_support_tls1 = "use_default"
-       ssl_support_tls1_1 = "use_default"
-       ssl_support_tls1_2 = "use_default"
+       cipher_suites = "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+       support_ssl3 = "use_default"
+       support_tls1 = "use_default"
+       support_tls1_1 = "use_default"
+       support_tls1_2 = "use_default"
        strict_verify = false
     },
   ]
@@ -1385,12 +1367,11 @@ resource "brocadevtm_pool" "acctest" {
        send_close_alerts = true
        server_name = true
        signature_algorithms = "ECDSA_SHA224 DSA_SHA256"
-       ssl_ciphers = "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
-       ssl_support_ssl2 = "enabled"
-       ssl_support_ssl3 = "enabled"
-       ssl_support_tls1 = "enabled"
-       ssl_support_tls1_1 = "enabled"
-       ssl_support_tls1_2 = "enabled"
+       cipher_suites = "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+       support_ssl3 = "enabled"
+       support_tls1 = "enabled"
+       support_tls1_1 = "enabled"
+       support_tls1_2 = "enabled"
        strict_verify = true
     },
   ]
@@ -1518,12 +1499,11 @@ resource "brocadevtm_pool" "acctest" {
        send_close_alerts = true
        server_name = true
        signature_algorithms = "ECDSA_SHA224 DSA_SHA256"
-       ssl_ciphers = "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
-       ssl_support_ssl2 = "enabled"
-       ssl_support_ssl3 = "enabled"
-       ssl_support_tls1 = "enabled"
-       ssl_support_tls1_1 = "enabled"
-       ssl_support_tls1_2 = "enabled"
+       cipher_suites = "SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA SSL_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+       support_ssl3 = "enabled"
+       support_tls1 = "enabled"
+       support_tls1_1 = "enabled"
+       support_tls1_2 = "enabled"
        strict_verify = true
     },
   ]

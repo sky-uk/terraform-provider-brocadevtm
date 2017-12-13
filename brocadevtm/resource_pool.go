@@ -436,6 +436,22 @@ func resourcePool() *schema.Resource {
 					},
 				},
 			},
+			"l4accel": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Computed: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"snat": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether connections to the back-end nodes should appear to originate from an IP address raised on the traffic manager, rather than the IP address from which they were received by the traffic manager.",
+						},
+					},
+				},
+			},
 			"load_balancing": {
 				Type:     schema.TypeSet,
 				Optional: true,
@@ -516,6 +532,11 @@ func resourcePool() *schema.Resource {
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"cipher_suites": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "The SSL/TLS cipher suites to allow for connections to a back-end node",
+						},
 						"client_auth": {
 							Type:        schema.TypeBool,
 							Optional:    true,
@@ -558,28 +579,29 @@ func resourcePool() *schema.Resource {
 							Default:     false,
 							Description: "Whether or not to use the TLS 1.0 server_name extension",
 						},
-						"signature_algorithms": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "SSL signature algorithm preference list",
-						},
-						"ssl_ciphers": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "SSL/TLS ciphers to allow for connections to a node",
-						},
-						"ssl_support_ssl2": {
+						"session_cache_enabled": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Default:     "use_default",
-							Description: "Whether or not SSLv2 is enabled",
+							Description: "Whether or not the SSL client cache will be used for this pool",
 							ValidateFunc: validation.StringInSlice([]string{
 								"disabled",
 								"enabled",
 								"use_default",
 							}, false),
 						},
-						"ssl_support_ssl3": {
+						"signature_algorithms": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "SSL signature algorithm preference list",
+						},
+						"strict_verify": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Whether or not strict certificate verification should be performed",
+						},
+						"support_ssl3": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Default:     "use_default",
@@ -590,7 +612,7 @@ func resourcePool() *schema.Resource {
 								"use_default",
 							}, false),
 						},
-						"ssl_support_tls1": {
+						"support_tls1": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Default:     "use_default",
@@ -601,7 +623,7 @@ func resourcePool() *schema.Resource {
 								"use_default",
 							}, false),
 						},
-						"ssl_support_tls1_1": {
+						"support_tls1_1": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Default:     "use_default",
@@ -612,7 +634,7 @@ func resourcePool() *schema.Resource {
 								"use_default",
 							}, false),
 						},
-						"ssl_support_tls1_2": {
+						"support_tls1_2": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Default:     false,
@@ -622,12 +644,6 @@ func resourcePool() *schema.Resource {
 								"enabled",
 								"use_default",
 							}, false),
-						},
-						"strict_verify": {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Default:     false,
-							Description: "Whether or not strict certificate verification should be performed",
 						},
 					},
 				},
@@ -774,6 +790,7 @@ func resourcePoolSet(d *schema.ResourceData, m interface{}) error {
 		"ssl",
 		"tcp",
 		"udp",
+		"l4accel",
 	} {
 		if d.HasChange(section) {
 			poolProperties[poolSectionName(section)] = d.Get(section).(*schema.Set).List()[0]
@@ -867,6 +884,7 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 		"ssl",
 		"tcp",
 		"udp",
+		"l4accel",
 	} {
 		set := make([]map[string]interface{}, 0)
 		//set = append(set, poolsProperties[section].(map[string]interface{}))
