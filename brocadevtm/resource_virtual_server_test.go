@@ -498,7 +498,7 @@ func testAccBrocadeVTMVirtualServerCheckDestroy(state *terraform.State, name str
 	client := config["jsonClient"].(*api.Client)
 
 	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "infoblox_virtual_server" {
+		if rs.Type != "brocadevtm_virtual_server" {
 			continue
 		}
 		if id, ok := rs.Primary.Attributes["id"]; ok && id == "" {
