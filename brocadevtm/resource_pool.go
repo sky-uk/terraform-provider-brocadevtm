@@ -2,6 +2,7 @@ package brocadevtm
 
 import (
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/sky-uk/go-brocade-vtm/api"
@@ -869,10 +870,13 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 		"udp",
 	} {
 		set := make([]map[string]interface{}, 0)
-		set = append(set, poolsProperties[section].(map[string]interface{}))
+
+		readSectionMap, err := util.BuildReadMap(poolsProperties[section].(map[string]interface{}))
+		set = append(set, readSectionMap)
 
 		err = d.Set(poolSectionName(section), set)
 		if err != nil {
+			spew.Dump(err)
 			return fmt.Errorf("[ERROR] BrocadeVTM Pools error whilst setting attribute %s in state", section)
 		}
 	}
