@@ -97,10 +97,11 @@ func resourceMonitor() *schema.Resource {
 				Description: "Whether or not the monitor should emit verbose logging. This is useful for diagnosing problems",
 			},
 			"http": {
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Description: "HTTP section",
 				Optional:    true,
 				MaxItems:    1,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"authentication": {
@@ -132,10 +133,11 @@ func resourceMonitor() *schema.Resource {
 				},
 			},
 			"rtsp": {
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Description: "RTSP section",
 				Optional:    true,
 				MaxItems:    1,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"body_regex": {
@@ -186,10 +188,11 @@ func resourceMonitor() *schema.Resource {
 				Computed: true,
 			},
 			"sip": {
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Description: "SIP section",
 				Optional:    true,
 				MaxItems:    1,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"body_regex": {
@@ -215,10 +218,11 @@ func resourceMonitor() *schema.Resource {
 				},
 			},
 			"tcp": {
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Description: "TCP section",
 				Optional:    true,
 				MaxItems:    1,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"close_string": {
@@ -246,10 +250,11 @@ func resourceMonitor() *schema.Resource {
 				},
 			},
 			"udp": {
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Description: "UDP section",
 				Optional:    true,
 				MaxItems:    1,
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"accept_all": {
@@ -299,7 +304,7 @@ func resourceMonitorSet(d *schema.ResourceData, m interface{}) error {
 		"udp",
 	} {
 		if d.HasChange(section) {
-			monitorProperties[section] = d.Get(section).(*schema.Set).List()[0]
+			monitorProperties[section] = d.Get(section).([]interface{})[0]
 		}
 	}
 
@@ -359,11 +364,7 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 		"udp",
 	} {
 		set := make([]map[string]interface{}, 0)
-		readSectionMap, err := util.BuildReadMap(monitorProperties[sectionName].(map[string]interface{}))
-		if err != nil {
-			return fmt.Errorf("[ERROR] BrocadeVTM Monitor error whilst building section map to set: %v", err)
-		}
-		set = append(set, readSectionMap)
+		set = append(set, monitorProperties[sectionName].(map[string]interface{}))
 		err = d.Set(sectionName, set)
 		if err != nil {
 			return fmt.Errorf("[ERROR] BrocadeVTM Monitor error whilst setting section %s: %v", sectionName, err)

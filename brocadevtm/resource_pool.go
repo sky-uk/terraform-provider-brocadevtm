@@ -162,7 +162,7 @@ func resourcePool() *schema.Resource {
 			},
 
 			"auto_scaling": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -307,7 +307,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"pool_connection": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -350,7 +350,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"dns_autoscale": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -379,7 +379,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"ftp": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -395,7 +395,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"http": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -417,7 +417,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"kerberos_protocol_transition": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -437,7 +437,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"load_balancing": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -472,7 +472,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"node": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -494,7 +494,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"smtp": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -510,7 +510,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"ssl": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -633,7 +633,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"tcp": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -649,7 +649,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"udp": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -776,7 +776,7 @@ func resourcePoolSet(d *schema.ResourceData, m interface{}) error {
 		"udp",
 	} {
 		if d.HasChange(section) {
-			poolProperties[poolSectionName(section)] = d.Get(section).(*schema.Set).List()[0]
+			poolProperties[poolSectionName(section)] = d.Get(section).([]interface{})[0]
 		}
 	}
 
@@ -869,12 +869,8 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 		"udp",
 	} {
 		set := make([]map[string]interface{}, 0)
-		//set = append(set, poolsProperties[section].(map[string]interface{}))
-		readSectionMap, err := util.BuildReadMap(poolsProperties[section].(map[string]interface{}))
-		if err != nil {
-			return err
-		}
-		set = append(set, readSectionMap)
+		set = append(set, poolsProperties[sectionName].(map[string]interface{}))
+
 		err = d.Set(poolSectionName(section), set)
 		if err != nil {
 			return fmt.Errorf("[ERROR] BrocadeVTM Pools error whilst setting attribute %s in state", section)
