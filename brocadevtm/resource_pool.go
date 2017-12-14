@@ -869,7 +869,7 @@ func resourcePoolRead(d *schema.ResourceData, m interface{}) error {
 		"udp",
 	} {
 		set := make([]map[string]interface{}, 0)
-		set = append(set, poolsProperties[sectionName].(map[string]interface{}))
+		set = append(set, poolsProperties[section].(map[string]interface{}))
 
 		err = d.Set(poolSectionName(section), set)
 		if err != nil {
