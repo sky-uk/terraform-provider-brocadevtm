@@ -507,12 +507,15 @@ func testAccBrocadeVTMVirtualServerCheckDestroy(state *terraform.State, name str
 		vs := make(map[string]interface{})
 		client.WorkWithConfigurationResources()
 		err := client.GetByName("virtual_servers", name, &vs)
-		if err != nil {
-			return fmt.Errorf("[ERROR] Brocade vTM error occurred while retrieving Virtual Server: %s", err)
-		}
 		if client.StatusCode == http.StatusOK {
-			return fmt.Errorf("[ERROR] Brocade vTM Virtual Server %s still exists", name)
+			return fmt.Errorf("[ERROR] Brocade vTM Check Destroy Error: Virtual Server %s still exists", name)
 		}
+		if client.StatusCode == http.StatusNotFound {
+			return nil
+		}
+
+		return fmt.Errorf("[ERROR] Brocade vTM error occurred while retrieving Virtual Server: %s", err)
+
 	}
 	return nil
 }
