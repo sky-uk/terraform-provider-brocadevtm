@@ -116,6 +116,7 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.manageec2conf", "true"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.manageiptrans", "true"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.managereturnpath", "true"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.manageservices", "true"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.managevpcconf", "true"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.name_servers.#", "2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.name_servers.0", "127.0.0.1"),
@@ -131,16 +132,6 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.search_domains.#", "2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.search_domains.0", "searchdomain1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.search_domains.1", "searchdomain2"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_client_id", "id1"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_client_key", "key1"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_enabled", "true"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_ips", "ip1,ip2,ip3"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_load_balance", "priority"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_log_level", "debug"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_mode", "local"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_portal_url", "127.0.0.1"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_proxy_host", "127.0.0.2"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_proxy_port", "444"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ssh_enabled", "true"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ssh_password_allowed", "true"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ssh_port", "22"),
@@ -160,6 +151,9 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_neighbor_addrs.0", "127.0.0.1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_neighbor_addrs.1", "127.0.0.2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_neighbor_addrs.2", "127.0.0.3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.lss_dedicated_ips.#", "2"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.lss_dedicated_ips.0", "127.0.0.3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.lss_dedicated_ips.1", "127.0.0.2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptables.#", "1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptables.0.config_enabled", "true"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptrans.#", "1"),
@@ -275,7 +269,9 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.manageazureroutes", "false"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.manageec2conf", "false"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.manageiptrans", "false"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.managereservedports", "false"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.managereturnpath", "false"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.manageservices", "false"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.managevpcconf", "false"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.name_servers.#", "2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.name_servers.0", "127.0.0.3"),
@@ -291,16 +287,6 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.search_domains.#", "2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.search_domains.0", "searchdomain3"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.search_domains.1", "searchdomain4"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_client_id", "id2"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_client_key", "key2"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_enabled", "false"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_ips", "ip1,ip2,ip3,ip4,ip5"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_load_balance", "round_robin"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_log_level", "info"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_mode", "portal"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_portal_url", "127.0.0.2"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_proxy_host", "127.0.0.3"),
-					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.shim_proxy_port", "445"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ssh_enabled", "false"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ssh_password_allowed", "false"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "appliance.0.ssh_port", "44"),
@@ -320,6 +306,10 @@ func TestAccBrocadeVTMTrafficManagerBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_neighbor_addrs.0", "127.0.0.3"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_neighbor_addrs.1", "127.0.0.4"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.ospfv2_neighbor_addrs.2", "127.0.0.5"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.lss_dedicated_ips.#", "3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.lss_dedicated_ips.0", "127.0.0.1"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.lss_dedicated_ips.1", "127.0.0.3"),
+					resource.TestCheckResourceAttr(trafficManagerResourceName, "fault_tolerance.0.lss_dedicated_ips.2", "127.0.0.2"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptables.#", "1"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptables.0.config_enabled", "false"),
 					resource.TestCheckResourceAttr(trafficManagerResourceName, "iptrans.#", "1"),
@@ -454,8 +444,8 @@ func testAccBrocadeTrafficManagerCreate(name string) string {
        updater_ip = "0.0.0.0"
 
        appliance = {
-           gateway_ipv4 = "127.0.0.1"
-	   gateway_ipv6 = "2001:db8:0:1234:0:567:8:2"
+            gateway_ipv4 = "127.0.0.1"
+		    gateway_ipv6 = "2001:db8:0:1234:0:567:8:2"
 
 	   hosts = [
 	   	{
@@ -476,6 +466,7 @@ func testAccBrocadeTrafficManagerCreate(name string) string {
             duplex = false
             mtu = 1500
             speed = "100"
+			mode = "static"
           },
           {
             name = "if2"
@@ -484,6 +475,7 @@ func testAccBrocadeTrafficManagerCreate(name string) string {
             duplex = true
             mtu = 1550
             speed = "10"
+			mode = "static"
           }
 
 	  ]
@@ -528,16 +520,6 @@ func testAccBrocadeTrafficManagerCreate(name string) string {
 	       ]
 
 	       search_domains = ["searchdomain1","searchdomain2"]
-	       shim_client_id = "id1"
-	       shim_client_key = "key1"
-	       shim_enabled = true
-	       shim_ips = "ip1,ip2,ip3"
-	       shim_load_balance = "priority"
-	       shim_log_level = "debug"
-	       shim_mode = "local"
-	       shim_portal_url = "127.0.0.1"
-	       shim_proxy_host = "127.0.0.2"
-	       shim_proxy_port = 444
 	       ssh_enabled = true
 	       ssh_password_allowed = true
 	       ssh_port = 22
@@ -555,6 +537,7 @@ func testAccBrocadeTrafficManagerCreate(name string) string {
 
 	fault_tolerance = {
 		bgp_router_id = "127.0.0.1"
+		lss_dedicated_ips = ["127.0.0.3", "127.0.0.2"],
 		ospfv2_ip = "127.0.0.1"
 		ospfv2_neighbor_addrs = ["127.0.0.1","127.0.0.2","127.0.0.3"]
 	}
@@ -674,6 +657,7 @@ func testAccBrocadeTrafficManagerUpdate(name string) string {
             duplex = true
             mtu = 3000
             speed = "1000"
+			mode = "static"
           },
           {
             name = "if4"
@@ -682,6 +666,7 @@ func testAccBrocadeTrafficManagerUpdate(name string) string {
             duplex = false
             mtu = 1800
             speed = "100"
+			mode = "static"
           }
 
        ]
@@ -711,7 +696,9 @@ func testAccBrocadeTrafficManagerUpdate(name string) string {
        manageazureroutes = false
        manageec2conf = false
        manageiptrans = false
+	   managereservedports = false
        managereturnpath = false
+	   manageservices = false
        managevpcconf = false
        name_servers = ["127.0.0.3","127.0.0.4"]
        ntpservers = ["127.0.0.4","127.0.0.5"]
@@ -726,16 +713,6 @@ func testAccBrocadeTrafficManagerUpdate(name string) string {
        ]
 
        search_domains = ["searchdomain3","searchdomain4"]
-       shim_client_id = "id2"
-       shim_client_key = "key2"
-       shim_enabled = false
-       shim_ips = "ip1,ip2,ip3,ip4,ip5"
-       shim_load_balance = "round_robin"
-       shim_log_level = "info"
-       shim_mode = "portal"
-       shim_portal_url = "127.0.0.2"
-       shim_proxy_host = "127.0.0.3"
-       shim_proxy_port = 445
        ssh_enabled = false
        ssh_password_allowed = false
        ssh_port = 44
@@ -752,6 +729,7 @@ func testAccBrocadeTrafficManagerUpdate(name string) string {
 
 	fault_tolerance = {
 		bgp_router_id = "127.0.0.2"
+		lss_dedicated_ips = ["127.0.0.1", "127.0.0.3", "127.0.0.2"],
 		ospfv2_ip = "127.0.0.2"
 		ospfv2_neighbor_addrs = ["127.0.0.3","127.0.0.4","127.0.0.5"]
 	}
