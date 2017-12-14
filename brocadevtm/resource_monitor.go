@@ -364,12 +364,7 @@ func resourceMonitorRead(d *schema.ResourceData, m interface{}) error {
 		"udp",
 	} {
 		set := make([]map[string]interface{}, 0)
-		//readSectionMap, err := util.BuildReadMap(monitorProperties[sectionName].(map[string]interface{}))
 		set = append(set, monitorProperties[sectionName].(map[string]interface{}))
-		//if err != nil {
-		//	return fmt.Errorf("[ERROR] BrocadeVTM Monitor error whilst building section map to set: %v", err)
-		//}
-		//set = append(set, readSectionMap)
 		err = d.Set(sectionName, set)
 		if err != nil {
 			return fmt.Errorf("[ERROR] BrocadeVTM Monitor error whilst setting section %s: %v", sectionName, err)
