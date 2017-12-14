@@ -2047,12 +2047,12 @@
 			"revisionTime": "2017-03-21T23:07:31Z"
 		},
 		{
-			"checksumSHA1": "9IwAacJhGO6q10NYb1m5i7eWkDY=",
+			"checksumSHA1": "fCTZlrH0wMcVO8jPf6oVazv43dI=",
 			"path": "github.com/sky-uk/go-brocade-vtm/api",
-			"revision": "5fde8b21425baa8479f65b9cbc5a96d843f270c1",
-			"revisionTime": "2017-12-07T11:26:33Z",
-			"version": "0.4.15",
-			"versionExact": "0.4.15"
+			"revision": "139952e91ffc2b1d54f6570e3b5d46f8e037a1f5",
+			"revisionTime": "2017-12-13T16:13:18Z",
+			"version": "0.4.16",
+			"versionExact": "0.4.16"
 		},
 		{
 			"checksumSHA1": "DIslBS7D9BaLaAQ3rjupZsv9vVE=",
