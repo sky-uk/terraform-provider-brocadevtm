@@ -10,6 +10,14 @@ Requirements
 -	[Terraform](https://www.terraform.io/downloads.html) 0.10.x
 -	[Go](https://golang.org/doc/install) 1.8 (to build the provider plugin)
 
+Supported Versions of Brocade vTM
+------------
+
+As the resources vary from version to version of the traffic manager API, we have different releases for different versions
+
+-	5.1 , standard release chain
+-	3.8 , latest release is [here](https://github.com/sky-uk/terraform-provider-brocadevtm/releases/tag/api_v3.8_r1.0)
+
 Building The Provider
 ---------------------
 
