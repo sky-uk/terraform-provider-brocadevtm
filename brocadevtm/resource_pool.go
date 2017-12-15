@@ -162,7 +162,7 @@ func resourcePool() *schema.Resource {
 			},
 
 			"auto_scaling": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -307,7 +307,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"pool_connection": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -350,7 +350,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"dns_autoscale": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -379,7 +379,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"ftp": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -395,7 +395,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"http": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -417,7 +417,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"kerberos_protocol_transition": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -437,7 +437,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"l4accel": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -453,7 +453,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"load_balancing": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -488,7 +488,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"node": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -510,7 +510,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"smtp": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -526,7 +526,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"ssl": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -649,7 +649,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"tcp": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -665,7 +665,7 @@ func resourcePool() *schema.Resource {
 				},
 			},
 			"udp": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				MaxItems: 1,
@@ -793,7 +793,7 @@ func resourcePoolSet(d *schema.ResourceData, m interface{}) error {
 		"l4accel",
 	} {
 		if d.HasChange(section) {
-			poolProperties[poolSectionName(section)] = d.Get(section).(*schema.Set).List()[0]
+			poolProperties[poolSectionName(section)] = d.Get(section).([]interface{})[0]
 		}
 	}
 
