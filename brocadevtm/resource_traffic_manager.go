@@ -245,6 +245,12 @@ func resourceTrafficManager() *schema.Resource {
 										Optional:    true,
 										Default:     true,
 									},
+									"mode": {
+										Type:         schema.TypeString,
+										Description:  "Set the configuriation mode of an interface, the interface name is used in place of the * (asterisk).",
+										Optional:     true,
+										ValidateFunc: validation.StringInSlice([]string{"dhcp", "static"}, true),
+									},
 									"mtu": {
 										Type:         schema.TypeInt,
 										Description:  "The maximum transmission unit (MTU) of the interface",
@@ -344,6 +350,12 @@ func resourceTrafficManager() *schema.Resource {
 							Optional:    true,
 							Default:     true,
 						},
+						"managedpa": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not the software manages the system configuration based on Data Plane Acceleration mode",
+							Optional:    true,
+							Default:     false,
+						},
 						"manageec2conf": {
 							Type:        schema.TypeBool,
 							Description: "Whether or not the software manages the EC2 config",
@@ -356,9 +368,21 @@ func resourceTrafficManager() *schema.Resource {
 							Optional:    true,
 							Default:     true,
 						},
+						"managereservedports": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not the software manages the system configuration for reserved ports.",
+							Optional:    true,
+							Default:     true,
+						},
 						"managereturnpath": {
 							Type:        schema.TypeBool,
 							Description: "Whether or not the software manages return path routing. If disabled, the appliance won't modify iptables / rules / routes for this feature",
+							Optional:    true,
+							Default:     true,
+						},
+						"manageservices": {
+							Type:        schema.TypeBool,
+							Description: "Whether or not the software manages the system services.",
 							Optional:    true,
 							Default:     true,
 						},
@@ -415,63 +439,6 @@ func resourceTrafficManager() *schema.Resource {
 							Description: "The search domains the appliance should use and place in /etc/resolv.conf",
 							Optional:    true,
 							Elem:        &schema.Schema{Type: schema.TypeString},
-						},
-						"shim_client_id": {
-							Type:        schema.TypeString,
-							Description: "The client ID provided by the portal for this server",
-							Optional:    true,
-						},
-						"shim_client_key": {
-							Type:        schema.TypeString,
-							Description: "The client key provided by the portal for this server",
-							Optional:    true,
-						},
-						"shim_enabled": {
-							Type:        schema.TypeBool,
-							Description: "Enable the Riverbed Cloud SteelHead discovery agent on this appliance",
-							Optional:    true,
-							Default:     false,
-						},
-						"shim_ips": {
-							Type:        schema.TypeString,
-							Description: "The IP addresses of the Riverbed Cloud SteelHeads to use, as a space or comma separated list. If using priority load balancing this should be in ascending order of priority (highest priority last)",
-							Optional:    true,
-						},
-						"shim_load_balance": {
-							Type:         schema.TypeString,
-							Description:  "The load balancing method for selecting a Riverbed Cloud SteelHead appliance",
-							Optional:     true,
-							Default:      "round_robin",
-							ValidateFunc: validation.StringInSlice([]string{"priority", "round_robin"}, false),
-						},
-						"shim_log_level": {
-							Type:         schema.TypeString,
-							Description:  "The minimum severity that the discovery agent will record to its log",
-							Optional:     true,
-							Default:      "notice",
-							ValidateFunc: validation.StringInSlice([]string{"critical", "debug", "info", "notice", "serious", "warning"}, false),
-						},
-						"shim_mode": {
-							Type:         schema.TypeString,
-							Description:  "The mode used to discover Riverbed Cloud SteelHeads in the local cloud or data center",
-							Optional:     true,
-							Default:      "portal",
-							ValidateFunc: validation.StringInSlice([]string{"local", "manual", "portal"}, false),
-						},
-						"shim_portal_url": {
-							Type:        schema.TypeString,
-							Description: "The hostname or IP address of the local portal to use",
-							Optional:    true,
-						},
-						"shim_proxy_host": {
-							Type:        schema.TypeString,
-							Description: "The IP or hostname of the proxy server to use to connect to the portal. Leave blank to not use a proxy server",
-							Optional:    true,
-						},
-						"shim_proxy_port": {
-							Type:        schema.TypeString,
-							Description: "The port of the proxy server, must be set if a proxy server has been configured",
-							Optional:    true,
 						},
 						"ssh_enabled": {
 							Type:        schema.TypeBool,
@@ -583,6 +550,12 @@ func resourceTrafficManager() *schema.Resource {
 							Type:        schema.TypeString,
 							Description: "The BGP router id If set to empty, then the IPv4 address used to communicate with the default IPv4 gateway is used instead. Specifying 0.0.0.0 will stop the traffic manager routing software from running the BGP protocol.",
 							Optional:    true,
+						},
+						"lss_dedicated_ips": {
+							Type:        schema.TypeList,
+							Description: "IP addresses associated with the links dedicated by the user for receiving L4 state sync messages from other peers in a cluster.",
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
 						},
 						"ospfv2_ip": {
 							Type:        schema.TypeString,

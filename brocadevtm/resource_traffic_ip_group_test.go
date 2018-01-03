@@ -14,9 +14,10 @@ import (
 func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 
 	randomInt := acctest.RandInt()
+
 	trafficIPGroupName := fmt.Sprintf("acctest_brocadevtm_traffic_ip_group-%d", randomInt)
 	trafficIPGroupResourceName := "brocadevtm_traffic_ip_group.acctest"
-
+	backendTrafficIpsPattern := regexp.MustCompile(`backend_traffic_ips\.[0-9]+`)
 	ipMappingIPPattern := regexp.MustCompile(`ip_mapping\.[0-9]+\.ip`)
 	ipMappingTMPattern := regexp.MustCompile(`ip_mapping\.[0-9]+\.traffic_manager`)
 	ipAddressesPattern := regexp.MustCompile(`ipaddresses\.[0-9]+`)
@@ -36,6 +37,10 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 			{
 				Config:      testAccBrocadeVTMTrafficIPGroupNoName(),
 				ExpectError: regexp.MustCompile(`required field is not set`),
+			},
+			{
+				Config:      testAccBrocadeVTMTrafficIPGroupInvalidBackendTrafficIPs(trafficIPGroupName),
+				ExpectError: regexp.MustCompile(`backend_traffic_ips: should be a list`),
 			},
 			{
 				Config:      testAccBrocadeVTMTrafficIPGroupInvalidIPAssignmentMode(trafficIPGroupName),
@@ -66,12 +71,14 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMTrafficIPGroupExists(trafficIPGroupName, trafficIPGroupResourceName),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "name", trafficIPGroupName),
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "backend_traffic_ips.#", "1"),
+					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, backendTrafficIpsPattern, "192.168.10.49"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "enabled", "true"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "hash_source_port", "true"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ip_assignment_mode", "alphabetic"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ip_mapping.#", "1"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingIPPattern, "192.168.34.56"),
-					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.24"),
+					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.27"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ipaddresses.#", "1"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipAddressesPattern, "192.168.100.10"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "keeptogether", "true"),
@@ -94,14 +101,17 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMTrafficIPGroupExists(trafficIPGroupName, trafficIPGroupResourceName),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "name", trafficIPGroupName),
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "backend_traffic_ips.#", "2"),
+					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, backendTrafficIpsPattern, "192.168.10.92"),
+					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, backendTrafficIpsPattern, "192.168.10.86"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "enabled", "false"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "hash_source_port", "false"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ip_assignment_mode", "balanced"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ip_mapping.#", "2"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingIPPattern, "192.168.34.56"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingIPPattern, "192.168.34.64"),
-					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.24"),
-					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.24"),
+					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.27"),
+					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.27"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ipaddresses.#", "2"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipAddressesPattern, "192.168.100.11"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipAddressesPattern, "192.168.100.12"),
@@ -126,14 +136,16 @@ func TestAccBrocadeVTMTrafficIpGroupBasic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccBrocadeVTMTrafficIPGroupExists(trafficIPGroupName, trafficIPGroupResourceName),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "name", trafficIPGroupName),
+					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "backend_traffic_ips.#", "1"),
+					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, backendTrafficIpsPattern, "192.168.10.28"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "enabled", "true"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "hash_source_port", "true"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ip_assignment_mode", "alphabetic"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ip_mapping.#", "2"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingIPPattern, "192.168.34.64"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingIPPattern, "192.168.34.56"),
-					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.24"),
-					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.24"),
+					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.27"),
+					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipMappingTMPattern, "10.93.59.27"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "ipaddresses.#", "1"),
 					util.AccTestCheckValueInKeyPattern(trafficIPGroupResourceName, ipAddressesPattern, "192.168.100.12"),
 					resource.TestCheckResourceAttr(trafficIPGroupResourceName, "keeptogether", "true"),
@@ -215,6 +227,15 @@ resource "brocadevtm_traffic_ip_group" "acctest" {
 `)
 }
 
+func testAccBrocadeVTMTrafficIPGroupInvalidBackendTrafficIPs(trafficIPGroupName string) string {
+	return fmt.Sprintf(`
+resource "brocadevtm_traffic_ip_group" "acctest" {
+  name = "%s"
+  backend_traffic_ips = "192.168.10.49"
+}
+`, trafficIPGroupName)
+}
+
 func testAccBrocadeVTMTrafficIPGroupInvalidIPAssignmentMode(trafficIPGroupName string) string {
 	return fmt.Sprintf(`
 resource "brocadevtm_traffic_ip_group" "acctest" {
@@ -273,13 +294,14 @@ func testAccBrocadeVTMTrafficIPGroupCreateTemplate(trafficIPGroupName string) st
 	return fmt.Sprintf(`
 resource "brocadevtm_traffic_ip_group" "acctest" {
   name = "%s"
+  backend_traffic_ips=["192.168.10.49"]
   enabled = true
   hash_source_port = true
   ip_assignment_mode = "alphabetic"
   ip_mapping = [
     {
       ip = "192.168.34.56"
-      traffic_manager = "10.93.59.24"
+      traffic_manager = "10.93.59.27"
     },
   ]
   ipaddresses = ["192.168.100.10"]
@@ -302,17 +324,18 @@ func testAccBrocadeVTMTrafficIPGroupUpdateTemplate(trafficIPGroupName string) st
 	return fmt.Sprintf(`
 resource "brocadevtm_traffic_ip_group" "acctest" {
   name = "%s"
+  backend_traffic_ips=["192.168.10.92","192.168.10.86"]
   enabled = false
   hash_source_port = false
   ip_assignment_mode = "balanced"
   ip_mapping = [
     {
       ip = "192.168.34.56"
-      traffic_manager = "10.93.59.24"
+      traffic_manager = "10.93.59.27"
     },
     {
       ip = "192.168.34.64"
-      traffic_manager = "10.93.59.24"
+      traffic_manager = "10.93.59.27"
     },
   ]
   ipaddresses = ["192.168.100.11", "192.168.100.12"]
@@ -335,23 +358,25 @@ func testAccBrocadeVTMTrafficIPGroupUpdate2Template(trafficIPGroupName string) s
 	return fmt.Sprintf(`
 resource "brocadevtm_traffic_ip_group" "acctest" {
   name = "%s"
+  backend_traffic_ips=["192.168.10.28"]
   enabled = true
   hash_source_port = true
   ip_assignment_mode = "alphabetic"
   ip_mapping = [
     {
       ip = "192.168.34.64"
-      traffic_manager = "10.93.59.24"
+      traffic_manager = "10.93.59.27"
     },
     {
       ip = "192.168.34.56"
-      traffic_manager = "10.93.59.24"
+
+      traffic_manager = "10.93.59.27"
     },
   ]
   ipaddresses = ["192.168.100.12"]
   keeptogether = true
   location = 5
-  machines = [ "192.168.10.11", "10.93.59.24" ]
+  machines = [ "192.168.10.11", "10.93.59.27" ]
   mode = "singlehosted"
   multicast = "232.123.23.48"
   note = "Acceptance test - update 2"

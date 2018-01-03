@@ -47,6 +47,8 @@ func TestAccBrocadeVTMPersistenceBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(persistenceResourceName, "delete", "true"),
 					resource.TestCheckResourceAttr(persistenceResourceName, "failure_mode", "url"),
 					resource.TestCheckResourceAttr(persistenceResourceName, "note", "Acceptance test"),
+					resource.TestCheckResourceAttr(persistenceResourceName, "subnet_prefix_length_v4", "24"),
+					resource.TestCheckResourceAttr(persistenceResourceName, "subnet_prefix_length_v6", "64"),
 					resource.TestCheckResourceAttr(persistenceResourceName, "type", "cookie"),
 					resource.TestCheckResourceAttr(persistenceResourceName, "url", "http://www.example.com/"),
 				),
@@ -60,6 +62,8 @@ func TestAccBrocadeVTMPersistenceBasic(t *testing.T) {
 					resource.TestCheckResourceAttr(persistenceResourceName, "delete", "false"),
 					resource.TestCheckResourceAttr(persistenceResourceName, "failure_mode", "new_node"),
 					resource.TestCheckResourceAttr(persistenceResourceName, "note", "Acceptance test - updated"),
+					resource.TestCheckResourceAttr(persistenceResourceName, "subnet_prefix_length_v4", "16"),
+					resource.TestCheckResourceAttr(persistenceResourceName, "subnet_prefix_length_v6", "32"),
 					resource.TestCheckResourceAttr(persistenceResourceName, "type", "j2ee"),
 					resource.TestCheckResourceAttr(persistenceResourceName, "url", "http://www.another-example.com/"),
 				),
@@ -154,6 +158,8 @@ resource "brocadevtm_persistence" "acctest" {
   delete = true
   failure_mode = "url"
   note = "Acceptance test"
+  subnet_prefix_length_v4 = 24
+  subnet_prefix_length_v6 = 64
   type = "cookie"
   url = "http://www.example.com/"
 }
@@ -168,6 +174,8 @@ resource "brocadevtm_persistence" "acctest" {
   delete = false
   failure_mode = "new_node"
   note = "Acceptance test - updated"
+  subnet_prefix_length_v4 = 16
+  subnet_prefix_length_v6 = 32
   type = "j2ee"
   url = "http://www.another-example.com/"
 }

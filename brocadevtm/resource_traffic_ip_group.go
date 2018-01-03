@@ -24,6 +24,12 @@ func resourceTrafficIPGroup() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+			"backend_traffic_ips": {
+				Type:        schema.TypeSet,
+				Description: "IP addresses associated with the Traffic IP group that can be used for communication with back-end servers.",
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			"enabled": {
 				Type:        schema.TypeBool,
 				Description: "Whether the traffic IP group should be enabled",
@@ -145,6 +151,7 @@ func resourceTrafficIPGroup() *schema.Resource {
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
 			"rhi_protocols": {
+
 				Type:        schema.TypeString,
 				Description: "List of protocols ro be used for RHI",
 				Optional:    true,
@@ -197,6 +204,7 @@ func getTrafficManagers(m interface{}) ([]string, error) {
 func basicTrafficIPGroupKeys() []string {
 	return []string{
 		"enabled",
+		"backend_traffic_ips",
 		"hash_source_port",
 		"ip_assignment_mode",
 		"ipaddresses",

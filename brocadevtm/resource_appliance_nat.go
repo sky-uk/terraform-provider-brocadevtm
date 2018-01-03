@@ -20,6 +20,7 @@ func resourceApplianceNat() *schema.Resource {
 			"many_to_one_all_ports": {
 				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"rule_number": {
@@ -43,6 +44,7 @@ func resourceApplianceNat() *schema.Resource {
 			"many_to_one_port_locked": {
 				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"rule_number": {
@@ -84,6 +86,7 @@ func resourceApplianceNat() *schema.Resource {
 			"one_to_one": {
 				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"rule_number": {
@@ -112,6 +115,7 @@ func resourceApplianceNat() *schema.Resource {
 			"port_mapping": {
 				Type:     schema.TypeSet,
 				Optional: true,
+				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"rule_number": {

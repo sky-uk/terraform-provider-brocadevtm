@@ -2,12 +2,13 @@ package api
 
 import (
 	"fmt"
-	"github.com/sky-uk/go-rest-api"
 	"log"
 	"net/http"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/sky-uk/go-rest-api"
 )
 
 const defaultAPIVersion = "3.8"
@@ -189,22 +190,28 @@ func (client *Client) GetAllResourceTypes() ([]map[string]interface{}, error) {
 	return resTypes, nil
 }
 
+// FormatNestedStruct - recursively navigate the tree for any child which value is not a string.
+func FormatNestedStruct(str map[string]interface{}, level int) string {
+	var outStr string
+	outStr += "\n"
+	for key, value := range str {
+		outStr += strings.Repeat("\t", level) + key
+		if vAsStr, ok := value.(string); ok {
+			outStr += " : " + vAsStr
+		} else {
+			level++
+			outStr += FormatNestedStruct(value.(map[string]interface{}), level)
+		}
+		outStr += "\n"
+	}
+
+	return outStr
+}
+
 // FormatErrorText - formats the error message including attributes error strings
 func FormatErrorText(tmErr *VTMError) string {
 	retStr := tmErr.ErrorID + ": " + tmErr.ErrorText + "\n"
-
-	for section, sectionMap := range tmErr.ErrorInfo {
-		sectionErrorStr := section + ":\n"
-		for attr, attrErrMap := range sectionMap.(map[string]interface{}) {
-			sectionErrorStr += "    " + attr + ":\n"
-			for attrErrKey, attrErrValue := range attrErrMap.(map[string]interface{}) {
-				sectionErrorStr += "        " + attrErrKey + ": " + attrErrValue.(string) + "\n"
-			}
-		}
-
-		retStr += sectionErrorStr
-	}
-
+	retStr += FormatNestedStruct(tmErr.ErrorInfo, 0)
 	return retStr
 }
 
