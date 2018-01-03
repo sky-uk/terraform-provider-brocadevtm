@@ -129,6 +129,7 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "priority"), "5"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "state"), "draining"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "weight"), "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "source_ip"), "127.0.0.1"),
 					resource.TestCheckResourceAttr(poolResourceName, "bandwidth_class", "example"),
 					resource.TestCheckResourceAttr(poolResourceName, "failure_pool", "test-pool"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "100"),
@@ -245,6 +246,7 @@ func TestAccPool_Basic(t *testing.T) {
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "priority"), "1"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "state"), "active"),
 					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "weight"), "2"),
+					util.AccTestCheckValueInKeyPattern(poolResourceName, util.AccTestCreateRegexPatternForSetItems("nodes_table", "source_ip"), "127.0.0.2"),
 					resource.TestCheckResourceAttr(poolResourceName, "bandwidth_class", "another-example"),
 					resource.TestCheckResourceAttr(poolResourceName, "failure_pool", "test-pool2"),
 					resource.TestCheckResourceAttr(poolResourceName, "max_connection_attempts", "55"),
@@ -976,6 +978,7 @@ resource "brocadevtm_pool" "acctest" {
       priority = 5
       state = "draining"
       weight = 2
+      source_ip = "127.0.0.1"
     },
   ]
   bandwidth_class = "example"
@@ -1125,6 +1128,7 @@ resource "brocadevtm_pool" "acctest" {
       priority = 1
       state = "active"
       weight = 2
+      source_ip = "127.0.0.2"
     },
   ]
   bandwidth_class = "another-example"

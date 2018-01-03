@@ -137,11 +137,6 @@ func resourceTrafficManager() *schema.Resource {
 				Default:      0,
 				ValidateFunc: util.ValidateUnsignedInteger,
 			},
-			"start_sysd": {
-				Type:        schema.TypeBool,
-				Description: "Whether or not to start the sysd process on software installations. Appliance and EC2 will always run sysd regardless of this config key",
-				Computed:    true,
-			},
 			"trafficip": {
 				Type:        schema.TypeList,
 				Description: "Custom kernel parameters applied by the user with sysctl interface",
@@ -515,16 +510,6 @@ func resourceTrafficManager() *schema.Resource {
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"availability_zone": {
-							Type:        schema.TypeString,
-							Description: "The availability zone of this EC2 instance, should be set when the appliance is first booted. Not required for non-EC2 systems.",
-							Optional:    true,
-						},
-						"instanceid": {
-							Type:        schema.TypeString,
-							Description: "The EC2 instance ID of this EC2 virtual appliance, should be set when the appliance is first booted. Not required for non-EC2 systems.",
-							Optional:    true,
-						},
 						"trafficips_public_enis": {
 							Type:        schema.TypeList,
 							Description: "List of MAC addresses of interfaces which the traffic manager can use to associate the EC2 elastic IPs (Traffic IPs) to the instance.",
