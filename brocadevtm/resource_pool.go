@@ -128,11 +128,6 @@ func resourcePool() *schema.Resource {
 							ValidateFunc: validation.IntBetween(1, 100),
 							Description:  "Weight assigned to the node. Valid values are between 1 and 100",
 						},
-						"source_ip": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "The source address the Traffic Manager uses to connect to this node.",
-						},
 					},
 				},
 			},
