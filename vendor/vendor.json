@@ -2047,12 +2047,12 @@
 			"revisionTime": "2017-03-21T23:07:31Z"
 		},
 		{
-			"checksumSHA1": "fCTZlrH0wMcVO8jPf6oVazv43dI=",
-			"path": "github.com/sky-uk/go-brocade-vtm/api",
-			"revision": "139952e91ffc2b1d54f6570e3b5d46f8e037a1f5",
-			"revisionTime": "2017-12-13T16:13:18Z",
-			"version": "0.4.16",
-			"versionExact": "0.4.16"
+			"checksumSHA1": "NaOoXUgc4JYyGAIomlXinc+f2iw=",
+			"path": "github.com/sky-uk/go-pulse-vtm/api",
+			"revision": "ff3c499074912749973d8f6edf9128b822d8c593",
+			"revisionTime": "2018-01-12T10:10:30Z",
+			"version": "0.4.52",
+			"versionExact": "0.4.52"
 		},
 		{
 			"checksumSHA1": "DIslBS7D9BaLaAQ3rjupZsv9vVE=",
@@ -2437,5 +2437,5 @@
 			"revisionTime": "2017-08-12T16:00:11Z"
 		}
 	],
-	"rootPath": "github.com/sky-uk/terraform-provider-brocadevtm"
+	"rootPath": "github.com/sky-uk/terraform-provider-pulsevtm"
 }
