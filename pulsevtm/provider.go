@@ -75,6 +75,7 @@ func Provider() terraform.ResourceProvider {
 			"pulsevtm_user_authenticator": resourceUserAuthenticator(),
 			"pulsevtm_user_group":         resourceUserGroup(),
 			"pulsevtm_virtual_server":     resourceVirtualServer(),
+			"pulsevtm_ssl_ticket_key":     resourceSSLTicketKey(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
