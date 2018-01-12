@@ -1,7 +1,7 @@
 Terraform Provider
 ==================
 
-Terraform provider for BrocadeVTM appliance
+Terraform provider for PulseVTM appliance
 
 
 Requirements
@@ -10,35 +10,35 @@ Requirements
 -	[Terraform](https://www.terraform.io/downloads.html) 0.10.x
 -	[Go](https://golang.org/doc/install) 1.8 (to build the provider plugin)
 
-Supported Versions of Brocade vTM
+Supported Versions of Pulse vTM
 ------------
 
 As the resources vary from version to version of the traffic manager API, we have different releases for different versions
 
 -	5.1 , standard release chain
--	3.8 , latest release is [here](https://github.com/sky-uk/terraform-provider-brocadevtm/releases/tag/api_v3.8_r1.0)
+-	3.8 , latest release is [here](https://github.com/sky-uk/terraform-provider-pulsevtm/releases/tag/api_v3.8_r1.0)
 
 Building The Provider
 ---------------------
 
-Clone repository to: `$GOPATH/src/github.com/sky-uk/terraform-provider-brocadevtm`
+Clone repository to: `$GOPATH/src/github.com/sky-uk/terraform-provider-pulsevtm`
 
 ```sh
 $ mkdir -p $GOPATH/src/github.com/sky-uk/; cd $GOPATH/src/github.com/sky-uk/
-$ git clone https://github.com/sky-uk/terraform-provider-brocadevtm
+$ git clone https://github.com/sky-uk/terraform-provider-pulsevtm
 ```
 
 Enter the provider directory and build the provider
 
 ```sh
-$ cd $GOPATH/src/github.com/sky-uk/terraform-provider-brocadevtm
+$ cd $GOPATH/src/github.com/sky-uk/terraform-provider-pulsevtm
 $ make build
 ```
 
 Using the provider
 ----------------------
 
-See the [BrocadeVTM Provider wiki](http://github.com/sky-uk/terraform-provider-brocadevtm/wiki) to get started using the BrocadeVTM provider.
+See the [PulseeVTM Provider wiki](http://github.com/sky-uk/terraform-provider-pulsevtm/wiki) to get started using the PulseVTM provider.
 
 Developing the Provider
 ---------------------------
@@ -50,7 +50,7 @@ To compile the provider, run `make build`. This will build the provider and put 
 ```sh
 $ make bin
 ...
-$ $GOPATH/bin/terraform-provider-brocadevtm
+$ $GOPATH/bin/terraform-provider-pulsevtm
 ...
 ```
 

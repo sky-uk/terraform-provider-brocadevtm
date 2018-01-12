@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/hashicorp/terraform/plugin"
-	"github.com/sky-uk/terraform-provider-brocadevtm/brocadevtm"
+	"github.com/sky-uk/terraform-provider-pulsevtm/pulsevtm"
 )
 
 func main() {
 	plugin.Serve(&plugin.ServeOpts{
-		ProviderFunc: brocadevtm.Provider})
+		ProviderFunc: pulsevtm.Provider})
 }

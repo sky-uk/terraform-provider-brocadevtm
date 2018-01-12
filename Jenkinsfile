@@ -2,7 +2,7 @@
 
 import java.util.regex.*
 
-project_name = 'terraform-provider-brocadevtm'
+project_name = 'terraform-provider-pulsevtm'
 project_owner = 'sky-uk'
 
 project_src_path = "github.com/${project_owner}/${project_name}"
@@ -71,27 +71,27 @@ slackHelper.notificationWrapper(slackChannel, currentBuild, env, true) {
                 }
 
                 stage 'testacc'
-                // If the git branch name is prefixed with api5_1_ or api3_8_ we want to use a specific Brocade VTM server. If neither use the default.
+                // If the git branch name is prefixed with api5_1_ or api3_8_ we want to use a specific Pulse VTM server. If neither use the default.
                 if(git_branch ==~ /^api3_8_.*/) {
-                    brocadeVTMCredentials="BROCADEVTM_3_8_CREDENTIALS"
-                    brocadeVTMServer=env.BROCADEVTM_3_8_SERVER
-                    brocadeVTMUnverifiedSSL=env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
-                    brocadeVTMAPI="3.8"
+                    pulseVTMCredentials="PULSEVTM_3_8_CREDENTIALS"
+                    pulseVTMServer=env.PULSEVTM_3_8_SERVER
+                    pulseVTMUnverifiedSSL=env.PULSEVTM_ALLOW_UNVERIFIED_SSL
+                    pulseVTMAPI="3.8"
 
                 } else {
-                    brocadeVTMCredentials = "BROCADEVTM_5_1_CREDENTIALS"
-                    brocadeVTMServer = env.BROCADEVTM_5_1_SERVER
-                    brocadeVTMUnverifiedSSL = env.BROCADEVTM_ALLOW_UNVERIFIED_SSL
-                    brocadeVTMAPI = "5.1"
+                    pulseVTMCredentials = "PULSEVTM_5_1_CREDENTIALS"
+                    pulseVTMServer = env.PULSEVTM_5_1_SERVER
+                    pulseVTMUnverifiedSSL = env.PULSEVTM_ALLOW_UNVERIFIED_SSL
+                    pulseVTMAPI = "5.1"
                 }
 
-                echo "Running acceptance tests using credentials ID: ${brocadeVTMCredentials}, API version: ${brocadeVTMAPI} and VTM server: ${brocadeVTMServer}"
+                echo "Running acceptance tests using credentials ID: ${pulseVTMCredentials}, API version: ${pulseVTMAPI} and VTM server: ${pulseVTMServer}"
 
                 inContainer {
-                    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: brocadeVTMCredentials, usernameVariable: 'BROCADEVTM_USERNAME', passwordVariable: 'BROCADEVTM_PASSWORD']]) {
-                        env.BROCADEVTM_SERVER=brocadeVTMServer
-                        env.BROCADEVTM_ALLOW_UNVERIFIED_SSL=brocadeVTMUnverifiedSSL
-                        env.BROCADEVTM_API_VERSION=brocadeVTMAPI
+                    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: pulseVTMCredentials, usernameVariable: 'PULSEVTM_USERNAME', passwordVariable: 'PULSEVTM_PASSWORD']]) {
+                        env.PULSEVTM_SERVER=pulseVTMServer
+                        env.PULSEVTM_ALLOW_UNVERIFIED_SSL=pulseVTMUnverifiedSSL
+                        env.PULSEVTM_API_VERSION=pulseVTMAPI
                         goHelper.goTestAcc(project_src_path)
                     }
                 }
