@@ -70,6 +70,7 @@ func Provider() terraform.ResourceProvider {
 			"pulsevtm_ssl_cas_file":       resourceSSLCasFile(),
 			"pulsevtm_ssl_client_key":     resourceSSLClientKey(),
 			"pulsevtm_ssl_server_key":     resourceSSLServerKey(),
+			"pulsevtm_ssl_ticket_key":     resourceSSLTicketKey(),
 			"pulsevtm_traffic_manager":    resourceTrafficManager(),
 			"pulsevtm_traffic_ip_group":   resourceTrafficIPGroup(),
 			"pulsevtm_user_authenticator": resourceUserAuthenticator(),
