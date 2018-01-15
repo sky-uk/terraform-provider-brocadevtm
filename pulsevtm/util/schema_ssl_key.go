@@ -23,8 +23,8 @@ func SchemaSSLKey() map[string]*schema.Schema {
 		},
 
 		"private": {
-			Type:     schema.TypeString,
-			Optional: true,
+			Type:      schema.TypeString,
+			Optional:  true,
 			Sensitive: true,
 		},
 
