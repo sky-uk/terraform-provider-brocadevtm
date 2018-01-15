@@ -1,7 +1,8 @@
 Terraform Provider
 ==================
 
-Terraform provider for PulseVTM appliance
+Terraform provider for PulseVTM appliance.
+Since version v0.7.0, the provider has been renamed to PulseVTM from BrocadeVTM.
 
 
 Requirements
@@ -38,7 +39,7 @@ $ make build
 Using the provider
 ----------------------
 
-See the [PulseeVTM Provider wiki](http://github.com/sky-uk/terraform-provider-pulsevtm/wiki) to get started using the PulseVTM provider.
+See the [PulseVTM Provider wiki](http://github.com/sky-uk/terraform-provider-pulsevtm/wiki) to get started using the PulseVTM provider.
 
 Developing the Provider
 ---------------------------
